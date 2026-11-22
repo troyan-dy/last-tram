@@ -6,18 +6,25 @@
 *{box-sizing:border-box}body{margin:0;background:#f5f1e5;color:#213c36;font:15px/1.45 system-ui,sans-serif}main{max-width:1140px;margin:auto;padding:16px clamp(12px,3vw,38px) 28px}header,.row,.rail,.legend,.timebar,.tabs,.metrics{display:flex;align-items:center;gap:10px;flex-wrap:wrap}header,.rail,.timebar{justify-content:space-between}header{border-bottom:1px solid #bcbfad;padding-bottom:8px}.stamp{font:700 11px/1.4 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.13em}.stamp b{color:#9b3e26}.sub{color:#59665c}h1{font:600 clamp(30px,4.5vw,54px)/1.04 Georgia,serif;letter-spacing:-.048em;margin:14px 0 4px}p{margin:2px 0 12px}button{font:inherit;background:#fffcf3;color:#264138;border:1px solid #aab5a5;border-radius:5px;padding:6px 11px;cursor:pointer}button[aria-pressed=true]{background:#29483d;color:#fff9e7}button:hover{border-color:#324f42}button:focus-visible,input:focus-visible{outline:3px solid #b95330;outline-offset:2px}.stage{border:1px solid #acb4a4;border-radius:7px;overflow:hidden}.rail,.legend{padding:6px 12px;background:#fffdf3}.rail small,.legend{font-size:12px}.rail b{font:700 17px/1.2 ui-monospace,monospace}svg{display:block;width:100%;height:auto;background:#263d4b}.legend{justify-content:space-between}.timebar{margin:12px 0 8px}.tabs{gap:4px}.tabs button{font-size:13px}.track{display:flex;align-items:center;gap:12px;color:#536355;font:12px ui-monospace,monospace}input[type=range]{width:100%;accent-color:#b45736;cursor:pointer}.metrics{margin-top:14px;gap:10px 22px;align-items:start}.metrics section{flex:1 1 280px;border-top:1px solid #b7bda9;padding-top:7px}.metrics strong{font:600 20px/1.3 Georgia,serif}.metrics label{display:block;margin:5px 0 0;cursor:pointer}input[type=checkbox]{accent-color:#29483d}.metrics p{margin:4px 0;font-size:14px}.mini{font-size:12px;color:#5c685c}.legend i{display:inline-block;width:8px;height:9px;background:#f5b44b;border:1px solid #594d3b;margin:0 3px 0 6px}.legend i.blue{background:#55cbd0} @media(max-width:650px){.tabs button{padding:5px 7px}.rail,.legend{padding:5px 7px}.legend{gap:3px}.metrics{margin-top:8px}main{padding-top:9px}.stage svg{min-height:170px}}
 .people-only,[hidden]{display:none!important}.people-study .day-only,.people-study #play,.people-study .track,.people-study .metrics,.people-study main>p.mini{display:none!important}.people-study .people-only:not([hidden]){display:block!important}.people-study .layers{display:flex!important;gap:8px;align-items:center;flex-wrap:wrap}.people-study [data-who]{cursor:pointer}.people-panel{border-top:1px solid #b7bda9;margin-top:12px;padding-top:8px}.people-panel p{margin:8px 0}.layers button{font-size:13px}.people-study .legend span:first-child{display:none}
 </style>
+<style>
+.intent-only{display:none}.intent-study .intent-only{display:block}.intent-study .intent-tools{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin:10px 0}.intent-study .intent-tools div{display:flex;flex-wrap:wrap;gap:4px}.intent-study .intent-tools button{font-size:13px}.intent-study .people-panel,.intent-study .timebar,.intent-study .legend,.intent-study #keyline{display:none!important}.intent-study .intent-foot{padding:7px 12px;background:#fffdf5;font-size:13px}.intent-study .intent-notes{margin:8px 0}.intent-notes #subject{font-weight:700}.intent-study [data-inspect]{cursor:pointer}.intent-study [data-inspect]:focus-visible{outline:none;filter:drop-shadow(0 0 1px #ffac20)}.intent-notes output{display:block}.intent-study .viewport{overflow-x:auto}.intent-study .viewport svg{min-width:560px}.intent-study .intent-notes label{cursor:pointer}.intent-study .intent-notes button{font-size:13px}
+</style>
 <main>
 <header class="stamp"><span><b>ЛТ /</b> Последний трамвай</span><span class="sub">Этюд 02 · объёмный город</span></header>
 <h1>Сутки у рынка</h1><p class="sub">Одна улица, два направления. С какой стороны будут ждать вагон вечером?</p>
+<div class="intent-only intent-tools"><div aria-label="Рисунок метки"><button data-art="A">A · Мысль</button><button data-art="B">B · Билет</button><button data-art="C">C · Путь</button></div><div><button id="flowSwitch">Потоки</button><button id="more">Час пик</button></div></div>
+<div class="intent-only intent-tools"><div class="stamp">Момент у остановки</div><div><button data-scene="0">1 · Поезд на остановке</button><button data-scene="1">2 · Мира вышла</button><button data-scene="2">3 · Пешком до входа</button></div></div>
 <section class="stage" aria-label="Улица у рынка">
 <div class="rail"><span class="stamp">Сосновые дворы / Рыночная площадь</span><b id="clock">07:30</b></div>
-<svg id="map" viewBox="-54 21 296 129" role="img" aria-labelledby="mapTitle mapDesc" xmlns="http://www.w3.org/2000/svg">
+<div class="viewport"><svg id="map" viewBox="-54 21 296 129" role="img" aria-labelledby="mapTitle mapDesc" xmlns="http://www.w3.org/2000/svg">
 <title id="mapTitle">Изометрическая улица с трамваем</title><desc id="mapDesc"></desc>
 <defs><radialGradient id="lamp"><stop stop-color="#ffd47b" stop-opacity=".63"/><stop offset=".55" stop-color="#e9ad5d" stop-opacity=".23"/><stop offset="1" stop-color="#e9ad5d" stop-opacity="0"/></radialGradient></defs>
-<g id="ground"></g><g id="city"></g><g id="watch"></g></svg>
+<g id="ground"></g><g id="city"></g><g id="watch"></g></svg></div>
+<div class="intent-only intent-foot"><div id="symbols"></div><span id="artKey"></span></div>
 <div class="people-only rail" id="keyline"></div>
 <div class="legend"><span><i></i> весь путь пешком　<i class="blue"></i> у посадочной площадки</span><span>Т1 · Дворы — Рынок</span></div>
 </section>
+<section class="intent-only intent-notes"><output id="residentInfo" aria-live="polite"></output></section>
 <div class="timebar"><div class="tabs" aria-label="Час наблюдения"><button data-hour="7.5">07:30 · Утро</button><button data-hour="13">13:00 · День</button><button data-hour="19">19:00 · Вечер</button><button data-hour="1">01:00 · Ночь</button></div><button id="play" aria-pressed="false">▶ Прожить сутки</button></div>
 <label class="track">00:00<input type="range" id="time" min="0" max="1439" value="450" step="1" aria-label="Время суток">23:59</label>
 <div class="metrics">
@@ -28,7 +35,7 @@
 <div class="layers"><button id="normal" aria-pressed="true">Обычный вид</button><button id="overlay" aria-pressed="false">Слой «Потоки»</button><button id="advance">Через несколько секунд →</button></div>
 <p><b id="whoTitle">У остановки</b> · <span id="why" aria-live="polite"></span></p>
 <div class="layers" aria-label="Выбрать жителя"><button data-name="n">Нина</button><button data-name="o">Олег</button><button data-name="m">Мира</button><button id="clear">Снять выделение</button></div>
-</section><footer class="mini"><a id="other" href="?study=people">Следующий этюд: трое на тротуаре →</a></footer></main>
+</section><footer class="mini"><a id="other" href="?study=people">Следующий этюд: трое на тротуаре →</a> · <a id="artLink" href="?study=intents">Ателье меток: три рисунка намерений</a></footer></main>
 <script>
 // Throwaway visual study: same camera, buildings and line in both demand scenarios.
 const $=id=>document.getElementById(id), clamp=x=>Math.max(0,Math.min(1,x));
@@ -89,7 +96,7 @@ const swings=[[0,2,1],[4,1,1],[7.5,15,3],[10.5,7,4],[13,5,5],[16,5,6],[19,3,15],
 function volumes(t){let i=1;while(t>swings[i][0])i++;let [a,out,back]=swings[i-1],[b,o,r]=swings[i],v=(t-a)/(b-a),f=Math.round(out+(o-out)*v),s=Math.round(back+(r-back)*v);if(!$('reverse').checked){let total=f+s;f=Math.round(total*.76);s=total-f}return [f,s]}
 function arrow(x,y,d){let col=d>0?'#783a25':'#285d71';return path([[x-5*d,y],[x+5*d,y]],'#fff5d3',1.7)+path([[x-5*d,y],[x+5*d,y],[x+2*d,y-3]],col,.9)+path([[x+5*d,y],[x+2*d,y+3]],col,.9)}
 let fixed=[],litMinute=-1;
-const params=new URLSearchParams(location.search),people=params.get('study')==='people';
+const params=new URLSearchParams(location.search),intents=params.get('study')==='intents',people=params.get('study')==='people';
 let layer=false,later=false,who='';
 const residents={
  n:{name:'Нина',coat:'#b43f3f',early:[69,95],late:[100,95],to:'весь путь пешком',why:'Из Сосновых дворов на рынок. «Две минуты экономии не стоят билета». Проходит мимо «Дворов».'},
@@ -125,6 +132,80 @@ function peopleReadout(){
  $('advance').textContent=later?'← В исходный кадр':'Через несколько секунд →';
  document.querySelectorAll('[data-name]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.name===who));
 }
+// Three treatments of the same itinerary: mode and destination belong to the trip, action to the current frame.
+const tint={tram:'#9be0d7',foot:'#ffdb91'},ink='#233d3e',paper='#fff7df';
+const destinations={market:'Рынок',park:'Парк',station:'Вокзал'};
+const actions={walk:'идёт пешком',approach:'к остановке',wait:'ждёт поезд',ride:'в поезде',exit:'выходит',last:'идёт ко входу'};
+const cast=[
+ ['Мира','tram','market','#915d90',[[200,113.4,'ride'],[202,101,'exit'],[215,94,'last']]],
+ ['Нина','foot','market','#ba584c',[[145,96,'walk'],[152,96,'walk'],[160,96,'walk']]],
+ ['Олег','tram','park','#4e877d',[[231,96,'approach'],[220,98,'approach'],[207,100,'wait']]],
+ ['Лев','foot','park','#777fac',[[169,119,'walk'],[165,119,'walk'],[160,119,'walk']]],
+ ['Яна','tram','station','#ba8655',[[193,100,'wait'],[193,100,'wait'],[193,100,'wait']]],
+ ['Ася','tram','park','#657caf',[[187,99,'wait'],[187,99,'wait'],[187,99,'wait']]],
+ ['Тимур','foot','station','#94815f',[[209,119,'walk'],[215,119,'walk'],[222,119,'walk']]],
+ ['Марк','foot','market','#6f8c5b',[[152,95,'walk'],[160,95,'walk'],[167,95,'walk']]]
+];
+let art=['A','B','C'].includes(params.get('variant'))?params.get('variant'):'A',shot=[1,2].includes(+params.get('frame'))?+params.get('frame'):0,rush=params.get('rush')==='1',showIntent=true,watching=0;
+const shift=(x,y,s)=>`<g transform="translate(${x} ${y})">${s}</g>`;
+const rounded=(x,y,w,h,r,c,stroke='none',sw=.25)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${c}" stroke="${stroke}" stroke-width="${sw}"/>`;
+const word=(x,y,str,size,color,anchor='middle',bold=650)=>`<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${color}" style="font:${bold} ${size}px system-ui,sans-serif">${str}</text>`;
+function glyph(kind,col=ink){
+ if(kind==='market')return poly([[-2.1,-1.7],[1.9,-1.7],[2.6,-.1],[-2.7,-.1]],col)+line([[-2,0],[-2,2],[2,2],[2,0]],col,.5)+line([[-1.1,1.8],[-1.1,.6],[.6,.6]],col,.42)+line([[-.7,-1.45],[-.9,-.35]],paper,.38)+line([[.85,-1.45],[1,-.35]],paper,.38);
+ if(kind==='park')return line([[0,-1],[0,2.2]],col,.65)+poly([[0,-2.6],[-2,-.6],[-1.3,-.6],[-2.3,1],[2.3,1],[1.3,-.6],[2,-.6]],col);
+ if(kind==='station')return poly([[-2.5,-.9],[0,-2.7],[2.5,-.9]],col)+rounded(-2,-1,4,3.1,.2,col)+disk(0,-.5,.95,paper)+line([[0,-1],[0,-.5],[.4,-.25]],col,.26)+rect(-.5,1.1,1,1.1,paper);
+ if(kind==='tram')return rounded(-1.8,-2,3.6,3.5,.65,col)+rounded(-1.25,-1.45,2.5,1.35,.2,paper)+line([[-1.5,2.2],[-.8,1.35],[.8,1.35],[1.5,2.2]],col,.5)+disk(-.9,.72,.25,paper)+disk(.9,.72,.25,paper);
+ return disk(.3,-1.9,.61,col)+line([[-1.8,2.1],[-.65,.8],[.05,-.9],[.7,.1],[1.7,.25]],col,.53)+line([[-.4,.3],[.8,1.1],[1.2,2.2]],col,.56)+line([[0,-.9],[-1,-.5],[-1.5,.1]],col,.46);
+}
+const dims={A:[18,12],B:[32,9.3],C:[27,8.6]};
+function artwork(r,act){
+ const [,mode,dest]=r,bg=tint[mode],d=destinations[dest],a=actions[act];
+ if(art==='A'){ // A thought: landmark is the big picture; a little pin keeps the trip mode.
+  return rounded(-8.2,-5.9,16.4,10.7,4.4,paper,ink,.42)+disk(0,5.8,.85,paper)+disk(-.8,7,.45,paper)+shift(-.35,-2,`<g transform="scale(1.35)">${glyph(dest)}</g>`)+word(0,3.25,a,1.8,ink)+shift(7,-4.4,disk(0,0,2.65,ink)+disk(0,0,2.3,bg)+`<g transform="scale(.76)">${glyph(mode)}</g>`);
+ }
+ if(art==='B'){ // B ticket: destination and action in words; the fixed coloured stub stays attached.
+  return rounded(-16,-4.6,32,9.2,1.2,paper,ink,.4)+rounded(-15.7,-4.3,7.4,8.6,.85,bg)+shift(-12,0,glyph(mode))+`<path d="M-8,-4 v8" stroke="${ink}" stroke-width=".3" stroke-dasharray=".6 .65"/>`+word(-6.4,-.65,d,3.2,ink,'start',760)+word(-6.4,2.7,a,2.05,ink,'start')+shift(12.5,-.4,`<g transform="scale(.78)">${glyph(dest)}</g>`);
+ }
+ // C trip strip: destination at right, active leg signalled by the light bead; the mode sits at left.
+ let tr=mode==='tram',slots=tr?[-5.7,-.6,4.6]:[-.6],active=tr?({approach:0,wait:0,ride:1,exit:2,last:2})[act]:0;
+ let strip=rounded(-13.5,-4.3,27,8.6,1.8,ink,paper,.32)+shift(-10.4,-.1,rounded(-2.45,-2.5,4.9,5,.8,bg)+`<g transform="scale(.77)">${glyph(mode)}</g>`)+line([[-7,-.65],[7.4,-.65]],'#95aaa3',.44);
+ slots.forEach((x,j)=>{strip+=disk(x,-.65,j===active?1.2:.57,j===active?bg:'#b4c5b9')});
+ return strip+word(.2,3,a,1.85,paper)+shift(10.1,-.4,disk(0,0,2.65,paper)+`<g transform="scale(.79)">${glyph(dest)}</g>`);
+}
+function intentScene(put){
+ const list=cast.slice(0,rush?8:3),[w,h]=dims[art],boxes=[],records=[];
+ for(let i=0;i<list.length;i++){const r=list[i],[x,y,act]=r[4][shot],[u,v]=pt(x,y);let chosen=i===watching;
+  if(act==='ride'){put(x,y+6,at(x,y,shift(0,-3.7,rounded(-.74,.35,1.4,.65,.3,r[3])+disk(0,-.1,.63,'#e0b892')+rounded(-.59,-.64,1.13,.3,.12,'#493c42'))))}
+  else put(x,y,(chosen?at(x,y,`<ellipse rx="3.2" ry="1.45" fill="none" stroke="#fff5cf" stroke-width="1.2"/><ellipse rx="3.2" ry="1.45" fill="none" stroke="${ink}" stroke-width=".45"/>`):'')+pedestrian(x,y,i,r[1]==='tram',1,!['wait','ride'].includes(act),r[3]));
+  const anchor=v-(act==='ride'?5.5:7.3);
+  let cx=Math.max(36+w/2,Math.min(178-w/2,u)),cy=anchor-h/2-2.8;
+  if(showIntent){
+   const ox=cx,oy=cy;
+   place:for(let row=0;row<8;row++)for(let dx of [0,-.5,.5,-1,1,-1.5,1.5,-2,2]){
+    const a=Math.max(36+w/2,Math.min(178-w/2,ox+dx*(w+2))),b=oy-row*(h+2);
+    if(b-h/2<50||boxes.some(o=>Math.abs(o.cx-a)<w+1.8&&Math.abs(o.cy-b)<h+1.8))continue;
+    cx=a;cy=b;break place;
+   }
+   boxes.push({cx,cy});
+  }
+  records.push({u,v,anchor,cx,cy,r,act,i,chosen});
+ }
+ let lines='',marks='',targets='';for(const {u,v,anchor,cx,cy,r,act,i,chosen} of records){
+  let z=`${r[0]} · ${actions[act]} · ${destinations[r[2]]} · ${r[1]==='tram'?'поездка на трамвае':'весь путь пешком'}`;
+  if(showIntent){
+   let points=[[u,anchor],[cx,cy+h/2]];lines+=line(points,paper,1.05)+line(points,ink,.43);
+   marks+=`<g data-inspect="${i}" data-mode="${r[1]}" data-dest="${r[2]}" data-action="${act}" role="button" aria-label="${z}" tabindex="0"><title>${z}</title>${shift(cx,cy,artwork(r,act))}</g>`;
+  }
+  targets+=`<g data-inspect="${i}" role="${showIntent?'presentation':'button'}" ${showIntent?'':`aria-label="${z}" tabindex="0"`}><title>${z}</title>${rect(u-2.8,v-8,5.6,9,'transparent')}</g>`;
+ }
+ const tx=[200,200,185][shot];put(tx,110,tram(tx));
+ $('watch').innerHTML=lines+targets+marks;
+ const r=list[watching],[,,act]=r[4][shot];$('residentInfo').textContent=`${r[0]} · ${actions[act]} → ${destinations[r[2]]}. Всё перемещение: ${r[1]==='tram'?'поездка на трамвае':'целиком пешком'}.`;
+ $('artKey').textContent=showIntent?({A:'Рисунок в облачке — место назначения, подпись — действие. Маленький значок сбоку — способ всего пути.',B:'На билете крупно написано куда, под ним — что делает житель. На цветном корешке — способ всего пути.',C:'Слева — способ всего пути, справа — цель. Светлая точка показывает этап: до поезда, в нём или после высадки. Под ней — текущее действие.'})[art]:'Обычный город. Включите «Потоки», чтобы увидеть намерения всех жителей.';
+ document.querySelectorAll('[data-art]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.art===art));document.querySelectorAll('[data-scene]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.scene===shot));
+ $('more').setAttribute('aria-pressed',rush);$('flowSwitch').setAttribute('aria-pressed',showIntent);
+ return '';
+}
 function render(){let t=minute/60,[out,back]=volumes(t),actors=fixed.slice(),put=(x,y,art)=>actors.push([pt(x,y)[1],art]);
  if(litMinute!==Math.floor(minute)){litMinute=Math.floor(minute);p=palette(t);night=clamp(1-Math.min((t-4.5)/3.4,(21.2-t)/3.6));sun=Math.cos((t-7)*Math.PI/12);
   $('ground').innerHTML=terrain();actors=[];buildings.forEach((b,i)=>put(b[0]+b[2]/2,b[1]+b[3],house(b,i)));trees.forEach(([x,y],i)=>put(x,y,tree(x,y,i)));
@@ -134,12 +215,12 @@ function render(){let t=minute/60,[out,back]=volumes(t),actors=fixed.slice(),put
    let x=q?(d>0?80-i*3:200+i*3):(d>0?45+progress*170:215-progress*170),y=q?100: d>0?95.5:118.8;put(x,y,pedestrian(x,y,i,q,d,!q))}
  }
  let traces='';
- if(people){traces=drawPeople(put);peopleReadout()}else{group(out,1);group(back,-1);let tx=140-56*Math.cos(moment*.14+.62);put(tx,110,tram(tx));
+ if(intents)traces=intentScene(put);else if(people){traces=drawPeople(put);peopleReadout()}else{group(out,1);group(back,-1);let tx=140-56*Math.cos(moment*.14+.62);put(tx,110,tram(tx));
  traces=$('arrows').checked?[61,112,170].map(x=>arrow(x,94,1)+arrow(x,122,-1)).join(''):''}
  $('city').innerHTML=traces+actors.sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join('');
  phase=t<5||t>=22?'Ночь':t<11?'Утро':t<17?'День':'Вечер';let hh=Math.floor(t),mm=Math.floor(minute)%60,hm=[hh,mm].map(i=>String(i).padStart(2,'0')).join(':');
  $('clock').textContent=hm;$('time').value=Math.floor(minute);$('time').setAttribute('aria-valuetext',hm);
- let flow=`К площади: ${out} · К жилым дворам: ${back}`;$('period').textContent=phase;$('flow').textContent=flow;$('mapDesc').textContent=people?`${phase}. Нина, Олег и Мира на тротуаре между дворами и рынком.`:`${phase}, ${hm}. ${flow}.`;
+ let flow=`К площади: ${out} · К жилым дворам: ${back}`;$('period').textContent=phase;$('flow').textContent=flow;$('mapDesc').textContent=intents?`Намерения жителей у рынка. ${$('residentInfo').textContent}`:people?`${phase}. Нина, Олег и Мира на тротуаре между дворами и рынком.`:`${phase}, ${hm}. ${flow}.`;
  document.querySelectorAll('[data-hour]').forEach(b=>b.setAttribute('aria-pressed',Math.abs(+b.dataset.hour*60-minute)<1));
 }
 function setPlay(on){playing=on;prev=0;$('play').textContent=on?'Ⅱ Остановить часы':'▶ Прожить сутки';$('play').setAttribute('aria-pressed',on)}
@@ -155,5 +236,17 @@ if(people){
  document.querySelectorAll('[data-name]').forEach(b=>b.onclick=()=>select(b.dataset.name));$('clear').onclick=()=>select('');
  $('normal').onclick=()=>{layer=false;render()};$('overlay').onclick=()=>{layer=true;render()};$('advance').onclick=()=>{later=!later;render()};
 }
-const initial=Number(params.get('hour')??(people?13:7.5));choose(Number.isFinite(initial)&&initial>=0&&initial<24?initial*60:450);if(!people)requestAnimationFrame(tick);
+if(intents){
+ document.querySelector('.people-panel').hidden=true;
+ $('symbols').innerHTML=Object.entries(destinations).map(([k,d])=>`<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px"><svg viewBox="-3 -3 6 6" width="18" height="18" style="width:18px;background:none" aria-hidden="true">${glyph(k)}</svg>${d}</span>`).join('');
+ document.body.classList.add('intent-study','people-study');document.title='Последний трамвай · Ателье меток';document.querySelector('header .sub').textContent='Этюд 03 · слой «Потоки»';document.querySelector('h1').textContent='У кого что на уме?';document.querySelector('h1 + p').textContent='Те же жители у рынка. Переключите рисунок метки, затем посмотрите, что меняется, когда Мира выходит из поезда.';
+ $('map').setAttribute('viewBox','33 48 149 88');$('map').setAttribute('role','group');$('artLink').hidden=true;
+ const variant=k=>{art=k;let url=new URL(location.href);url.searchParams.set('variant',art);try{history.replaceState(null,'',url)}catch{}render()};
+ document.querySelectorAll('[data-art]').forEach(b=>b.onclick=()=>variant(b.dataset.art));document.querySelectorAll('[data-scene]').forEach(b=>b.onclick=()=>{shot=+b.dataset.scene;render()});
+ $('more').onclick=()=>{rush=!rush;if(!rush&&watching>=3)watching=0;render()};$('flowSwitch').onclick=()=>{showIntent=!showIntent;render()};
+ const inspect=e=>{const g=e.target.closest('[data-inspect]');if(!g)return;watching=+g.dataset.inspect;render();if(e.type==='keydown')$('watch').querySelector(`[tabindex="0"][data-inspect="${watching}"]`)?.focus()};
+ $('watch').onclick=inspect;$('watch').onkeydown=e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();inspect(e)}};
+ document.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();variant('ABC'[('ABC'.indexOf(art)+(e.key==='ArrowLeft'?2:1))%3])}});
+}
+const initial=Number(params.get('hour')??(intents?19:people?13:7.5));choose(Number.isFinite(initial)&&initial>=0&&initial<24?initial*60:450);if(!people&&!intents)requestAnimationFrame(tick);
 </script></html>
