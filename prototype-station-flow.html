@@ -40,7 +40,7 @@ dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);bor
 <main>
 <header><div class="brand"><span class="mark" aria-hidden="true">Т</span><div><div class="eyebrow">Служба движения · игровой прототип</div><h1>Последний трамвай</h1></div></div>
 <div class="row"><span class="time" id="clock"></span><button id="pause">Ⅱ Пауза</button><button id="speed" title="Скорость симуляции">1×</button><button id="setup" aria-label="Сид и новая партия">☰</button></div></header>
-<div class="bar"><div class="row"><strong id="day"></strong><button hidden class="hot tight" id="nextMorning">▶ Следующее утро</button></div><span class="msg" id="message" role="status"></span></div>
+<div class="bar"><strong id="status"></strong><span class="msg" id="message" role="status"></span></div>
 <div class="layout"><section class="board"><div class="maphead"><strong id="area"></strong><span id="instruction"></span><div class="camera"><button id="zoomOut" aria-label="Отдалить карту">−</button><button id="fit" title="Показать весь район">Обзор</button><button id="zoomIn" aria-label="Приблизить карту">+</button></div></div>
 <div class="viewport"><svg id="city" viewBox="94 112 730 355" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Живая карта района">
 <defs>
@@ -54,7 +54,7 @@ dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);bor
 <g id="ground"></g><g id="railLayer"></g><g id="architecture"></g><g id="shade" pointer-events="none"></g><g id="trace" pointer-events="none"></g><g id="stops"></g><g id="buildLayer"></g><g id="traffic"></g><g id="pedestrians"></g>
 </svg></div>
 <div class="mapfoot"><span><span class="key"><i class="dot"></i>пешеход</span>　<span class="key"><i class="dot wait"></i>к трамваю</span>　<span class="key"><i class="dot car"></i>вагон</span></span><button class="tight" id="order">Заказ города →</button></div>
-<div class="hud"><div><small>Касса</small><b id="cash"></b></div><div><small>Билеты за утро</small><b id="revenue"></b></div><div><small>Прибыли</small><b id="arrivals"></b></div><div><small>Выиграно у ходьбы</small><b id="saved"></b></div></div></section>
+<div class="hud"><div><small>Касса</small><b id="cash"></b></div><div><small>Выручка всего</small><b id="revenue"></b></div><div><small>Прибытий всего</small><b id="arrivals"></b></div><div><small>Выиграно у ходьбы</small><b id="saved"></b></div></div></section>
 <aside><nav class="tabs" aria-label="Пульт"><button data-tab="watch">Наблюдение</button><button data-tab="network">Сеть</button><button data-tab="goal">Задание</button></nav>
 <div class="pad panel" id="panel"></div>
 <div class="pad controls"><div class="control"><div class="spread"><b>Билет</b><div class="row"><button id="minus" aria-label="Снизить тариф">−</button><output class="cost" id="fare"></output><button id="plus" aria-label="Повысить тариф">+</button></div></div></div>
@@ -62,7 +62,7 @@ dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);bor
 </div>
 <details class="drawer" id="journal"><summary>Журнал диспетчера · кто пересел и сколько выиграл</summary><section><p class="sub" id="compareLabel"></p><div id="comparison" class="note"></div><div id="log" class="log"></div></section></details>
 </main>
-<dialog id="settings"><h2>Новая партия</h2><p>Один сид повторяет застройку, дома и утренний спрос. Новая партия сбросит кассу и сеть.</p><p style="margin:10px 0"><label>Сид города <input id="seedField" size="13" maxlength="18"></label></p><div class="row"><button id="start" class="hot">Начать с этим сидом</button><button id="random">Случайный сид</button><button id="close">Назад</button></div></dialog>
+<dialog id="settings"><h2>Новая партия</h2><p>Один сид повторяет застройку и поток жителей. Новая партия сбросит кассу и сеть.</p><p style="margin:10px 0"><label>Сид города <input id="seedField" size="13" maxlength="18"></label></p><div class="row"><button id="start" class="hot">Начать с этим сидом</button><button id="random">Случайный сид</button><button id="close">Назад</button></div></dialog>
 <script>
 "use strict";
 // География и расписание: одна единица времени = 1/10 игровой минуты.
@@ -74,7 +74,7 @@ const ST=[
 const LINKS=[[0,1],[1,2],[0,4],[4,3],[3,1],[3,8],[8,2],[0,5],[5,6],[6,1],[6,7],[7,2],[9,4],[2,10],[6,11],[3,12]];
 const NAMES="Нина Олег Илья Ася Мира Ян Лев Вера Лида Антон Зоя Глеб Майя Игорь Соня Тимур Алла Юрий Рита Фёдор Лена Марк Тася Иван".split(" ");
 const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const fmt=n=>Number((n/10).toFixed(1)).toLocaleString("ru"), rub=n=>n+" ₽", sign=n=>(n>0?"+":"")+n, tickTime=t=>{const m=420+Math.floor(t/10);return `${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`};
+const fmt=n=>Number((n/10).toFixed(1)).toLocaleString("ru"), rub=n=>n+" ₽", sign=n=>(n>0?"+":"")+n, tickTime=t=>{const m=Math.floor(t/10);return `${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`};
 function rng(seed){let h=2166136261;for(const c of seed)h=Math.imul(h^c.charCodeAt(0),16777619);return()=>{h=(Math.imul(1664525,h)+1013904223)>>>0;return h/4294967296}}
 const node=(x,y)=>y*X.length+x,stopNode=i=>node(ST[i][1],ST[i][2]),stopPoint=i=>[X[ST[i][1]],Y[ST[i][2]]];
 function shortest(adj,a,b){const ds=new Map([[a,0]]),prev=new Map(),todo=new Set([a]);while(todo.size){let u;for(const v of todo)if(u===undefined||ds.get(v)<ds.get(u))u=v;todo.delete(u);if(u===b)break;
@@ -109,22 +109,58 @@ function schedule(net,seq){if(seq.length<2)return null;let t=0;const calls=[],se
   for(let k=1;k<r.path.length;k++){const a=r.path[k-1],b=r.path[k],[x,y]=stopPoint(a),[xx,yy]=stopPoint(b),end=t+Math.ceil(Math.hypot(xx-x,yy-y)/TRAIN);
   segments.push({a,b,from:t,to:end});t=end}
  }return {calls,segments,period:t}}
-function createSim(city,net,day=1){
- const g={city,net,day,t:0,rev:0,saved:0,arr:[],logs:[],events:[],cars:[],lines:net.lines.map(l=>schedule(net,l)),done:false};
- g.people=city.people.filter(d=>!d.outer||net.ring).map(d=>({...d,phase:"home",at:d.home,paid:null,legs:[],leg:0,rethink:false}));
+const DEMAND_PERIOD=300,HISTORY=600;
+function resident(d,start){return {...d,start,phase:"home",at:d.home,paid:null,legs:[],leg:0,rethink:false}}
+function createSim(city,net){
+ const g={city,net,t:0,rev:0,saved:0,total:0,outerServed:false,arr:[],logs:[],cars:[],lines:net.lines.map(l=>schedule(net,l))};
+ g.people=city.people.filter(d=>!d.outer||net.ring).map(d=>resident(d,Math.max(1,d.start)));
  net.fleet.forEach((l,i)=>{const n=net.fleet.filter(x=>x===l).length,prior=net.fleet.slice(0,i).filter(x=>x===l).length;g.cars.push({id:i,l,offset:Math.floor(g.lines[l].period*(prior+.55)/n),since:0})});return g
 }
 const mod=(a,b)=>((a%b)+b)%b;
-function carPos(g,c,sub=0){const line=g.lines[c.l],phase=mod(g.t+sub-c.since+c.offset,line.period),s=line.segments.find(k=>phase<k.to),[x,y]=stopPoint(s.a),[xx,yy]=stopPoint(s.b),r=(phase-s.from)/(s.to-s.from);
- return {x:x+(xx-x)*r,y:y+(yy-y)*r,angle:s.a===s.b?0:Math.atan2(yy-y,xx-x)*180/Math.PI,stop:s.a===s.b?s.a:null}}
+function segmentPose(s,t){const [x,y]=s.xy||stopPoint(s.a),[xx,yy]=stopPoint(s.b),r=(t-s.from)/(s.to-s.from);
+ return {x:x+(xx-x)*r,y:y+(yy-y)*r,a:s.a,b:s.b,angle:s.a===s.b?0:Math.atan2(yy-y,xx-x)*180/Math.PI,stop:s.a===s.b?s.a:null}}
+function carPos(g,c,sub=0){const t=g.t+sub;if(t<c.since)return segmentPose(c.join.find(s=>t<s.to),t);
+ const line=g.lines[c.l],phase=mod(t-c.since+c.offset,line.period);return segmentPose(line.segments.find(k=>phase<k.to),phase)}
+// Сохранить положение и направление на общем перегоне. Вне новой линии
+// сначала пройти по построенным рельсам к одной из её остановок.
+function attachment(net,line,pos,t){
+ const distance=(xy,s)=>Math.hypot(xy[0]-stopPoint(s)[0],xy[1]-stopPoint(s)[1]),xy=[pos.x,pos.y];
+ const same=line.segments.find(s=>s.a===pos.a&&s.b===pos.b);
+ if(same){const r=same.a===same.b?0:distance(xy,same.a)/distance(stopPoint(same.b),same.a);
+  return {since:t,offset:Math.round(same.from+r*(same.to-same.from))%line.period,join:[]}}
+ let best=null;
+ for(const end of new Set([pos.a,pos.b]))for(const call of line.calls){const path=railPath(net,end,call.s);if(!path)continue;
+  const d=distance(xy,end)+path.d;if(!best||d<best.d)best={d,end,path:path.path,call}}
+ if(!best)return null;
+ const join=[];let since=t,start=xy,from=best.end===pos.a?pos.b:pos.a;
+ for(const b of best.path){const dt=Math.ceil(distance(start,b)/TRAIN);if(dt>0){join.push({a:from,b,xy:start,from:since,to:since+dt});since+=dt}from=b;start=stopPoint(b)}
+ return {since,offset:best.call.in,join};
+}
+function changeService(g,l,seq,cars){
+ const line=g.net.lines[l].join()===seq.join()?g.lines[l]:schedule(g.net,seq);if(!line)return false;
+ const joins=cars.map(c=>attachment(g.net,line,carPos(g,c),g.t));if(joins.some(j=>!j))return false;
+ g.net.lines[l]=[...seq];g.lines[l]=line;
+ cars.forEach((c,i)=>{Object.assign(c,joins[i],{l});g.net.fleet[c.id]=l});
+ for(const p of g.people){
+  if(p.phase==="ride"){
+   const leg=p.legs[p.leg],car=cars.find(c=>c.id===leg.car);
+   if(car){const calls=line.calls.map(call=>({to:call.s,end:nextCall(car,line,call,g.t)}));
+    const direct=calls.filter(c=>c.to===leg.to),next=(direct.length?direct:calls).sort((a,b)=>a.end-b.end)[0];
+    Object.assign(leg,next,{l});}
+   p.afterRide=true;
+  }else if(p.phase==="wait")choose(g,p);else if(["walk","approach","last"].includes(p.phase))p.rethink=true;
+ }
+ return true;
+}
+function nextCall(c,line,call,t){const base=c.since-c.offset+call.in;return base+Math.ceil((Math.max(t,c.since)-base)/line.period)*line.period}
 function foot(city,a,b){const p=city.path(a,b);return {kind:"foot",path:p.path,d:p.d,dt:p.path.slice(1).reduce((n,v,i)=>{const [x,y]=city.pts[v],[xx,yy]=city.pts[p.path[i]];return n+Math.ceil(Math.hypot(x-xx,y-yy)/WALK)},0)}}
 function rides(g,l,from,ready){
  const line=g.lines[l],best=new Map();if(!line)return [];
  for(const car of g.cars.filter(c=>c.l===l))for(const [i,call] of line.calls.entries()){if(call.s!==from)continue;
-  const epoch=car.since-car.offset,cycle=Math.ceil((ready-(epoch+call.out))/line.period),base=epoch+cycle*line.period,depart=base+call.out;
+   const epoch=car.since-car.offset,cycle=Math.ceil((Math.max(ready,car.since)-(epoch+call.out))/line.period),base=epoch+cycle*line.period,depart=base+call.out;
   for(let k=1;k<line.calls.length;k++){const j=(i+k)%line.calls.length,at=line.calls[j],end=base+at.in+(j<=i?line.period:0);
    if(at.s===from||best.get(at.s)?.end<=end)continue;
-   best.set(at.s,{kind:"ride",l,car:car.id,from,to:at.s,board:Math.max(ready,base+call.in),depart,end});
+    best.set(at.s,{kind:"ride",l,car:car.id,from,to:at.s,board:Math.max(ready,car.since,base+call.in),depart,end});
   }
  }return [...best.values()]
 }
@@ -139,45 +175,46 @@ function choose(g,p){
    for(const r2 of rides(g,other,r.to,r.end+1))finish([first,r],r2,true);
   }
  }
- const gain=best?t+walk.dt-best.end:0,worth=Math.max(0,gain*p.value/10),use=best&&gain>0&&worth+1e-8>=g.net.fare;
+ const fare=p.paid===null?g.net.fare:0,gain=best?t+walk.dt-best.end:0,worth=Math.max(0,gain*p.value/10),use=best&&gain>0&&worth+1e-8>=fare;
  const legs=use?best.legs:[walk],r=best?.legs.find(l=>l.kind==="ride");
- p.decision={walk:walk.dt,tram:best?best.end-t:null,gain,worth,fare:g.net.fare,use:!!use,wait:r?r.depart-(t+best.legs[0].dt):0,xf:best?.xf};
+ p.decision={walk:walk.dt,tram:best?best.end-t:null,gain,worth,fare,use:!!use,wait:r?r.depart-(t+best.legs[0].dt):0,xf:best?.xf};
  p.legs=legs;p.leg=0;p.rethink=false;beginLeg(g,p);if(p.phase==="wait")boardIfReady(g,p);
 }
 function boardIfReady(g,p){const r=p.legs[p.leg];if(g.t<r.board||g.t>r.depart)return;
  if(p.paid===null){p.paid=p.decision.fare;g.rev+=p.paid;g.net.bank+=p.paid}p.phase="ride"}
 function beginLeg(g,p){
  while(p.leg<p.legs.length){const s=p.legs[p.leg];if(s.kind==="ride"){p.phase="wait";return}
-  if(s.path.length>1){p.phase=p.paid!==null?"last":p.decision.use?"approach":"walk";p.seg=0;p.segStart=g.t;return}p.leg++}
- p.phase="done";p.end=g.t;p.time=g.t-p.start;p.gain=foot(g.city,p.home,p.dest).dt-p.time;g.arr.push(p);g.saved+=p.gain;
+   if(s.path.length>1){p.phase=p.legs[p.leg+1]?.kind==="ride"?"approach":p.paid!==null?"last":"walk";p.seg=0;p.segStart=g.t;return}p.leg++}
+ p.phase="done";p.end=g.t;p.time=g.t-p.start;p.gain=foot(g.city,p.home,p.dest).dt-p.time;g.arr.push({...p});g.total++;g.saved+=p.gain;
+ if(p.outer&&p.paid!==null)g.outerServed=true;
 }
 function motion(g,p,sub=0){const s=p.legs[p.leg],a=g.city.pts[s.path[p.seg]],b=g.city.pts[s.path[p.seg+1]],dt=Math.ceil(Math.hypot(a[0]-b[0],a[1]-b[1])/WALK);return {a,b,dt,r:Math.min(1,(g.t+sub-p.segStart)/dt)}}
-function stepSim(g){if(g.done)return;g.t++;
- for(const p of g.people){
-  if(p.phase==="done")continue;
+function stepSim(g){g.t++;while(g.arr.length&&g.arr[0].end<=g.t-HISTORY)g.arr.shift();
+ for(let i=0;i<g.people.length;i++){let p=g.people[i];
+  if(p.phase==="done"){const origin=g.city.people[p.id];if(mod(g.t-Math.max(1,origin.start),DEMAND_PERIOD)!==0)continue;
+   p=g.people[i]=resident(origin,g.t)}
   if(p.phase==="home"){if(g.t<Math.max(1,p.start))continue;p.start=g.t;choose(g,p)}
   if(["walk","approach","last"].includes(p.phase)){const m=motion(g,p);if(m.r>=1){p.at=p.legs[p.leg].path[++p.seg];p.segStart=g.t;
    if(p.rethink&&p.at!==p.dest){choose(g,p)}else if(p.seg===p.legs[p.leg].path.length-1){p.leg++;beginLeg(g,p)}
   }}
   if(p.phase==="wait")boardIfReady(g,p);
-  if(p.phase==="ride"){const r=p.legs[p.leg];if(g.t>=r.end){p.at=stopNode(r.to);p.leg++;beginLeg(g,p)}}
+   if(p.phase==="ride"){const r=p.legs[p.leg];if(g.t>=r.end){p.at=stopNode(r.to);if(p.afterRide){p.afterRide=false;choose(g,p)}else{p.leg++;beginLeg(g,p)}}}
  }
  if(g.rev>=180||g.saved>=450)g.net.permit=true;
- g.done=g.arr.length===g.people.length;
 }
 function reconsider(g){for(const p of g.people)if(p.paid===null){if(p.phase==="wait")choose(g,p);else if(["walk","approach"].includes(p.phase))p.rethink=true}}
 function addCar(g,l){if(!g.lines[l]||g.net.bank<75||g.net.fleet.length>=8)return false;
  const line=g.lines[l],active=g.cars.filter(c=>c.l===l),phases=active.map(c=>mod(g.t-c.since+c.offset,line.period)),terminals=[line.calls[0],line.calls[g.net.lines[l].length-1]];
  const gap=x=>phases.length?Math.min(...phases.map(v=>Math.min(mod(x-v,line.period),mod(v-x,line.period)))):line.period;
  const offset=terminals.sort((a,b)=>gap(b.in)-gap(a.in))[0].in;g.net.bank-=75;g.cars.push({id:g.net.fleet.length,l,offset,since:g.t});g.net.fleet.push(l);reconsider(g);return true}
-function baseline(city,ring){const net=network();net.ring=ring;const g=createSim(city,net);while(!g.done&&g.t<1600)stepSim(g);return g}
+function openRing(g){g.net.bank-=165;g.net.ring=true;for(const d of g.city.people.filter(p=>p.outer))g.people.push(resident(d,g.t+1+d.id-20))}
 </script>
 <script>
 // Вид города. Все координаты людей и вагонов берутся из текущего состояния рейса.
 const COLORS=["#b34231","#345f8a"],TARGET=["Вокзал","Крытый рынок","Лодочная станция"];
 const phaseName={home:"дома",walk:"идёт пешком",approach:"идёт к остановке",wait:"ждёт вагон",ride:"едет в трамвае",last:"идёт от остановки",done:"на месте"};
-let city,g,ref,tab="watch",pick={type:"station",id:0},tool="",draft=[],editLine=0,queued=null,paused=false,speed=1,carry=0,previous=0,uiTick=-10,modeMsg="",seenArr=0,ended=false;
-let referenceName="",zoom=1,center=null,drag=null,ignoreClick=false,lastPaint=0;
+let city,g,ref,tab="watch",pick={type:"station",id:0},tool="",draft=[],editLine=0,paused=false,speed=1,carry=0,previous=0,uiTick=-10,seenArr=0,compareFrom=0;
+let referenceName="",zoom=1,center=null,drag=null,ignoreClick=false,lastPaint=0,launchCar=0,panelMarkup="";
 const svg=(id,html)=>{$(id).innerHTML=html},pt=a=>a.join(","),routePoints=ids=>ids.map(i=>pt(stopPoint(i))).join(" ");
 function house(h){
  const x=h.x,y=h.y,w=31+Math.round(h.style*22),hei=12+Math.round(h.style*7),col=["#ce9e78","#bd997d","#b3a68a","#9fae9e"][Math.floor(h.style*4)],left=x-w/2;
@@ -240,16 +277,20 @@ function camera(){
 }
 function drawNetwork(){
  camera();
+ for(const id of ["traffic","pedestrians"])$(id).style.pointerEvents=tool?"none":"";
  svg("shade",g.net.ring?"":'<rect width="940" height="590" mask="url(#boundary)" fill="#405747" opacity=".29"/><rect x="97" y="113" width="723" height="351" rx="18" fill="none" stroke="#607c62" stroke-dasharray="5 6"/>');
  let rails="";for(const e of g.net.edges){
   const [a,b]=LINKS[e],points=routePoints([a,b]);rails+=`<polyline points="${points}" fill="none" stroke="#8a8372" stroke-width="7" stroke-dasharray="2 4"/><polyline points="${points}" stroke="#545c56" stroke-width="4" fill="none"/><polyline points="${points}" stroke="#d4ceba" stroke-width="2" fill="none"/>`;
   const [x,y]=stopPoint(a),[xx,yy]=stopPoint(b),n=Math.ceil(Math.hypot(xx-x,yy-y)/65);for(let k=1;k<n;k++){
    const bx=x+(xx-x)*k/n,by=y+(yy-y)*k/n;rails+=`<path d="M${bx+6} ${by+10}v-15l-7 2" fill="none" stroke="#787c6c" stroke-width="1"/>`;}
- }svg("railLayer",rails);
+ }
+ if(tab==="network")g.lines.forEach((line,l)=>{if(!line)return;
+  for(const seg of line.segments.filter(s=>s.a<s.b))rails+=`<polyline points="${routePoints([seg.a,seg.b])}" fill="none" stroke="${COLORS[l]}" opacity=".8" stroke-width="2" transform="translate(0 ${l?3:-3})"/>`});
+ svg("railLayer",rails);
  let s="";for(let i=0;i<ST.length;i++){if(!access(i))continue;const [x,y]=stopPoint(i),service=g.net.lines.map((l,j)=>l.includes(i)?j:-1).filter(j=>j>=0),editing=tool==="line";
  s+=`<g transform="translate(${x} ${y})" data-stop="${i}" role="button" tabindex="0" aria-label="Остановка ${ST[i][0]}"><title>${ST[i][0]}</title>
- <circle r="${editing?12:6}" fill="${editing?"#ffdc80":service.length?"#f6eed7":"#c2c4ac"}" stroke="${COLORS[service[0]]||"#717d6a"}" stroke-width="2"/><circle r="2" fill="#43594e"/>
- <rect x="-10" y="6" width="20" height="3" fill="#7b8575"/><text class="tag" text-anchor="middle" y="20">${ST[i][0]}</text><circle r="13" fill="transparent"/></g>`}
+  <circle r="${editing?12:6}" fill="${editing&&draft.includes(i)?"#ffce68":service.length?"#f6eed7":"#c2c4ac"}" stroke="${COLORS[service[0]]||"#717d6a"}" stroke-width="2"/><circle r="2" fill="#43594e"/>
+  <rect x="-10" y="6" width="20" height="3" fill="#7b8575"/><text class="tag" text-anchor="middle" y="20">${ST[i][0]}</text>${tab==="network"&&!editing&&service.length?`<text class="tag" x="8" y="-7">${service.map(labelLine).join("/")}</text>`:""}<circle r="13" fill="transparent"/></g>`}
  svg("stops",s);
  let overlay="";if(tool==="build")LINKS.forEach(([a,b],e)=>{if(!access(a)||!access(b)||g.net.edges.includes(e))return;
  const [x,y]=stopPoint(a),[xx,yy]=stopPoint(b);overlay+=`<g data-edge="${e}" tabindex="0" role="button" aria-label="Проложить ${ST[a][0]} — ${ST[b][0]}"><title>Путь · 40 ₽</title><path d="M${x} ${y}L${xx} ${yy}" stroke="#22604a" stroke-width="6" stroke-dasharray="7 4"/><path d="M${x} ${y}L${xx} ${yy}" stroke="transparent" stroke-width="18"/><circle cx="${(x+xx)/2}" cy="${(y+yy)/2}" r="8" fill="#235640"/><text x="${(x+xx)/2}" y="${(y+yy)/2+4}" fill="white" text-anchor="middle" font-size="13">+</text></g>`});
@@ -268,7 +309,7 @@ function actor(key,layer,markup,label){if(actors.has(key))return actors.get(key)
 function drawActors(){
  const chosen=pick.type+":"+pick.id;
  for(const c of g.cars){const key="car:"+c.id,q=carPos(g,c,carry),el=actor(key,"traffic",`<title>Вагон №${c.id+1}</title><circle class="halo" r="15" fill="none" stroke="#ffc649" stroke-width="2.8"/><g class="body"><rect x="-15" y="-5" width="31" height="12" rx="4" fill="#42564b" opacity=".35"/><rect x="-16" y="-6" width="32" height="12" rx="4" fill="${COLORS[c.l]}" stroke="#493f34"/><rect x="-12" y="-4.3" width="24" height="8.6" rx="2" fill="#f4daa5"/><path d="M-9-3v6m4-6v6m10-6v6m4-6v6" stroke="#749899" stroke-width="2"/><path d="m-3 0 4-3 4 3-4 2z" fill="none" stroke="#585c54"/><circle cx="14" cy="-3" r="1.3" fill="#ffed9c"/></g><rect x="-16" y="-9" width="32" height="18" fill="transparent"/>`,`Вагон ${c.id+1}, линия ${c.l+1}`);
- el.setAttribute("transform",`translate(${q.x} ${q.y})`);el.querySelector(".body").setAttribute("transform",`rotate(${q.angle})`);el.querySelector(".halo").style.display=chosen===key?"":"none"}
+  el.setAttribute("transform",`translate(${q.x} ${q.y})`);el.querySelector(".body").setAttribute("transform",`rotate(${q.angle})`);el.querySelector(".body rect:nth-child(2)").setAttribute("fill",COLORS[c.l]);el.setAttribute("aria-label",`Вагон ${c.id+1}, линия ${c.l+1}`);el.querySelector(".halo").style.display=chosen===key?"":"none"}
  for(const p of g.people){const key="person:"+p.id,hidden=["home","ride","done"].includes(p.phase);
   if(hidden&&!actors.has(key))continue;
   const el=actor(key,"pedestrians",`<title>${p.name}</title><circle class="halo" r="8.4" fill="#fff4bd" fill-opacity=".45" stroke="#293b31" stroke-width="1.1"/><ellipse cx="1.4" cy="1" rx="3.8" ry="1.7" fill="#516552" opacity=".5"/><path class="legs" fill="none" stroke="#363f3a" stroke-width="1.7" stroke-linecap="round"/><path class="coat" d="M-2.9-1.4q-1-5 2.8-5.4 4 .1 3.3 5.4z" stroke="#4e574b" stroke-width=".7"/><circle cy="-7.6" r="2.2" fill="#eac8a4" stroke="#665946" stroke-width=".8"/><circle cy="-3" r="8" fill="transparent"/>`,p.name);
@@ -283,22 +324,22 @@ function drawActors(){
  }}svg("trace",trace);
 }
 const labelLine=l=>`Т${l+1}`;
-function say(s){modeMsg=s;$("message").textContent=s}
-function log(s){g.logs.unshift(`${tickTime(g.t)} · ${s}`)}
-function keepBefore(){
- if(g.done)return;const {city:map,...state}=g;ref={...structuredClone(state),city:map};
- while(!ref.done&&ref.t<1800)stepSim(ref);
- referenceName=`как прошло бы это утро без решения в ${tickTime(g.t)} (тариф ${rub(g.net.fare)}, вагонов ${g.cars.length})`;
+function say(s){$("message").textContent=s}
+function log(s){g.logs.unshift(`${tickTime(g.t)} · ${s}`);g.logs.length=Math.min(g.logs.length,12)}
+function snapshotService(){const {city:map,...state}=g;return {...structuredClone(state),city:map}}
+function keepBefore(snapshot=snapshotService()){
+ ref=snapshot;compareFrom=ref.t;
+ referenceName=`движение без изменения в ${tickTime(ref.t)} (тариф ${rub(ref.net.fare)}, вагонов ${ref.cars.length})`;
 }
+function counterpart(p){return ref.arr.find(b=>b.id===p.id&&b.start===p.start)}
 function updateControls(){
  $("fare").value=rub(g.net.fare);$("minus").disabled=g.net.fare===0;$("plus").disabled=g.net.fare===60;
  const opts=g.net.lines.flatMap((s,i)=>s.length?[`<option value="${i}">${labelLine(i)} · ${g.cars.filter(c=>c.l===i).length} ваг.</option>`]:[]).join("");
  if($("buyLine").innerHTML!==opts){const val=$("buyLine").value;$("buyLine").innerHTML=opts;if([...$("buyLine").options].some(o=>o.value===val))$("buyLine").value=val}
  $("buy").disabled=g.net.bank<75||g.net.fleet.length>=8;
- $("pause").textContent=paused?"▶ Пуск":"Ⅱ Пауза";$("pause").disabled=g.done;$("speed").textContent=speed+"×";
- $("clock").textContent=tickTime(g.t);$("day").textContent=`Смена ${String(g.day).padStart(2,"0")}  /  ${g.done?"Утро завершено":paused?"На паузе":"Утренний выпуск"}`;
- $("nextMorning").hidden=!g.done;
- $("cash").textContent=rub(g.net.bank);$("revenue").textContent=rub(g.rev);$("arrivals").textContent=`${g.arr.length} / ${g.people.length}`;$("saved").textContent=fmt(g.saved)+" мин";
+ $("pause").textContent=paused?"▶ Пуск":"Ⅱ Пауза";$("speed").textContent=speed+"×";
+ $("clock").textContent=tickTime(g.t);$("clock").title="Время с начала игры, часы:минуты";$("status").textContent=paused?"На паузе":"Диспетчерская · движение открыто";
+ $("cash").textContent=rub(g.net.bank);$("revenue").textContent=rub(g.rev);$("arrivals").textContent=g.total;$("saved").textContent=fmt(g.saved)+" мин";
 }
 const btn=(action,text,disabled=false)=>`<button data-act="${action}" ${disabled?"disabled":""}>${text}</button>`;
 function watchPanel(){
@@ -308,16 +349,18 @@ function watchPanel(){
    detail=`<p class="sub">При последнем выборе от текущей точки: пешком ${fmt(d.walk)} мин; с трамваем ${d.tram===null?"нет пути":fmt(d.tram)+" мин (ожидание до отправления "+fmt(d.wait)+" мин"+(d.xf?", с пересадкой":"")+")"}.</p>`}
   if(p.phase==="wait")detail+=`<p>Ждёт №${p.legs[p.leg].car+1} · ${ST[p.legs[p.leg].from][0]}</p>`;
   if(p.phase==="ride"){const r=p.legs[p.leg];detail+=`<p>В вагоне №${r.car+1} → ${ST[r.to][0]}</p>`}
-  if(p.phase==="done"){const b=ref.people.find(x=>x.id===p.id);detail+=`<p><b>Факт: ${fmt(p.time)} мин.</b> ${comparePerson(p,b)}</p>`}
+   if(p.phase==="done"){detail+=`<p><b>Факт: ${fmt(p.time)} мин.</b> ${comparePerson(p,counterpart(p))}</p>`}
   return `<div class="eyebrow">Житель / ${phaseName[p.phase]}</div><h2>${p.name}</h2><p>${p.outer?"Внешнее кольцо":"Жилой квартал"} → ${TARGET[p.target]}</p><div class="note">${why}</div>${detail}`;
  }
  if(pick.type==="car"){const c=g.cars[pick.id],riders=g.people.filter(p=>p.phase==="ride"&&p.legs[p.leg].car===c.id),q=carPos(g,c);
- return `<div class="eyebrow">Подвижной состав / ${labelLine(c.l)}</div><h2>Вагон №${c.id+1}</h2><p>${q.stop===null?"На перегоне":"На остановке «"+ST[q.stop][0]+"»"}</p><p class="sub">${g.net.lines[c.l].map(i=>ST[i][0]).join(" → ")}</p><h3>В салоне: ${riders.length}</h3><div class="row">${riders.map(p=>btn("p"+p.id,p.name)).join("")||"Свободно"}</div>`}
+ const line=g.lines[c.l],upcoming=line.calls.map(call=>({s:call.s,at:nextCall(c,line,call,g.t+1)})).sort((a,b)=>a.at-b.at)[0];
+ return `<div class="eyebrow">Подвижной состав / ${labelLine(c.l)}</div><h2>Вагон №${c.id+1}</h2><p>${q.stop===null?"На перегоне":"На остановке «"+ST[q.stop][0]+"»"}</p><p>Следующая: <b>${ST[upcoming.s][0]}</b></p><p class="sub">${g.net.lines[c.l].map(i=>ST[i][0]).join(" → ")}</p><h3>В салоне: ${riders.length}</h3><div class="row">${riders.map(p=>btn("p"+p.id,p.name)).join("")||"Свободно"}</div>`}
  if(pick.type==="stop"){const i=pick.id,wait=g.people.filter(p=>p.phase==="wait"&&p.legs[p.leg].from===i);
- return `<div class="eyebrow">Остановка</div><h2>${ST[i][0]}</h2><p>${g.net.lines.map((l,j)=>l.includes(i)?labelLine(j):"").filter(Boolean).join(" · ")||"Без маршрута"}</p><h3>На платформе: ${wait.length}</h3><div class="row">${wait.map(p=>btn("p"+p.id,p.name)).join("")||"Никто не ждёт"}</div>`}
+ const services=g.lines.flatMap((line,l)=>line?.calls.some(c=>c.s===i)?[`${labelLine(l)}: останавливается`]:line?.segments.some(s=>s.b===i)?[`${labelLine(l)}: проезжает без остановки`]:[]);
+ return `<div class="eyebrow">Остановка</div><h2>${ST[i][0]}</h2><p>${services.join(" · ")||"Без маршрута"}</p><h3>На платформе: ${wait.length}</h3><div class="row">${wait.map(p=>btn("p"+p.id,p.name)).join("")||"Никто не ждёт"}</div>`}
  const target=pick.id,a=g.arr.filter(p=>p.target===target),rail=a.filter(p=>p.paid!==null),en=g.people.filter(p=>p.target===target&&!["home","done"].includes(p.phase));
  const subjects=en.filter(p=>p.phase==="walk").slice(0,3);
- return `<div class="eyebrow">Место назначения / с 07:00</div><h2>${TARGET[target]}</h2><p><b>${a.length}</b> на месте · <b>${en.length}</b> в дороге</p><p class="sub">Из квартала: ${a.filter(p=>!p.outer&&p.paid===null).length} пешком / ${a.filter(p=>!p.outer&&p.paid!==null).length} трамваем.${g.net.ring?` Из кольца: ${a.filter(p=>p.outer&&p.paid===null).length} / ${a.filter(p=>p.outer&&p.paid!==null).length}.`:""}</p>
+ return `<div class="eyebrow">Прибытия за последние 60 минут</div><h2>${TARGET[target]}</h2><p><b>${a.length}</b> прибыли · <b>${en.length}</b> сейчас в дороге</p><p class="sub">Из квартала: ${a.filter(p=>!p.outer&&p.paid===null).length} пешком / ${a.filter(p=>!p.outer&&p.paid!==null).length} трамваем.${g.net.ring?` Из кольца: ${a.filter(p=>p.outer&&p.paid===null).length} / ${a.filter(p=>p.outer&&p.paid!==null).length}.`:""}</p>
  <div class="note">${a.length?`Последнее прибытие: ${a.at(-1).name}, ${fmt(a.at(-1).time)} мин. Билеты прибывших: ${rub(rail.reduce((s,p)=>s+p.paid,0))}.`:"Пока никто не прибыл. На карте видно, кто уже вышел из дома."}</div><h3>Идут сюда пешком</h3><div class="row">${subjects.map(p=>btn("p"+p.id,p.name)).join("")||"Сейчас никого"}</div>`;
 }
 function comparePerson(p,b){if(!b||b.phase!=="done")return "";const d=b.time-p.time;
@@ -325,92 +368,96 @@ function comparePerson(p,b){if(!b||b.phase!=="done")return "";const d=b.time-p.t
 function netPanel(){
  let sub="";if(tool==="build"){sub=`<div class="note">Нажмите на зелёный пунктир между остановками. Один перегон стоит 40 ₽. Затем включите остановку в маршрут.</div>${btn("cancel","Готово")}`}
  else if(tool==="line"){
-  sub=`<div class="note"><b>Маршрут ${labelLine(editLine)}</b><br>${draft.map(i=>ST[i][0]).join(" → ")||"Выберите первую остановку"}<br><small>Обратно вагон идёт в обратном порядке. Меняются только остановки, пути остаются.</small></div><div class="row">${btn("undo","↶",!draft.length)}${btn("save","Назначить на завтра",draft.length<2)}${btn("cancel","Отмена")}</div>`;
+   const idle=!g.cars.some(c=>c.l===editLine);
+   const release=idle?`<label>Выпуск на ${labelLine(editLine)} <select id="releaseCar">${g.cars.map(c=>`<option value="${c.id}" ${launchCar===c.id?"selected":""}>Перевести №${c.id+1} с ${labelLine(c.l)}</option>`).join("")}<option value="-1" ${launchCar===-1?"selected":""} ${g.net.bank<75||g.cars.length>=8?"disabled":""}>Новый вагон · 75 ₽</option></select></label>`:"";
+   sub=`<div class="note"><b>Остановки ${labelLine(editLine)}</b><div class="row">${draft.map((s,i)=>btn("remove"+s,`${i+1}. ${ST[s][0]} ×`)).join("")||"Выберите первую остановку"}</div><small>Нажмите остановку на карте: выбранная уберётся, новая добавится в конец. Вагон проедет пропущенную остановку без посадки.</small></div>${release}<div class="row">${btn("clear","Задать заново",!draft.length)}${btn("save",idle?"Запустить "+labelLine(editLine)+" сейчас":"Применить сейчас",draft.length<2||(!idle&&draft.join()===g.net.lines[editLine].join()))}${btn("cancel","Отмена")}</div>`;
  }else{sub=`<div class="row">${btn("build","Проложить пути")}${btn("line0","Изменить Т1")}${btn("line1",g.net.lines[1].length?"Изменить Т2":"Назначить Т2")}</div>`}
- const next=queued||{lines:g.net.lines,fleet:g.net.fleet};
- const move=next.lines[1].length?`<h3>Назначения на завтра</h3><div class="row">${g.cars.map(c=>btn("move"+c.id,`№${c.id+1}: ${labelLine(next.fleet[c.id]??c.l)} ⇄`)).join("")}</div>`:"";
- return `<div class="eyebrow">Путевое хозяйство</div><h2>Сеть района</h2>${g.net.lines.map((l,i)=>l.length?`<p><b>${labelLine(i)}</b> · ${l.map(s=>ST[s][0]).join(" → ")}</p>`:"").join("")}<p class="sub">${g.net.edges.length} перегонов · ${g.cars.length} ваг. · места без ограничений</p>${sub}${move}${queued?`<div class="note">На следующее утро: ${queued.lines.map((l,i)=>l.length?labelLine(i)+" "+l.map(s=>ST[s][0]).join(" → "):"").filter(Boolean).join("; ")}.</div>`:""}<div style="margin-top:9px">${dayButton()}</div>`;
+ const move=g.lines[1]?`<h3>Перевести на другую линию</h3><div class="row">${g.cars.map(c=>btn("move"+c.id,`Вагон №${c.id+1}: ${labelLine(c.l)} → ${labelLine(1-c.l)}`)).join("")}</div>`:"";
+ return `<div class="eyebrow">Действующие маршруты</div><h2>Сеть района</h2>${g.net.lines.map((l,i)=>{const n=g.cars.filter(c=>c.l===i).length;return l.length?`<p><b>${labelLine(i)}</b> · ${l.map(s=>ST[s][0]).join(" → ")}<br><small>${n?`На линии: ${n} ваг.`:"Нет движения: переведите сюда вагон или купите новый."}</small></p>`:""}).join("")}${sub}${move}`;
 }
-const dayButton=()=>btn(g.done?"next":"finish",g.done?"▶ Следующее утро":"Досчитать это утро →");
 function summaryOfTrips(){
- const pairs=g.arr.map(p=>[p,ref.people.find(b=>b.id===p.id)]).filter(([,b])=>b?.phase==="done");
+ const pairs=g.arr.filter(p=>p.end>compareFrom).map(p=>[p,counterpart(p)]).filter(([,b])=>b);
  const changed=pairs.filter(([p,b])=>p.paid!==null&&b.paid===null);
  const slower=pairs.filter(([p,b])=>p.paid===null&&b.paid!==null);
  const delta=pairs.reduce((sum,[p,b])=>sum+b.time-p.time,0),money=pairs.reduce((sum,[p,b])=>sum+(p.paid||0)-(b.paid||0),0);
  return {pairs,changed,slower,delta,money};
 }
-function goalPanel(){const d=g.net,s=summaryOfTrips();return `${g.done?`<div class="eyebrow">Итог смены / ${g.arr.length} прибытий</div><h2>Кто пересел</h2><p>${s.changed.length?s.changed.map(([p,b])=>btn("p"+p.id,p.name+" · "+fmt(b.time-p.time)+" мин")).join(" "):"Новых пассажиров нет."}</p>
- <div class="note">${s.delta>=0?"Дополнительно сэкономлено":"Дополнительно потрачено"} ${fmt(Math.abs(s.delta))} мин. Изменение выручки: ${sign(s.money)} ₽.</div><p class="sub">Сравнение: ${referenceName}.</p><hr style="border:0;border-top:1px solid var(--line)">`:""}<div class="eyebrow">Городской заказ</div><h2>${d.ring?"Связать окраины":"Открыть внешнее кольцо"}</h2>
- ${d.ring?`<p>Найдите поток с окраины к вокзалу или лодочной станции. Постройте связь и довезите хотя бы одного жителя кольца.</p><div class="note">${g.arr.some(p=>p.outer&&p.paid!==null)?"Выполнено: поездка из кольца завершена.":"Считаются только завершённые поездки из кольца."}</div>`:`<p>За одно утро соберите 180 ₽ за билеты <b>или</b> сэкономьте жителям 45 минут.</p>
+function goalPanel(){const d=g.net;return `<div class="eyebrow">Городской заказ</div><h2>${d.ring?"Связать окраины":"Открыть внешнее кольцо"}</h2>
+ ${d.ring?`<p>Найдите поток с окраины к вокзалу или лодочной станции. Постройте связь и довезите хотя бы одного жителя кольца.</p><div class="note">${g.outerServed?"Выполнено: поездка из кольца завершена.":"Считаются только завершённые поездки из кольца."}</div>`:`<p>Соберите 180 ₽ за билеты <b>или</b> сэкономьте жителям 45 минут.</p>
  <h3>Билеты · ${rub(g.rev)} / 180 ₽</h3><div class="meter"><i style="width:${Math.min(100,g.rev/1.8)}%"></i></div>
  <h3>Выигрыш · ${fmt(g.saved)} / 45 мин</h3><div class="meter"><i style="width:${Math.max(0,Math.min(100,g.saved/4.5))}%"></i></div><p class="sub">${d.permit?"Право на расширение получено.":"Выполните любую из двух целей."} Цена кольца: 165 ₽.</p>${btn("expand","Открыть кольцо · 165 ₽",!d.permit||d.bank<165)}`}
- <div class="control" style="margin-top:12px">${dayButton()}</div>`}
-function panel(){const el=$("panel");const content=tab==="watch"?watchPanel():tab==="network"?netPanel():goalPanel();if(el.innerHTML!==content){
+  `}
+function panel(){const el=$("panel");const content=tab==="watch"?watchPanel():tab==="network"?netPanel():goalPanel();if(panelMarkup!==content){panelMarkup=content;
  const focused=el.contains(document.activeElement)?document.activeElement.dataset.act:null;el.innerHTML=content;if(focused)el.querySelector(`[data-act="${focused}"]`)?.focus({preventScroll:true})}
  document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab))}
 function drawJournal(){
- $("compareLabel").textContent=`С чем сравниваем: ${referenceName}. Считаются завершённые перемещения тех же жителей.`;
+ $("compareLabel").textContent=`Сравнение: ${referenceName}. За последние 60 минут, только поездки, завершённые в обоих вариантах.`;
  const {pairs:same,delta,money:r,changed,slower}=summaryOfTrips();
  $("comparison").textContent=same.length?`Те же ${same.length} прибывших: изменение времени ${fmt(-delta)} мин; изменение выручки ${sign(r)} ₽. Пересели в трамвай: ${changed.map(([p])=>p.name).join(", ")||"никто"}. Теперь пешком: ${slower.map(([p])=>p.name).join(", ")||"никто"}.`:"Сравнение появится после первого прибытия.";
  const rows=same.slice().reverse().map(([p,b])=>`<div><b>${tickTime(p.end)} · ${p.name} → ${TARGET[p.target]}</b> · ${fmt(p.time)} мин. ${comparePerson(p,b)}</div>`);
  $("log").innerHTML=[...g.logs.slice(0,12).map(s=>`<div>${esc(s)}</div>`),...rows].join("");
 }
 function display(force=false){
- drawActors();if(!force&&!g.done&&g.t-uiTick<3)return;uiTick=g.t;updateControls();panel();if($("journal").open)drawJournal();
- if(g.arr.length>seenArr){for(const a of g.arr.slice(seenArr)){const b=ref.people.find(p=>p.id===a.id);if(b?.paid===null&&a.paid!==null)say(`${a.name}: вместо ходьбы — трамвай. До цели ${fmt(a.time)} мин, выигрыш ${fmt(b.time-a.time)} мин.`)}seenArr=g.arr.length}
- if(g.done&&!ended){ended=true;paused=true;tool="";tab="goal";say(`Утро завершено: ${g.arr.length} прибытий, ${rub(g.rev)} за билеты. Можно начать следующую смену.`);drawNetwork();updateControls();panel()}
+ drawActors();if(!force&&g.t-uiTick<3)return;uiTick=g.t;updateControls();panel();if($("journal").open)drawJournal();
+ if(g.total>seenArr){for(const a of g.arr.slice(-(g.total-seenArr))){const b=counterpart(a);if(b?.paid===null&&a.paid!==null)say(`${a.name}: вместо ходьбы — трамвай. До цели ${fmt(a.time)} мин, выигрыш ${fmt(b.time-a.time)} мин.`)}seenArr=g.total}
 }
-function morning(net,day,warm=false){
- g=createSim(city,net,day);ref=baseline(city,net.ring);referenceName="тот же сид и спрос, исходная сеть с одним вагоном и билетом 30 ₽";actors.clear();svg("traffic","");svg("pedestrians","");ended=false;carry=0;uiTick=-10;seenArr=0;paused=false;tool="";queued=null;
- if(warm)for(let i=0;i<24;i++)stepSim(g);drawNetwork();display(true);
+function newGame(seed){
+ city=makeCity(seed);pick={type:"station",id:0};tab="watch";speed=1;zoom=1;center=null;drawGround();g=createSim(city,network());for(let i=0;i<24;i++)stepSim(g);
+ keepBefore();referenceName="исходная сеть с одним вагоном и билетом 30 ₽";actors.clear();svg("traffic","");svg("pedestrians","");carry=0;uiTick=-10;seenArr=0;paused=false;tool="";drawNetwork();display(true);
+ say("Нажмите на пешехода. Что ему поможет: дешевле билет или чаще трамвай?")
 }
-function newGame(seed){city=makeCity(seed);pick={type:"station",id:0};tab="watch";speed=1;zoom=1;center=null;drawGround();morning(network(),1,true);say("Нажмите на пешехода. Что ему поможет: дешевле билет или чаще трамвай?")}
-function syncQueue(){if(!queued)queued={lines:g.net.lines.map(l=>[...l]),fleet:[...g.net.fleet]};while(queued.fleet.length<g.net.fleet.length)queued.fleet.push(g.net.fleet[queued.fleet.length])}
 function act(a){
  if(/^p\d+$/.test(a)){pick={type:"person",id:+a.slice(1)};tab="watch"}
  else if(a==="build"){tool="build";say("Выберите на карте перегон для строительства.")}
- else if(a==="line0"||a==="line1"){tool="line";editLine=+a.slice(-1);draft=[];say("Выберите первую остановку, затем следующую на построенных рельсах.")}
+ else if(a==="line0"||a==="line1"){tool="line";editLine=+a.slice(-1);draft=[...g.net.lines[editLine]];launchCar=g.cars.at(-1).id;say("Уберите лишние остановки или добавьте новые на карте.")}
  else if(a==="cancel"){tool="";say("Режим наблюдения.")}
- else if(a==="undo")draft.pop();
- else if(a==="save"&&draft.length>=2){syncQueue();queued.lines[editLine]=[...draft];tool="";say("Расписание сохранено. Оно вступит в силу следующим утром.")}
- else if(a.startsWith("move")){syncQueue();const id=+a.slice(4);queued.fleet[id]=1-queued.fleet[id];say(`Вагон №${id+1}: ${labelLine(queued.fleet[id])} со следующего утра.`)}
- else if(a==="finish"){while(!g.done&&g.t<1800)stepSim(g);if(g.done)log("Смена досчитана по действующему расписанию.")}
- else if(a==="next"&&g.done){const last=g;if(queued){g.net.lines=queued.lines;g.net.fleet=queued.fleet}morning(g.net,g.day+1);ref=last;referenceName=`прошлая смена №${last.day}, только жители, участвовавшие в обеих сменах`;say("Новое утро. Те же жители снова выходят из домов.")}
- else if(a==="expand"&&g.net.permit&&!g.net.ring&&g.net.bank>=165){g.net.bank-=165;g.net.ring=true;zoom=1;center=null;log("Открыто внешнее кольцо · −165 ₽");say("Вся граница открыта. Стройте пути сейчас; жители кольца выйдут следующим утром.")}
+ else if(a==="clear")draft=[];
+ else if(a.startsWith("remove"))draft=draft.filter(s=>s!==+a.slice(6));
+ else if(a==="save"&&draft.length>=2){const cars=g.cars.filter(c=>c.l===editLine),buy=!cars.length&&launchCar===-1;
+  if(buy&&(g.net.bank<75||g.cars.length>=8)){say("Новый вагон недоступен. Выберите вагон для перевода.");return}
+  if(!cars.length&&!buy)cars.push(g.cars[launchCar]);const before=snapshotService();
+  if(!changeService(g,editLine,draft,cars)){say("Вагон не может доехать до новой линии: соедините участки рельсами.");return}
+  keepBefore(before);
+  if(buy)addCar(g,editLine);
+  tool="";const text=`${labelLine(editLine)}: ${draft.map(s=>ST[s][0]).join(" → ")}.`;log(text);say(`Маршрут действует. ${text}`);updateControls();$("buyLine").value=editLine}
+ else if(a.startsWith("move")){const c=g.cars[+a.slice(4)],l=1-c.l,before=snapshotService();
+  if(!changeService(g,l,g.net.lines[l],[c])){say("Нет соединительного пути между линиями.");return}
+  keepBefore(before);
+  const msg=`Вагон №${c.id+1} переведён на ${labelLine(l)}.`;log(msg);say(msg)}
+ else if(a==="expand"&&g.net.permit&&!g.net.ring&&g.net.bank>=165){keepBefore();openRing(g);zoom=1;center=null;log("Открыто внешнее кольцо · −165 ₽");say("Кольцо открыто. Жители окраины выходят из домов.")}
  drawNetwork();display(true)
 }
 $("panel").onclick=e=>{const b=e.target.closest("[data-act]");if(b)act(b.dataset.act)};
+$("panel").onchange=e=>{if(e.target.id==="releaseCar")launchCar=Number(e.target.value)};
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;tool="";drawNetwork();panel()});
 $("order").onclick=()=>{tab="goal";tool="";drawNetwork();panel()};
-$("nextMorning").onclick=()=>act("next");
 function chooseOnMap(e){
  if(ignoreClick){ignoreClick=false;return}
  const el=e.target.closest("[data-edge],[data-stop],[data-pick]");if(!el)return;
  if(el.dataset.edge!==undefined&&tool==="build"){const n=+el.dataset.edge;if(g.net.bank<40){say("Для перегона нужно 40 ₽.");return}
   if(!g.net.edges.includes(n)){g.net.edges.push(n);g.net.bank-=40;const [a,b]=LINKS[n];log(`Путь ${ST[a][0]} — ${ST[b][0]} · −40 ₽`);say("Рельсы готовы. Добавьте остановки этого участка в маршрут.")}}
  else if(el.dataset.stop!==undefined){const n=+el.dataset.stop;
-  if(tool==="line"){if(draft.includes(n)){say("Эта остановка уже есть в маршруте.");return}
-   if(draft.length&&!railPath(g.net,draft.at(-1),n)){say("Сначала проложите рельсы до этой остановки.");return}draft.push(n)}
+  if(tool==="line"){if(draft.includes(n))draft=draft.filter(s=>s!==n);
+   else if(draft.length&&!railPath(g.net,draft.at(-1),n)){say("Сначала проложите рельсы до этой остановки.");return}else draft.push(n)}
   else{tool="";tab="watch";pick={type:"stop",id:n}}}
  else if(el.dataset.pick){if(tool)return;const [type,id]=el.dataset.pick.split(":");pick={type,id:+id};tab="watch"}
  drawNetwork();display(true)
 }
 $("city").onclick=chooseOnMap;$("city").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();chooseOnMap(e)}};
-for(const [id,d] of [["minus",-10],["plus",10]])$(id).onclick=()=>{keepBefore();g.net.fare+=d;reconsider(g);log(`Новый тариф: ${rub(g.net.fare)}`);say(g.done?"Тариф назначен на следующее утро.":"Тариф изменён. Пешеходы проверят выбор на ближайшем узле улицы.");display(true)};
-$("buy").onclick=()=>{const l=+$("buyLine").value;keepBefore();if(addCar(g,l)){if(queued)syncQueue();log(`Вагон №${g.cars.length} назначен на ${labelLine(l)} · −75 ₽`);say(g.done?"Вагон приобретён для следующей смены.":"Вагон вышел с конечной. Жители видят обновлённое расписание.");display(true)}};
+for(const [id,d] of [["minus",-10],["plus",10]])$(id).onclick=()=>{keepBefore();g.net.fare+=d;reconsider(g);log(`Новый тариф: ${rub(g.net.fare)}`);say("Тариф изменён. Пешеходы проверят выбор на ближайшем узле улицы.");display(true)};
+$("buy").onclick=()=>{const l=+$("buyLine").value;keepBefore();if(addCar(g,l)){log(`Вагон №${g.cars.length} назначен на ${labelLine(l)} · −75 ₽`);say("Вагон вышел с конечной. Жители видят обновлённое расписание.");display(true)}};
 $("pause").onclick=()=>{paused=!paused;carry=0;display(true)};$("speed").onclick=()=>{speed=({1:3,3:6,6:1})[speed];display(true)};
 $("journal").ontoggle=()=>{if($("journal").open)drawJournal()};
-let wasPaused=false;$("setup").onclick=()=>{wasPaused=paused;paused=true;$("seedField").value=city.seed;$("settings").showModal();display(true)};
-$("settings").onclose=()=>{paused=g.done||wasPaused;carry=0;display(true)};$("close").onclick=()=>$("settings").close();
+$("setup").onclick=()=>{$("seedField").value=city.seed;$("settings").showModal()};$("close").onclick=()=>$("settings").close();
 $("random").onclick=()=>{$("seedField").value="ТРАМ-"+crypto.getRandomValues(new Uint32Array(1))[0].toString(36).slice(0,6).toUpperCase()};
-$("start").onclick=()=>{const seed=$("seedField").value.trim()||"ТРАМ-17";wasPaused=false;$("settings").close();newGame(seed)};
+$("start").onclick=()=>{const seed=$("seedField").value.trim()||"ТРАМ-17";$("settings").close();newGame(seed)};
 $("zoomIn").onclick=()=>{zoom=Math.min(2.5,zoom+.5);if(pick.type==="person"){const p=g.people.find(p=>p.id===pick.id);if(p)center=ppos(p)}camera()};
 $("zoomOut").onclick=()=>{zoom=Math.max(1,zoom-.5);camera()};$("fit").onclick=()=>{zoom=1;center=null;camera()};
 $("city").addEventListener("pointerdown",e=>{ignoreClick=false;if(zoom>1)drag={x:e.clientX,y:e.clientY,c:[...center]}});
 $("city").addEventListener("pointermove",e=>{if(!drag||!e.buttons)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(!ignoreClick&&Math.hypot(dx,dy)<5)return;ignoreClick=true;
  $("city").setPointerCapture(e.pointerId);const ratio=$("city").viewBox.baseVal.width/$("city").getBoundingClientRect().width;center=[drag.c[0]-dx*ratio,drag.c[1]-dy*ratio];camera()});
 window.addEventListener("pointerup",()=>drag=null);
-function frame(stamp){if(previous&&!paused&&!g.done&&!document.hidden){carry+=Math.min(150,stamp-previous)*.008*speed;const n=Math.floor(carry);carry-=n;if(n){for(let i=0;i<n&&!g.done;i++)stepSim(g);display();lastPaint=stamp}else if(stamp-lastPaint>=32){drawActors();lastPaint=stamp}}previous=stamp;requestAnimationFrame(frame)}
+function frame(stamp){if(previous&&!paused&&!document.hidden){carry+=Math.min(150,stamp-previous)*.008*speed;const n=Math.floor(carry);carry-=n;if(n){for(let i=0;i<n;i++){stepSim(g);stepSim(ref)}display();lastPaint=stamp}else if(stamp-lastPaint>=32){drawActors();lastPaint=stamp}}previous=stamp;requestAnimationFrame(frame)}
 newGame("ТРАМ-17");requestAnimationFrame(frame);
 </script>
 </html>
