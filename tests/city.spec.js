@@ -33,7 +33,7 @@ test('поезд и обе крайние остановки на одном н�
 
 test('у рынка фильтры скрывают облачка, а не людей; выбор человека сбрасывает фильтры', async ({ page }) => {
   await page.getByRole('button',{name:'Крытый рынок: показать прибытия'}).click();
-  await page.getByRole('button',{name:'Потоки',exact:true,timeout:1000}).click({timeout:1500});
+  await page.getByRole('button',{name:'Потоки',exact:true}).click({timeout:1500});
   const walking = page.getByRole('button',{name:'Целиком пешком',exact:true});
   await walking.click();
   const walker = page.locator('#pedestrians g[data-mode="walk"]:visible').first();
@@ -89,4 +89,38 @@ test('два утра: один сид, те же отправления, оди
   expect(await actual()).toEqual(base);
   await page.locator('#setup').click(); await page.locator('#seedField').fill('Другой'); await page.locator('#start').click();
   await expect(page.locator('#morningResults tbody tr')).toHaveCount(0);
+});
+
+test('вечером Нина выходит с рынка домой и следующим утром возвращается к обычному маршруту', async ({ page }) => {
+  await page.getByRole('button',{name:'К вечернему пику'}).click({timeout:1500});
+  await expect(page.locator('#clock')).toHaveText('18:00');
+  const id=await page.evaluate(()=>{
+    advance(3); display(true);
+    return g.people.find(p=>p.name==='Нина'&&p.home===city.dest[1].id&&p.dest===city.people[0].home)?.id;
+  });
+  expect(id).toBe(0);
+  await page.getByRole('button',{name:'Крытый рынок: показать прибытия'}).getByText('РЫНОК',{exact:true}).click();
+  await page.getByRole('button',{name:'К зданию',exact:true}).click();
+  await expect(page.locator('#panel')).toContainText('Нина');
+  const route=await page.evaluate(()=>{advance(14405-g.t);const p=g.people[0];return [p.home===city.people[0].home,p.dest===city.dest[1].id,p.start>14400]});
+  expect(route).toEqual([true,true,true]);
+});
+
+test('построенный путь и изменённый Т1 сохраняются после покупки кольца', async ({ page }) => {
+  await page.getByRole('button',{name:'Сеть',exact:true}).click();
+  await page.getByRole('button',{name:'Проложить пути'}).click();
+  await page.getByRole('button',{name:'Проложить Дворы — Школа'}).click();
+  await page.getByRole('button',{name:'Готово',exact:true}).click();
+  await page.getByRole('button',{name:'Изменить Т1'}).click();
+  await page.getByRole('button',{name:/2\. Сквер ×/}).click();
+  await page.getByRole('button',{name:'Применить сейчас'}).click();
+  const before=await page.evaluate(()=>JSON.stringify([g.net.edges,g.net.lines,g.net.fleet,city.doors]));
+  await page.getByRole('button',{name:'К вечернему пику'}).click({timeout:1500});
+  await page.locator('#order').click();
+  await expect(page.getByRole('button',{name:/Открыть кольцо ·/})).toBeDisabled();
+  await page.getByRole('button',{name:'К вечернему пику'}).click();
+  await page.getByRole('button',{name:/Открыть кольцо ·/}).click();
+  expect(await page.evaluate(()=>JSON.stringify([g.net.edges,g.net.lines,g.net.fleet,city.doors]))).toBe(before);
+  await expect(page.locator('[data-stop="12"]')).toBeVisible();
+  expect(await page.evaluate(()=>g.people.filter(p=>p.outer).length)).toBe(4);
 });
