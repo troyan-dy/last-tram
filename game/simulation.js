@@ -5,6 +5,7 @@
   const { planJourney, stepTransit } =
     typeof module !== 'undefined' ? require('./journey.js') : globalThis.LastTram;
   const { openLine, moveTrains } = typeof module !== 'undefined' ? require('./service.js') : globalThis.LastTram;
+  const { createHistory } = typeof module !== 'undefined' ? require('./history.js') : globalThis.LastTram;
   const byId = list => new Map(list.map(item => [item.id, item]));
 
   function makeResidents(game) {
@@ -30,7 +31,7 @@
   function startGame(city, systems = {}) {
     const lookup = { buildings: byId(city.buildings), stops: byId(city.stops), edges: byId(city.edges) };
     const game = { city, lookup, tick: 0, openRing: 0, residents: [], trains: [], routes: [],
-      trackIds: new Set(), cash: BALANCE.startingCash, fare: BALANCE.fare, fareIncome: 0,
+      trackIds: new Set(), cash: BALANCE.startingCash, fare: BALANCE.fare, fareIncome: 0, history: createHistory(),
       systems: { demand: g => dailyDemand(g, depart), service: moveTrains, planJourney, stepTransit, openLine, ...systems } };
     game.residents = makeResidents(game);
     game.systems.openLine(game);
@@ -74,6 +75,7 @@
     r.lastJourney = { originId: j.originId, destinationId: j.destinationId,
       mode: j.mode, startedAt: j.startedAt, arrivedAt: game.tick, decision: j.decision };
     r.journey = null;
+    game.history.recordArrival(game,r,r.lastJourney);
     game.systems.onArrival?.(game, r, r.lastJourney);
   }
 

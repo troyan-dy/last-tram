@@ -80,8 +80,10 @@
       if (j.paid===undefined) {
         j.paid=j.decision.fare;
         g.cash+=j.paid; g.fareIncome+=j.paid;
-        g.systems.onFare?.(g,p,{tick:g.tick,amount:j.paid,residentId:p.id,trainId:train.id,
-          routeId:train.routeId,originId:j.originId,destinationId:j.destinationId});
+        const ticket={tick:g.tick,amount:j.paid,residentId:p.id,trainId:train.id,
+          routeId:train.routeId,originId:j.originId,destinationId:j.destinationId};
+        g.history.recordFare(ticket);
+        g.systems.onFare?.(g,p,ticket);
       }
       return true;
     }
