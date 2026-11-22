@@ -138,7 +138,7 @@
       if (game!==lastGame || signature!==key) { build(game); lastGame=game; signature=key; }
       const drawn=new Set();
       for (const train of game.trains)
-        sprite('train',train.id,'Поезд 01',art.train(false),train.position,drawn);
+        sprite('train',train.id,train.name,art.train(false),train.position,drawn);
       for (const r of game.residents) {
         if (r.onTrainId || (!r.journey && !(focus?.id===r.id || (game.tick===0 && r===game.residents[0])))) continue;
         sprite('resident',r.id,r.name,art.person(r)+'<circle class="hit" cy="-4.2" r="5.3" fill="transparent"/>',r.position,drawn);
