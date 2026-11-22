@@ -19,8 +19,9 @@
 <section id="filterBox" class="building-only" aria-label="Фильтры перемещений">
 <div class="filter-row"><label>Место <select id="placePicker" aria-label="Выбрать место"></select></label>
 <fieldset id="directions"><legend>Направление</legend><label><input id="arrive" type="checkbox" checked> К зданию</label><label><input id="depart" type="checkbox" checked> Из здания</label></fieldset>
-<fieldset><legend>Всё перемещение</legend><label><input id="byFoot" type="checkbox" checked> Целиком пешком</label><label><input id="byTram" type="checkbox" checked> С трамваем</label></fieldset>
-<button id="resetPlaces">Сбросить</button></div>
+<fieldset id="tripModes"><legend>Всё перемещение</legend><label><input id="byFoot" type="checkbox" checked> Целиком пешком</label><label><input id="byTram" type="checkbox" checked> С трамваем</label></fieldset>
+<button id="resetPlaces">Весь квартал</button></div>
+<strong id="focusTitle"></strong>
 <output id="filterNote" aria-live="polite"></output>
 <label class="mini"><input id="dimOthers" type="checkbox" checked> Приглушать жителей без облачков</label></section>
 <div class="intent-only intent-tools"><div class="stamp">Момент у остановки</div><div><button data-scene="0">1 · Поезд на остановке</button><button data-scene="1">2 · Мира вышла</button><button data-scene="2">3 · Пешком до входа</button></div></div>
@@ -162,8 +163,12 @@ const sites={...destinations,...Object.fromEntries(buildings.map((_,i)=>[siteAt(
 // Origins of the eight active trips, not the place a resident happens to be standing next to.
 const fromSite=['station','home8','market','market','home3','station','market','park'];
 let site='';
-function matching(i){const r=cast[i];return (!site||($('arrive').checked&&r[2]===site)||($('depart').checked&&fromSite[i]===site))&&(r[1]==='foot'?$('byFoot').checked:$('byTram').checked)}
-function chooseSite(id){site=id;$('placePicker').value=id;watching=-1;render()}
+function matching(i){if(!site)return true;const r=cast[i];return (($('arrive').checked&&r[2]===site)||($('depart').checked&&fromSite[i]===site))&&(r[1]==='foot'?$('byFoot').checked:$('byTram').checked)}
+function setFocus(place,person=-1){
+ if(site!==place||!place)for(const id of ['arrive','depart','byFoot','byTram'])$(id).checked=true;
+ site=place;watching=person;$('placePicker').value=place;litMinute=-1;render();
+}
+function inspectPerson(i){if(buildingStudy)setFocus('',i);else{watching=i;render()}}
 function siteShape(id,body){const active=id===site,attrs=active?' style="filter:drop-shadow(0 0 1px #fff4c6) drop-shadow(0 0 1px #342e22)"':'';
  return `<g data-place="${id}" tabindex="0" role="button" aria-label="Выбрать: ${sites[id]}" aria-pressed="${active}"${attrs}><title>${sites[id]}</title>${body}</g>`}
 function buildingBody(b,i){let drawing=house(b,i);if(!buildingStudy)return drawing;const id=siteAt(i);if(id==='station'){const [x,y,w,d,h]=b,[u,v]=pt(x+w*.52,y+d*.5,h+7);drawing+=label(u,v,'ВОКЗАЛ')}return siteShape(id,drawing)}
@@ -193,13 +198,16 @@ function artwork(r,act){
  return strip+word(.2,3,a,1.85,paper)+shift(10.1,-.4,disk(0,0,2.65,paper)+`<g transform="scale(.79)">${glyph(dest)}</g>`);
 }
 function intentScene(put){
-  const list=cast.slice(0,rush?8:3),[w,h]=dims[art],boxes=[],records=[];
+  const list=cast.slice(0,rush?8:3),[w,h]=dims[art],boxes=[],records=[];let unmarked='';
  for(let i=0;i<list.length;i++){const r=list[i],[x,y,act]=r[4][shot],[u,v]=pt(x,y),matches=!buildingStudy||matching(i),chosen=matches&&i===watching;
   const sprite=act==='ride'?at(x,y,shift(0,-3.7,rounded(-.74,.35,1.4,.65,.3,r[3])+disk(0,-.1,.63,'#e0b892')+rounded(-.59,-.64,1.13,.3,.12,'#493c42'))):
    (chosen?at(x,y,`<ellipse rx="3.2" ry="1.45" fill="none" stroke="#fff5cf" stroke-width="1.2"/><ellipse rx="3.2" ry="1.45" fill="none" stroke="${ink}" stroke-width=".45"/>`):'')+pedestrian(x,y,i,r[1]==='tram',1,!['wait','ride'].includes(act),r[3]);
   const opacity=!matches&&$('dimOthers').checked ? 0.5 : 1;
   put(x,act==='ride'?y+6:y,`<g data-resident="${i}" opacity="${opacity}">${sprite}</g>`);
-  if(!matches)continue;
+  if(!matches||(buildingStudy&&watching>=0&&!chosen)){
+   unmarked+=`<g data-inspect="${i}" role="button" tabindex="0" aria-label="Выбрать жителя: ${r[0]}"><title>${r[0]}</title>${rect(u-2.8,v-8,5.6,9,'transparent')}</g>`;
+   continue;
+  }
   const anchor=v-(act==='ride'?5.5:7.3);
   let cx=Math.max(36+w/2,Math.min(178-w/2,u)),cy=anchor-h/2-2.8;
   if(showIntent){
@@ -222,13 +230,15 @@ function intentScene(put){
   targets+=`<g data-inspect="${i}" role="${showIntent?'presentation':'button'}" ${showIntent?'':`aria-label="${z}" tabindex="0"`}><title>${z}</title>${rect(u-2.8,v-8,5.6,9,'transparent')}</g>`;
  }
  const tx=[200,200,185][shot];put(tx,110,tram(tx));
- $('watch').innerHTML=lines+targets+marks;
-  if(buildingStudy&&!records.some(o=>o.i===watching))watching=-1;
+ $('watch').innerHTML=lines+unmarked+targets+marks;
   const r=list[watching];$('residentInfo').textContent=r?`${r[0]} · ${buildingStudy?sites[fromSite[watching]]+' → '+destinations[r[2]]+'. Сейчас: '+actions[r[4][shot][2]]:actions[r[4][shot][2]]+' → '+destinations[r[2]]}. Всё перемещение: ${r[1]==='tram'?'поездка на трамвае':'целиком пешком'}.`:'';
   if(buildingStudy){
-   $('directions').disabled=!site;
-   $('filterNote').textContent=`${sites[site]||'Весь квартал'} · В пути сейчас: ${records.length} из ${list.length}. `+(records.length?'Это жители в дороге, а не число уже прибывших.':'Совпадений нет. Измените фильтры или выберите другое здание.');
-   $('pool').innerHTML=records.length?'В выборке: '+records.map(({r,i})=>`<button data-person="${i}" aria-pressed="${watching===i}">${r[0]}</button>`).join(''):'';
+   $('directions').hidden=$('tripModes').hidden=$('dimOthers').parentElement.hidden=!site;
+   $('resetPlaces').hidden=!site&&!r;
+   $('focusTitle').textContent=site?`В фокусе: ${sites[site]}`:r?`В фокусе: ${r[0]}`:'Обзор квартала';
+   $('placePicker').options[0].textContent=r?'Выбрать здание…':'Весь квартал';
+   $('filterNote').textContent=site?`В пути сейчас: ${records.length} из ${list.length}. `+(records.length?'Нажмите на любого жителя, чтобы перейти к его поездке.':'Совпадений нет. Измените фильтры или выберите другого участника на карте.'):r?'':'Нажмите на здание, чтобы отобрать его потоки, или на жителя, чтобы посмотреть его поездку.';
+   $('pool').innerHTML=site&&records.length?'В выборке: '+records.map(({r,i})=>`<button data-person="${i}">${r[0]}</button>`).join(''):'';
   }
  $('artKey').textContent=showIntent?({A:'Рисунок в облачке — место назначения, подпись — действие. Маленький значок сбоку — способ всего пути.',B:'На билете крупно написано куда, под ним — что делает житель. На цветном корешке — способ всего пути.',C:'Слева — способ всего пути, справа — цель. Светлая точка показывает этап: до поезда, в нём или после высадки. Под ней — текущее действие.'})[art]:'Обычный город. Включите «Потоки», чтобы увидеть намерения всех жителей.';
  document.querySelectorAll('[data-art]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.art===art));document.querySelectorAll('[data-scene]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.scene===shot));
@@ -274,23 +284,26 @@ if(intents){
   const variant=k=>{if(buildingStudy)return;art=k;let url=new URL(location.href);url.searchParams.set('variant',art);try{history.replaceState(null,'',url)}catch{}render()};
  document.querySelectorAll('[data-art]').forEach(b=>b.onclick=()=>variant(b.dataset.art));document.querySelectorAll('[data-scene]').forEach(b=>b.onclick=()=>{shot=+b.dataset.scene;render()});
  $('more').onclick=()=>{rush=!rush;if(!rush&&watching>=3)watching=0;render()};$('flowSwitch').onclick=()=>{showIntent=!showIntent;render()};
- const inspect=e=>{const g=e.target.closest('[data-inspect]');if(!g)return;watching=+g.dataset.inspect;render();if(e.type==='keydown')$('watch').querySelector(`[tabindex="0"][data-inspect="${watching}"]`)?.focus()};
+  const inspect=e=>{const g=e.target.closest('[data-inspect]');if(!g)return;inspectPerson(+g.dataset.inspect);if(e.type==='keydown')$('watch').querySelector(`[tabindex="0"][data-inspect="${watching}"]`)?.focus()};
  $('watch').onclick=inspect;$('watch').onkeydown=e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();inspect(e)}};
   document.addEventListener('keydown',e=>{if(!buildingStudy&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();variant('ABC'[('ABC'.indexOf(art)+(e.key==='ArrowLeft'?2:1))%3])}});
 }
 if(buildingStudy){
  art='A';rush=true;watching=-1;site=Object.hasOwn(sites,params.get('place'))?params.get('place'):'';
  document.body.classList.add('building-study');$('artToolbar').hidden=true;$('artLink').hidden=false;$('filterLink').hidden=true;
- document.title='Последний трамвай · Потоки у здания';document.querySelector('h1').textContent='Кто связан с этим зданием?';document.querySelector('header .sub').textContent='Этюд 04 · фильтр по зданию';
+ $('filterBox').append($('residentInfo'));
+ document.title='Последний трамвай · Фокус на карте';document.querySelector('h1').textContent='Здание и его жители';document.querySelector('header .sub').textContent='Этюд 04 · фокус на карте';
  document.querySelector('h1 + p').textContent='Нажмите на рынок с полосатым навесом, вокзал или дом. Отберите тех, кто направляется туда или начал в нём свой путь.';$('map').setAttribute('aria-label','Карта с доступными для выбора зданиями');
  $('placePicker').innerHTML='<option value="">Весь квартал</option>'+Object.entries(sites).map(([id,n])=>`<option value="${id}">${n}</option>`).join('');$('placePicker').value=site;
- function pickSite(id){litMinute=-1;chooseSite(id)}
+ if(site&&params.get('direction')==='in')$('depart').checked=false;
+ if(site&&params.get('mode')==='tram')$('byFoot').checked=false;
+ function pickSite(id){setFocus(id)}
  const selectOnMap=e=>{const id=e.target.closest('[data-place]')?.dataset.place;if(id){pickSite(id);if(e.type==='keydown')$('city').querySelector(`[data-place="${id}"]`)?.focus()}};
  $('city').onclick=selectOnMap;$('city').onkeydown=e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();selectOnMap(e)}};
  $('placePicker').onchange=e=>pickSite(e.target.value);
  for(const id of ['arrive','depart','byFoot','byTram','dimOthers'])$(id).onchange=render;
- $('resetPlaces').onclick=()=>{for(const id of ['arrive','depart','byFoot','byTram'])$(id).checked=true;pickSite('')};
- $('pool').onclick=e=>{let b=e.target.closest('[data-person]');if(b){watching=+b.dataset.person;render();$('pool').querySelector(`[data-person="${watching}"]`)?.focus()}};
+ $('resetPlaces').onclick=()=>pickSite('');
+ $('pool').onclick=e=>{let b=e.target.closest('[data-person]');if(b){inspectPerson(+b.dataset.person);$('watch').querySelector(`[tabindex="0"][data-inspect="${watching}"]`)?.focus()}};
 }
 const initial=Number(params.get('hour')??(intents?19:people?13:7.5));choose(Number.isFinite(initial)&&initial>=0&&initial<24?initial*60:450);if(!people&&!intents)requestAnimationFrame(tick);
 </script></html>
