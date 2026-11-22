@@ -3,7 +3,7 @@
   const BALANCE = Object.freeze({
     startMinute: 450, ticksPerMinute: 6, ticksPerSecond: 8,
     walkSpeed: 0.8, trainSpeed: 2.8, dwellTicks: 9, fare: 2, fareWeight: 2, startingCash: 80,
-    morningSpread: 11, residentsPerHome: 3
+    morningSpread: 11, residentsPerHome: 3, trackCost: 12, trainCost: 36
   });
   const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
