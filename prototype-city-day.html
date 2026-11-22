@@ -9,10 +9,20 @@
 <style>
 .intent-only{display:none}.intent-study .intent-only{display:block}.intent-study .intent-tools{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin:10px 0}.intent-study .intent-tools div{display:flex;flex-wrap:wrap;gap:4px}.intent-study .intent-tools button{font-size:13px}.intent-study .people-panel,.intent-study .timebar,.intent-study .legend,.intent-study #keyline{display:none!important}.intent-study .intent-foot{padding:7px 12px;background:#fffdf5;font-size:13px}.intent-study .intent-notes{margin:8px 0}.intent-notes #subject{font-weight:700}.intent-study [data-inspect]{cursor:pointer}.intent-study [data-inspect]:focus-visible{outline:none;filter:drop-shadow(0 0 1px #ffac20)}.intent-notes output{display:block}.intent-study .viewport{overflow-x:auto}.intent-study .viewport svg{min-width:560px}.intent-study .intent-notes label{cursor:pointer}.intent-study .intent-notes button{font-size:13px}
 </style>
+<style>
+.building-only{display:none}.building-study .building-only{display:block}.building-study #filterBox{background:#fffcf2;border:1px solid #bac3b1;border-radius:6px;padding:8px 12px;margin:8px 0}.building-study .filter-row{display:flex;gap:8px 20px;align-items:center;flex-wrap:wrap}.filter-row fieldset{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;border:0;padding:0;margin:0}.filter-row legend{font-size:12px;font-weight:700;color:#506151}.filter-row label{cursor:pointer}.filter-row select{font:inherit;max-width:100%}.filter-row input{accent-color:#29483d}.building-study [data-place]{cursor:pointer}.building-study [data-place]:focus-visible{outline:2px solid #ffd67e}.building-study #filterNote{display:block;font-size:13px;margin-top:5px}.building-study .intent-foot #symbols{display:none}.building-study .intent-foot #artKey{font-size:12px}.building-study .intent-notes{margin-bottom:12px}.building-study #pool{font-size:12px}.building-study #pool button{font-size:12px;padding:3px 7px;margin:3px 3px 0 0}
+</style>
 <main>
 <header class="stamp"><span><b>ЛТ /</b> Последний трамвай</span><span class="sub">Этюд 02 · объёмный город</span></header>
 <h1>Сутки у рынка</h1><p class="sub">Одна улица, два направления. С какой стороны будут ждать вагон вечером?</p>
-<div class="intent-only intent-tools"><div aria-label="Рисунок метки"><button data-art="A">A · Мысль</button><button data-art="B">B · Билет</button><button data-art="C">C · Путь</button></div><div><button id="flowSwitch">Потоки</button><button id="more">Час пик</button></div></div>
+<div class="intent-only intent-tools" id="artToolbar"><div aria-label="Рисунок метки"><button data-art="A">A · Мысль</button><button data-art="B">B · Билет</button><button data-art="C">C · Путь</button></div><div><button id="flowSwitch">Потоки</button><button id="more">Час пик</button></div></div>
+<section id="filterBox" class="building-only" aria-label="Фильтры перемещений">
+<div class="filter-row"><label>Место <select id="placePicker" aria-label="Выбрать место"></select></label>
+<fieldset id="directions"><legend>Направление</legend><label><input id="arrive" type="checkbox" checked> К зданию</label><label><input id="depart" type="checkbox" checked> Из здания</label></fieldset>
+<fieldset><legend>Всё перемещение</legend><label><input id="byFoot" type="checkbox" checked> Целиком пешком</label><label><input id="byTram" type="checkbox" checked> С трамваем</label></fieldset>
+<button id="resetPlaces">Сбросить</button></div>
+<output id="filterNote" aria-live="polite"></output>
+<label class="mini"><input id="silhouettes" type="checkbox" checked> Оставлять остальных жителей силуэтами</label></section>
 <div class="intent-only intent-tools"><div class="stamp">Момент у остановки</div><div><button data-scene="0">1 · Поезд на остановке</button><button data-scene="1">2 · Мира вышла</button><button data-scene="2">3 · Пешком до входа</button></div></div>
 <section class="stage" aria-label="Улица у рынка">
 <div class="rail"><span class="stamp">Сосновые дворы / Рыночная площадь</span><b id="clock">07:30</b></div>
@@ -24,7 +34,7 @@
 <div class="people-only rail" id="keyline"></div>
 <div class="legend"><span><i></i> весь путь пешком　<i class="blue"></i> у посадочной площадки</span><span>Т1 · Дворы — Рынок</span></div>
 </section>
-<section class="intent-only intent-notes"><output id="residentInfo" aria-live="polite"></output></section>
+<section class="intent-only intent-notes"><div class="building-only" id="pool"></div><output id="residentInfo" aria-live="polite"></output></section>
 <div class="timebar"><div class="tabs" aria-label="Час наблюдения"><button data-hour="7.5">07:30 · Утро</button><button data-hour="13">13:00 · День</button><button data-hour="19">19:00 · Вечер</button><button data-hour="1">01:00 · Ночь</button></div><button id="play" aria-pressed="false">▶ Прожить сутки</button></div>
 <label class="track">00:00<input type="range" id="time" min="0" max="1439" value="450" step="1" aria-label="Время суток">23:59</label>
 <div class="metrics">
@@ -35,7 +45,7 @@
 <div class="layers"><button id="normal" aria-pressed="true">Обычный вид</button><button id="overlay" aria-pressed="false">Слой «Потоки»</button><button id="advance">Через несколько секунд →</button></div>
 <p><b id="whoTitle">У остановки</b> · <span id="why" aria-live="polite"></span></p>
 <div class="layers" aria-label="Выбрать жителя"><button data-name="n">Нина</button><button data-name="o">Олег</button><button data-name="m">Мира</button><button id="clear">Снять выделение</button></div>
-</section><footer class="mini"><a id="other" href="?study=people">Следующий этюд: трое на тротуаре →</a> · <a id="artLink" href="?study=intents">Ателье меток: три рисунка намерений</a></footer></main>
+</section><footer class="mini"><a id="other" href="?study=people">Следующий этюд: трое на тротуаре →</a> · <a id="artLink" href="?study=intents">Ателье меток: три рисунка намерений</a> · <a id="filterLink" href="?study=buildings">Потоки у здания</a></footer></main>
 <script>
 // Throwaway visual study: same camera, buildings and line in both demand scenarios.
 const $=id=>document.getElementById(id), clamp=x=>Math.max(0,Math.min(1,x));
@@ -96,7 +106,7 @@ const swings=[[0,2,1],[4,1,1],[7.5,15,3],[10.5,7,4],[13,5,5],[16,5,6],[19,3,15],
 function volumes(t){let i=1;while(t>swings[i][0])i++;let [a,out,back]=swings[i-1],[b,o,r]=swings[i],v=(t-a)/(b-a),f=Math.round(out+(o-out)*v),s=Math.round(back+(r-back)*v);if(!$('reverse').checked){let total=f+s;f=Math.round(total*.76);s=total-f}return [f,s]}
 function arrow(x,y,d){let col=d>0?'#783a25':'#285d71';return path([[x-5*d,y],[x+5*d,y]],'#fff5d3',1.7)+path([[x-5*d,y],[x+5*d,y],[x+2*d,y-3]],col,.9)+path([[x+5*d,y],[x+2*d,y+3]],col,.9)}
 let fixed=[],litMinute=-1;
-const params=new URLSearchParams(location.search),intents=params.get('study')==='intents',people=params.get('study')==='people';
+const params=new URLSearchParams(location.search),buildingStudy=params.get('study')==='buildings',intents=buildingStudy||params.get('study')==='intents',people=params.get('study')==='people';
 let layer=false,later=false,who='';
 const residents={
  n:{name:'Нина',coat:'#b43f3f',early:[69,95],late:[100,95],to:'весь путь пешком',why:'Из Сосновых дворов на рынок. «Две минуты экономии не стоят билета». Проходит мимо «Дворов».'},
@@ -147,6 +157,16 @@ const cast=[
  ['Марк','foot','market','#6f8c5b',[[152,95,'walk'],[160,95,'walk'],[167,95,'walk']]]
 ];
 let art=['A','B','C'].includes(params.get('variant'))?params.get('variant'):'A',shot=[1,2].includes(+params.get('frame'))?+params.get('frame'):0,rush=params.get('rush')==='1',showIntent=true,watching=0;
+const siteAt=i=>i===9?'market':i===5?'station':'home'+i;
+const sites={...destinations,...Object.fromEntries(buildings.map((_,i)=>[siteAt(i),destinations[siteAt(i)]||`Дом №${i+1}`]))};
+// Origins of the eight active trips, not the place a resident happens to be standing next to.
+const fromSite=['station','home8','market','market','home3','station','market','park'];
+let site='';
+function matching(i){const r=cast[i];return (!site||($('arrive').checked&&r[2]===site)||($('depart').checked&&fromSite[i]===site))&&(r[1]==='foot'?$('byFoot').checked:$('byTram').checked)}
+function chooseSite(id){site=id;$('placePicker').value=id;watching=-1;render()}
+function siteShape(id,body){const active=id===site,attrs=active?' style="filter:drop-shadow(0 0 1px #fff4c6) drop-shadow(0 0 1px #342e22)"':'';
+ return `<g data-place="${id}" tabindex="0" role="button" aria-label="Выбрать: ${sites[id]}" aria-pressed="${active}"${attrs}><title>${sites[id]}</title>${body}</g>`}
+function buildingBody(b,i){let drawing=house(b,i);if(!buildingStudy)return drawing;const id=siteAt(i);if(id==='station'){const [x,y,w,d,h]=b,[u,v]=pt(x+w*.52,y+d*.5,h+7);drawing+=label(u,v,'ВОКЗАЛ')}return siteShape(id,drawing)}
 const shift=(x,y,s)=>`<g transform="translate(${x} ${y})">${s}</g>`;
 const rounded=(x,y,w,h,r,c,stroke='none',sw=.25)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${c}" stroke="${stroke}" stroke-width="${sw}"/>`;
 const word=(x,y,str,size,color,anchor='middle',bold=650)=>`<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${color}" style="font:${bold} ${size}px system-ui,sans-serif">${str}</text>`;
@@ -173,8 +193,12 @@ function artwork(r,act){
  return strip+word(.2,3,a,1.85,paper)+shift(10.1,-.4,disk(0,0,2.65,paper)+`<g transform="scale(.79)">${glyph(dest)}</g>`);
 }
 function intentScene(put){
- const list=cast.slice(0,rush?8:3),[w,h]=dims[art],boxes=[],records=[];
- for(let i=0;i<list.length;i++){const r=list[i],[x,y,act]=r[4][shot],[u,v]=pt(x,y);let chosen=i===watching;
+  const list=cast.slice(0,rush?8:3),[w,h]=dims[art],boxes=[],records=[];
+  for(let i=0;i<list.length;i++){const r=list[i],[x,y,act]=r[4][shot],[u,v]=pt(x,y);let chosen=i===watching;
+  if(buildingStudy&&!matching(i)){
+   if($('silhouettes').checked){const sprite=act==='ride'?at(x,y,shift(0,-3.7,disk(0,0,.63,'#abaea6'))):pedestrian(x,y,i,false,1,act!=='wait','#a2a8a1');put(x,act==='ride'?y+6:y,`<g opacity=".32" pointer-events="none">${sprite}</g>`)}
+   continue;
+  }
   if(act==='ride'){put(x,y+6,at(x,y,shift(0,-3.7,rounded(-.74,.35,1.4,.65,.3,r[3])+disk(0,-.1,.63,'#e0b892')+rounded(-.59,-.64,1.13,.3,.12,'#493c42'))))}
   else put(x,y,(chosen?at(x,y,`<ellipse rx="3.2" ry="1.45" fill="none" stroke="#fff5cf" stroke-width="1.2"/><ellipse rx="3.2" ry="1.45" fill="none" stroke="${ink}" stroke-width=".45"/>`):'')+pedestrian(x,y,i,r[1]==='tram',1,!['wait','ride'].includes(act),r[3]));
   const anchor=v-(act==='ride'?5.5:7.3);
@@ -200,7 +224,13 @@ function intentScene(put){
  }
  const tx=[200,200,185][shot];put(tx,110,tram(tx));
  $('watch').innerHTML=lines+targets+marks;
- const r=list[watching],[,,act]=r[4][shot];$('residentInfo').textContent=`${r[0]} · ${actions[act]} → ${destinations[r[2]]}. Всё перемещение: ${r[1]==='tram'?'поездка на трамвае':'целиком пешком'}.`;
+  if(buildingStudy&&!records.some(o=>o.i===watching))watching=-1;
+  const r=list[watching];$('residentInfo').textContent=r?`${r[0]} · ${buildingStudy?sites[fromSite[watching]]+' → '+destinations[r[2]]+'. Сейчас: '+actions[r[4][shot][2]]:actions[r[4][shot][2]]+' → '+destinations[r[2]]}. Всё перемещение: ${r[1]==='tram'?'поездка на трамвае':'целиком пешком'}.`:'';
+  if(buildingStudy){
+   $('directions').disabled=!site;
+   $('filterNote').textContent=`${sites[site]||'Весь квартал'} · В пути сейчас: ${records.length} из ${list.length}. `+(records.length?'Это жители в дороге, а не число уже прибывших.':'Совпадений нет. Измените фильтры или выберите другое здание.');
+   $('pool').innerHTML=records.length?'В выборке: '+records.map(({r,i})=>`<button data-person="${i}" aria-pressed="${watching===i}">${r[0]}</button>`).join(''):'';
+  }
  $('artKey').textContent=showIntent?({A:'Рисунок в облачке — место назначения, подпись — действие. Маленький значок сбоку — способ всего пути.',B:'На билете крупно написано куда, под ним — что делает житель. На цветном корешке — способ всего пути.',C:'Слева — способ всего пути, справа — цель. Светлая точка показывает этап: до поезда, в нём или после высадки. Под ней — текущее действие.'})[art]:'Обычный город. Включите «Потоки», чтобы увидеть намерения всех жителей.';
  document.querySelectorAll('[data-art]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.art===art));document.querySelectorAll('[data-scene]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.scene===shot));
  $('more').setAttribute('aria-pressed',rush);$('flowSwitch').setAttribute('aria-pressed',showIntent);
@@ -208,7 +238,8 @@ function intentScene(put){
 }
 function render(){let t=minute/60,[out,back]=volumes(t),actors=fixed.slice(),put=(x,y,art)=>actors.push([pt(x,y)[1],art]);
  if(litMinute!==Math.floor(minute)){litMinute=Math.floor(minute);p=palette(t);night=clamp(1-Math.min((t-4.5)/3.4,(21.2-t)/3.6));sun=Math.cos((t-7)*Math.PI/12);
-  $('ground').innerHTML=terrain();actors=[];buildings.forEach((b,i)=>put(b[0]+b[2]/2,b[1]+b[3],house(b,i)));trees.forEach(([x,y],i)=>put(x,y,tree(x,y,i)));
+  $('ground').innerHTML=terrain();actors=[];buildings.forEach((b,i)=>put(b[0]+b[2]/2,b[1]+b[3],buildingBody(b,i)));trees.forEach(([x,y],i)=>put(x,y,tree(x,y,i)));
+  if(buildingStudy){let [u,v]=pt(142,79);put(142,80,siteShape('park',land(122,74,30,10,p.garden)+label(u,v,'ПАРК')))}
   for(let x of [44,87,142,186,214,264])put(x,103,lamp(x));for(let x of [82,202])put(x,102,stop(x));fixed=actors.slice()}
  function group(n,d){let waiting=n>=3?Math.max(1,Math.floor(n*.34)):0,walkers=n-waiting;
   for(let i=0;i<n;i++){let q=i<waiting,ix=i-waiting,progress=q?0:((ix+.36+.29*Math.sin(ix*4.2+d))/walkers+moment*(.014+(ix%3)*.001))%1;
@@ -241,12 +272,26 @@ if(intents){
  $('symbols').innerHTML=Object.entries(destinations).map(([k,d])=>`<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px"><svg viewBox="-3 -3 6 6" width="18" height="18" style="width:18px;background:none" aria-hidden="true">${glyph(k)}</svg>${d}</span>`).join('');
  document.body.classList.add('intent-study','people-study');document.title='Последний трамвай · Ателье меток';document.querySelector('header .sub').textContent='Этюд 03 · слой «Потоки»';document.querySelector('h1').textContent='У кого что на уме?';document.querySelector('h1 + p').textContent='Те же жители у рынка. Переключите рисунок метки, затем посмотрите, что меняется, когда Мира выходит из поезда.';
  $('map').setAttribute('viewBox','33 48 149 88');$('map').setAttribute('role','group');$('artLink').hidden=true;
- const variant=k=>{art=k;let url=new URL(location.href);url.searchParams.set('variant',art);try{history.replaceState(null,'',url)}catch{}render()};
+  const variant=k=>{if(buildingStudy)return;art=k;let url=new URL(location.href);url.searchParams.set('variant',art);try{history.replaceState(null,'',url)}catch{}render()};
  document.querySelectorAll('[data-art]').forEach(b=>b.onclick=()=>variant(b.dataset.art));document.querySelectorAll('[data-scene]').forEach(b=>b.onclick=()=>{shot=+b.dataset.scene;render()});
  $('more').onclick=()=>{rush=!rush;if(!rush&&watching>=3)watching=0;render()};$('flowSwitch').onclick=()=>{showIntent=!showIntent;render()};
  const inspect=e=>{const g=e.target.closest('[data-inspect]');if(!g)return;watching=+g.dataset.inspect;render();if(e.type==='keydown')$('watch').querySelector(`[tabindex="0"][data-inspect="${watching}"]`)?.focus()};
  $('watch').onclick=inspect;$('watch').onkeydown=e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();inspect(e)}};
- document.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();variant('ABC'[('ABC'.indexOf(art)+(e.key==='ArrowLeft'?2:1))%3])}});
+  document.addEventListener('keydown',e=>{if(!buildingStudy&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();variant('ABC'[('ABC'.indexOf(art)+(e.key==='ArrowLeft'?2:1))%3])}});
+}
+if(buildingStudy){
+ art='A';rush=true;watching=-1;site=Object.hasOwn(sites,params.get('place'))?params.get('place'):'';
+ document.body.classList.add('building-study');$('artToolbar').hidden=true;$('artLink').hidden=false;$('filterLink').hidden=true;
+ document.title='Последний трамвай · Потоки у здания';document.querySelector('h1').textContent='Кто связан с этим зданием?';document.querySelector('header .sub').textContent='Этюд 04 · фильтр по зданию';
+ document.querySelector('h1 + p').textContent='Нажмите на рынок с полосатым навесом, вокзал или дом. Отберите тех, кто направляется туда или начал в нём свой путь.';$('map').setAttribute('aria-label','Карта с доступными для выбора зданиями');
+ $('placePicker').innerHTML='<option value="">Весь квартал</option>'+Object.entries(sites).map(([id,n])=>`<option value="${id}">${n}</option>`).join('');$('placePicker').value=site;
+ function pickSite(id){litMinute=-1;chooseSite(id)}
+ const selectOnMap=e=>{const id=e.target.closest('[data-place]')?.dataset.place;if(id){pickSite(id);if(e.type==='keydown')$('city').querySelector(`[data-place="${id}"]`)?.focus()}};
+ $('city').onclick=selectOnMap;$('city').onkeydown=e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();selectOnMap(e)}};
+ $('placePicker').onchange=e=>pickSite(e.target.value);
+ for(const id of ['arrive','depart','byFoot','byTram','silhouettes'])$(id).onchange=render;
+ $('resetPlaces').onclick=()=>{for(const id of ['arrive','depart','byFoot','byTram','silhouettes'])$(id).checked=true;pickSite('')};
+ $('pool').onclick=e=>{let b=e.target.closest('[data-person]');if(b){watching=+b.dataset.person;render();$('pool').querySelector(`[data-person="${watching}"]`)?.focus()}};
 }
 const initial=Number(params.get('hour')??(intents?19:people?13:7.5));choose(Number.isFinite(initial)&&initial>=0&&initial<24?initial*60:450);if(!people&&!intents)requestAnimationFrame(tick);
 </script></html>
