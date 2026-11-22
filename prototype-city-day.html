@@ -15,6 +15,7 @@
 <main>
 <header class="stamp"><span><b>ЛТ /</b> Последний трамвай</span><span class="sub">Этюд 02 · объёмный город</span></header>
 <h1>Сутки у рынка</h1><p class="sub">Одна улица, два направления. С какой стороны будут ждать вагон вечером?</p>
+<div id="cameraBar" hidden class="timebar"><div class="tabs" aria-label="Стартовый масштаб"><button data-camera="district">A · Район</button><button data-camera="street">B · Остановка</button></div><span class="mini">Один кадр · 07:30</span></div>
 <div class="intent-only intent-tools" id="artToolbar"><div aria-label="Рисунок метки"><button data-art="A">A · Мысль</button><button data-art="B">B · Билет</button><button data-art="C">C · Путь</button></div><div><button id="flowSwitch">Потоки</button><button id="more">Час пик</button></div></div>
 <section id="filterBox" class="building-only" aria-label="Фильтры перемещений">
 <div class="filter-row"><label>Место <select id="placePicker" aria-label="Выбрать место"></select></label>
@@ -46,7 +47,7 @@
 <div class="layers"><button id="normal" aria-pressed="true">Обычный вид</button><button id="overlay" aria-pressed="false">Слой «Потоки»</button><button id="advance">Через несколько секунд →</button></div>
 <p><b id="whoTitle">У остановки</b> · <span id="why" aria-live="polite"></span></p>
 <div class="layers" aria-label="Выбрать жителя"><button data-name="n">Нина</button><button data-name="o">Олег</button><button data-name="m">Мира</button><button id="clear">Снять выделение</button></div>
-</section><footer class="mini"><a id="other" href="?study=people">Следующий этюд: трое на тротуаре →</a> · <a id="artLink" href="?study=intents">Ателье меток: три рисунка намерений</a> · <a id="filterLink" href="?study=buildings">Потоки у здания</a></footer></main>
+</section><footer class="mini"><a id="other" href="?study=people">Следующий этюд: трое на тротуаре →</a> · <a id="artLink" href="?study=intents">Ателье меток: три рисунка намерений</a> · <a id="filterLink" href="?study=buildings">Потоки у здания</a> · <a id="cameraLink" href="?study=camera">Первый экран: район или остановка</a></footer></main>
 <script>
 // Throwaway visual study: same camera, buildings and line in both demand scenarios.
 const $=id=>document.getElementById(id), clamp=x=>Math.max(0,Math.min(1,x));
@@ -107,7 +108,7 @@ const swings=[[0,2,1],[4,1,1],[7.5,15,3],[10.5,7,4],[13,5,5],[16,5,6],[19,3,15],
 function volumes(t){let i=1;while(t>swings[i][0])i++;let [a,out,back]=swings[i-1],[b,o,r]=swings[i],v=(t-a)/(b-a),f=Math.round(out+(o-out)*v),s=Math.round(back+(r-back)*v);if(!$('reverse').checked){let total=f+s;f=Math.round(total*.76);s=total-f}return [f,s]}
 function arrow(x,y,d){let col=d>0?'#783a25':'#285d71';return path([[x-5*d,y],[x+5*d,y]],'#fff5d3',1.7)+path([[x-5*d,y],[x+5*d,y],[x+2*d,y-3]],col,.9)+path([[x+5*d,y],[x+2*d,y+3]],col,.9)}
 let fixed=[],litMinute=-1;
-const params=new URLSearchParams(location.search),buildingStudy=params.get('study')==='buildings',intents=buildingStudy||params.get('study')==='intents',people=params.get('study')==='people';
+const params=new URLSearchParams(location.search),buildingStudy=params.get('study')==='buildings',intents=buildingStudy||params.get('study')==='intents',people=params.get('study')==='people',cameraStudy=params.get('study')==='camera';
 let layer=false,later=false,who='';
 const residents={
  n:{name:'Нина',coat:'#b43f3f',early:[69,95],late:[100,95],to:'весь путь пешком',why:'Из Сосновых дворов на рынок. «Две минуты экономии не стоят билета». Проходит мимо «Дворов».'},
@@ -249,10 +250,13 @@ function render(){let t=minute/60,[out,back]=volumes(t),actors=fixed.slice(),put
  if(litMinute!==Math.floor(minute)){litMinute=Math.floor(minute);p=palette(t);night=clamp(1-Math.min((t-4.5)/3.4,(21.2-t)/3.6));sun=Math.cos((t-7)*Math.PI/12);
   $('ground').innerHTML=terrain();actors=[];buildings.forEach((b,i)=>put(b[0]+b[2]/2,b[1]+b[3],buildingBody(b,i)));trees.forEach(([x,y],i)=>put(x,y,tree(x,y,i)));
   if(buildingStudy){let [u,v]=pt(142,79);put(142,80,siteShape('park',land(122,74,30,10,p.garden)+label(u,v,'ПАРК')))}
-  for(let x of [44,87,142,186,214,264])put(x,103,lamp(x));for(let x of [82,202])put(x,102,stop(x));fixed=actors.slice()}
+   for(let x of [44,87,142,186,214,264])put(x,103,lamp(x));for(let x of [82,202])put(x,102,stop(x));
+   if(cameraStudy){const [x,y]=pt(80,80,19);put(80,90,label(x,y,'СОСНОВЫЕ ДВОРЫ'))}
+   fixed=actors.slice()}
  function group(n,d){let waiting=n>=3?Math.max(1,Math.floor(n*.34)):0,walkers=n-waiting;
   for(let i=0;i<n;i++){let q=i<waiting,ix=i-waiting,progress=q?0:((ix+.36+.29*Math.sin(ix*4.2+d))/walkers+moment*(.014+(ix%3)*.001))%1;
-   let x=q?(d>0?80-i*3:200+i*3):(d>0?45+progress*170:215-progress*170),y=q?100: d>0?95.5:118.8;put(x,y,pedestrian(x,y,i,q,d,!q))}
+    let x=q?(d>0?80-i*3:200+i*3):(d>0?45+progress*170:215-progress*170),y=q?100: d>0?95.5:118.8;
+    const coat=cameraStudy?cast[(i+(d>0?0:3))%cast.length][3]:undefined;put(x,y,pedestrian(x,y,i,q,d,!q,coat))}
  }
  let traces='';
  if(intents)traces=intentScene(put);else if(people){traces=drawPeople(put);peopleReadout()}else{group(out,1);group(back,-1);let tx=140-56*Math.cos(moment*.14+.62);put(tx,110,tram(tx));
@@ -305,5 +309,15 @@ if(buildingStudy){
  $('resetPlaces').onclick=()=>pickSite('');
  $('pool').onclick=e=>{let b=e.target.closest('[data-person]');if(b){inspectPerson(+b.dataset.person);$('watch').querySelector(`[tabindex="0"][data-inspect="${watching}"]`)?.focus()}};
 }
-const initial=Number(params.get('hour')??(intents?19:people?13:7.5));choose(Number.isFinite(initial)&&initial>=0&&initial<24?initial*60:450);if(!people&&!intents)requestAnimationFrame(tick);
+if(cameraStudy){
+ document.title='Последний трамвай · Первый экран';document.querySelector('header .sub').textContent='Этюд 05 · старт игры';
+ document.querySelector('h1').textContent='Новая игра. Что видно первым?';document.querySelector('h1 + p').textContent='Сравните два положения камеры. Поезд, люди и город в обоих кадрах на тех же местах.';
+ document.querySelector('.timebar:not(#cameraBar)').hidden=true;document.querySelector('.track').hidden=true;document.querySelector('.metrics').hidden=true;document.querySelector('main > p.mini').hidden=true;$('cameraLink').hidden=true;$('cameraBar').hidden=false;
+ document.querySelector('.legend span').textContent='Служба движения · утренний выпуск';
+ const frames={district:{box:'-52 20 260 120',text:'Район: жилые дворы и рынок связаны одной трамвайной линией.'},street:{box:'-30 61 104 48',text:'Остановка «Дворы»: видны очередь, прохожие и подъезжающий поезд.'}};
+ const setCamera=k=>{const f=frames[k];$('map').setAttribute('viewBox',f.box);$('mapTitle').textContent=f.text;document.querySelector('.rail .stamp').textContent=f.text;
+  document.querySelectorAll('[data-camera]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.camera===k));const u=new URL(location.href);u.searchParams.set('start',k);try{history.replaceState(null,'',u)}catch{}};
+ document.querySelectorAll('[data-camera]').forEach(b=>b.onclick=()=>setCamera(b.dataset.camera));setCamera(params.get('start')==='street'?'street':'district');
+}
+const initial=cameraStudy?7.5:Number(params.get('hour')??(intents?19:people?13:7.5));choose(Number.isFinite(initial)&&initial>=0&&initial<24?initial*60:450);if(!people&&!intents&&!cameraStudy)requestAnimationFrame(tick);
 </script></html>
