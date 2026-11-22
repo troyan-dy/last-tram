@@ -2,7 +2,7 @@
   'use strict';
   const LT = globalThis.LastTram, $ = id => document.getElementById(id);
   const safe = value => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-  let game, focus, paused, speed, previous, carry;
+  let game, focus, paused, speed, previous, carry, advanceTo;
   const map = LT.createMap($('map'), select);
   const updateNetwork=LT.createNetworkPanel(()=>game,render,select);
   const speeds = [1,4,12];
@@ -11,7 +11,7 @@
   function select(type,id) { focus={type,id}; render(); }
   function watch() {
     const first = game.residents.find(r=>r.journey && !r.onTrainId) ??
-      game.residents.find(r=>game.lookup.buildings.get(r.homeId).ring<=game.openRing && !r.morningStarted) ?? game.residents[0];
+      game.residents.find(r=>game.lookup.buildings.get(r.homeId).ring<=game.openRing && !r.lastJourney) ?? game.residents[0];
     select('resident',first.id);
   }
 
@@ -56,6 +56,10 @@
   function render() {
     map.render(game,focus); inspector();
     $('clock').textContent=stamp(LT.clockMinute(game));
+    const time=LT.cityTime(game);
+    $('clock-period').textContent=`День ${time.day} · ${time.period.name}`;
+    $('next-period').textContent=`К ${stamp(time.next.minute)} · ${time.next.name}`;
+    $('next-period').disabled=advanceTo!==null;
     $('fleet').textContent=`Поездов: ${game.trains.length}`;
     $('zone-label').textContent=game.openRing ? `КОЛЬЦО / ${game.openRing}` : 'ЦЕНТР / 01';
     updateNetwork(game);
@@ -65,12 +69,18 @@
     $('speed').textContent=`${speed}×`;
   }
   function newGame(seed) {
-    game=LT.startGame(LT.createCity(seed)); focus=null; paused=false; speed=1; carry=0; previous=null;
+    game=LT.startGame(LT.createCity(seed)); focus=null; paused=false; speed=1; carry=0; previous=null; advanceTo=null;
     $('city-seed').textContent=game.city.seed;
     render();
   }
   function frame(now) {
-    if (previous!==null && !paused) {
+    if (advanceTo!==null) {
+      // Budget a slice per frame: input and paint still run while simulating a long night.
+      const deadline=performance.now()+6, end=Math.min(advanceTo,game.tick+256);
+      do { LT.advance(game, Math.min(16,end-game.tick)); } while (game.tick<end && performance.now()<deadline);
+      if (game.tick===advanceTo) advanceTo=null;
+      render();
+    } else if (previous!==null && !paused) {
       carry+=Math.min(now-previous,250)*LT.BALANCE.ticksPerSecond*speed/1000;
       const ticks=Math.floor(carry);
       if (ticks) { LT.advance(game,ticks); carry-=ticks; render(); }
@@ -79,8 +89,9 @@
     requestAnimationFrame(frame);
   }
   $('seed-form').addEventListener('submit',e=>{e.preventDefault();newGame($('seed').value);});
-  $('pause').addEventListener('click',()=>{paused=!paused; previous=null; render();});
+  $('pause').addEventListener('click',()=>{advanceTo=null; paused=!paused; previous=null; render();});
   $('speed').addEventListener('click',()=>{speed=speeds[(speeds.indexOf(speed)+1)%speeds.length];render();});
+  $('next-period').addEventListener('click',()=>{advanceTo=LT.cityTime(game).nextTick; carry=0; render();});
   $('inspector').addEventListener('click',e=>{if (e.target.closest('[data-watch]')) watch();});
   $('fit').addEventListener('click',map.fit);
   $('less').addEventListener('click',()=>map.zoomBy(1/1.4));

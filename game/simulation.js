@@ -1,6 +1,7 @@
 (() => {
   'use strict';
   const { BALANCE, distance } = typeof module !== 'undefined' ? require('./movement.js') : globalThis.LastTram;
+  const { dailyRoutine, dailyDemand } = typeof module !== 'undefined' ? require('./demand.js') : globalThis.LastTram;
   const { planJourney, stepTransit } =
     typeof module !== 'undefined' ? require('./journey.js') : globalThis.LastTram;
   const { openLine, moveTrains } = typeof module !== 'undefined' ? require('./service.js') : globalThis.LastTram;
@@ -20,7 +21,7 @@
           : localWorks[(index + n * 3 + 1) % localWorks.length];
         return { id: `p:${home.id}:${n}`, name: names[i % names.length],
           homeId: home.id, workId: work.id, currentBuildingId: home.id, position: { ...home.entrance },
-          departAt: i * BALANCE.morningSpread, morningStarted: false, journey: null, lastJourney: null,
+          routine: dailyRoutine(i, work, localWorks), lastDemandSlot: null, journey: null, lastJourney: null,
           onTrainId: null, coat: (i + home.tint) % 5 };
       });
     });
@@ -30,7 +31,7 @@
     const lookup = { buildings: byId(city.buildings), stops: byId(city.stops), edges: byId(city.edges) };
     const game = { city, lookup, tick: 0, openRing: 0, residents: [], trains: [], routes: [],
       trackIds: new Set(), cash: BALANCE.startingCash, fare: BALANCE.fare, fareIncome: 0,
-      systems: { demand: morningDemand, service: moveTrains, planJourney, stepTransit, openLine, ...systems } };
+      systems: { demand: g => dailyDemand(g, depart), service: moveTrains, planJourney, stepTransit, openLine, ...systems } };
     game.residents = makeResidents(game);
     game.systems.openLine(game);
     return game;
@@ -46,20 +47,14 @@
     return true;
   }
 
-  function morningDemand(game) {
-    for (const r of game.residents) {
-      if (!r.morningStarted && game.tick >= r.departAt && game.lookup.buildings.get(r.homeId).ring <= game.openRing)
-        r.morningStarted = depart(game, r, r.workId);
-    }
-  }
-
   function stepWalk(resident, leg) {
     let left = BALANCE.walkSpeed;
-    while (left > 0 && leg.next < leg.points.length) {
+    while (leg.next < leg.points.length) {
       const target = leg.points[leg.next], p = resident.position, d = distance(p, target);
-      if (d <= left) {
+      // Snap sub-nanometre rounding errors and consume coincident final waypoints this tick.
+      if (d <= left + 1e-9) {
         resident.position = { ...target };
-        left -= d;
+        left = Math.max(0, left - d);
         leg.next++;
       } else {
         resident.position = { x: p.x + (target.x - p.x) * left / d, y: p.y + (target.y - p.y) * left / d };
