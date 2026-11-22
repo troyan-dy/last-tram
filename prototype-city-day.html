@@ -22,7 +22,7 @@
 <fieldset><legend>Всё перемещение</legend><label><input id="byFoot" type="checkbox" checked> Целиком пешком</label><label><input id="byTram" type="checkbox" checked> С трамваем</label></fieldset>
 <button id="resetPlaces">Сбросить</button></div>
 <output id="filterNote" aria-live="polite"></output>
-<label class="mini"><input id="silhouettes" type="checkbox" checked> Оставлять остальных жителей силуэтами</label></section>
+<label class="mini"><input id="dimOthers" type="checkbox" checked> Приглушать жителей без облачков</label></section>
 <div class="intent-only intent-tools"><div class="stamp">Момент у остановки</div><div><button data-scene="0">1 · Поезд на остановке</button><button data-scene="1">2 · Мира вышла</button><button data-scene="2">3 · Пешком до входа</button></div></div>
 <section class="stage" aria-label="Улица у рынка">
 <div class="rail"><span class="stamp">Сосновые дворы / Рыночная площадь</span><b id="clock">07:30</b></div>
@@ -194,13 +194,12 @@ function artwork(r,act){
 }
 function intentScene(put){
   const list=cast.slice(0,rush?8:3),[w,h]=dims[art],boxes=[],records=[];
-  for(let i=0;i<list.length;i++){const r=list[i],[x,y,act]=r[4][shot],[u,v]=pt(x,y);let chosen=i===watching;
-  if(buildingStudy&&!matching(i)){
-   if($('silhouettes').checked){const sprite=act==='ride'?at(x,y,shift(0,-3.7,disk(0,0,.63,'#abaea6'))):pedestrian(x,y,i,false,1,act!=='wait','#a2a8a1');put(x,act==='ride'?y+6:y,`<g opacity=".32" pointer-events="none">${sprite}</g>`)}
-   continue;
-  }
-  if(act==='ride'){put(x,y+6,at(x,y,shift(0,-3.7,rounded(-.74,.35,1.4,.65,.3,r[3])+disk(0,-.1,.63,'#e0b892')+rounded(-.59,-.64,1.13,.3,.12,'#493c42'))))}
-  else put(x,y,(chosen?at(x,y,`<ellipse rx="3.2" ry="1.45" fill="none" stroke="#fff5cf" stroke-width="1.2"/><ellipse rx="3.2" ry="1.45" fill="none" stroke="${ink}" stroke-width=".45"/>`):'')+pedestrian(x,y,i,r[1]==='tram',1,!['wait','ride'].includes(act),r[3]));
+ for(let i=0;i<list.length;i++){const r=list[i],[x,y,act]=r[4][shot],[u,v]=pt(x,y),matches=!buildingStudy||matching(i),chosen=matches&&i===watching;
+  const sprite=act==='ride'?at(x,y,shift(0,-3.7,rounded(-.74,.35,1.4,.65,.3,r[3])+disk(0,-.1,.63,'#e0b892')+rounded(-.59,-.64,1.13,.3,.12,'#493c42'))):
+   (chosen?at(x,y,`<ellipse rx="3.2" ry="1.45" fill="none" stroke="#fff5cf" stroke-width="1.2"/><ellipse rx="3.2" ry="1.45" fill="none" stroke="${ink}" stroke-width=".45"/>`):'')+pedestrian(x,y,i,r[1]==='tram',1,!['wait','ride'].includes(act),r[3]);
+  const opacity=!matches&&$('dimOthers').checked ? 0.5 : 1;
+  put(x,act==='ride'?y+6:y,`<g data-resident="${i}" opacity="${opacity}">${sprite}</g>`);
+  if(!matches)continue;
   const anchor=v-(act==='ride'?5.5:7.3);
   let cx=Math.max(36+w/2,Math.min(178-w/2,u)),cy=anchor-h/2-2.8;
   if(showIntent){
@@ -289,8 +288,8 @@ if(buildingStudy){
  const selectOnMap=e=>{const id=e.target.closest('[data-place]')?.dataset.place;if(id){pickSite(id);if(e.type==='keydown')$('city').querySelector(`[data-place="${id}"]`)?.focus()}};
  $('city').onclick=selectOnMap;$('city').onkeydown=e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();selectOnMap(e)}};
  $('placePicker').onchange=e=>pickSite(e.target.value);
- for(const id of ['arrive','depart','byFoot','byTram','silhouettes'])$(id).onchange=render;
- $('resetPlaces').onclick=()=>{for(const id of ['arrive','depart','byFoot','byTram','silhouettes'])$(id).checked=true;pickSite('')};
+ for(const id of ['arrive','depart','byFoot','byTram','dimOthers'])$(id).onchange=render;
+ $('resetPlaces').onclick=()=>{for(const id of ['arrive','depart','byFoot','byTram'])$(id).checked=true;pickSite('')};
  $('pool').onclick=e=>{let b=e.target.closest('[data-person]');if(b){watching=+b.dataset.person;render();$('pool').querySelector(`[data-person="${watching}"]`)?.focus()}};
 }
 const initial=Number(params.get('hour')??(intents?19:people?13:7.5));choose(Number.isFinite(initial)&&initial>=0&&initial<24?initial*60:450);if(!people&&!intents)requestAnimationFrame(tick);
