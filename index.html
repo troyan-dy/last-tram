@@ -6,6 +6,25 @@
   <meta name="theme-color" content="#203e36">
   <title>Последний трамвай · Атлас движения</title>
   <link rel="stylesheet" href="game/style.css">
+  <style>
+    .timebox { display:grid; grid-template-columns: auto auto auto; max-width:none; flex-shrink:0 }
+    #next-period { grid-column:1 / -1; height:auto; padding:4px 8px; font:600 12px/1.4 var(--mono) }
+    #next-period:disabled { cursor:progress }
+    #clock-period { white-space:nowrap; text-transform:uppercase }
+    #map[data-light="day"] .scenery { filter:brightness(1.06) }
+    #map[data-light="evening"] .scenery { filter:sepia(.36) saturate(1.1) brightness(.78) }
+    #map[data-light="night"] .scenery { filter:url(#night-light) }
+    .platform-light { opacity:0 }
+    #map[data-light="evening"] .platform-light { opacity:.65 }
+    #map[data-light="night"] .platform-light { opacity:1 }
+    .board:has(#map[data-light="evening"]) { background-color:#e2dfd2 }
+    .board:has(#map[data-light="night"]) { background-color:#c8d2d0 }
+    @media (max-width:660px) {
+      .timebox { grid-template-columns:repeat(2,1fr); width:118px }
+      .timebox div { grid-column:1 / -1 }
+      #next-period { font-size:10px }
+    }
+  </style>
 </head>
 <body>
   <header class="masthead">
@@ -16,10 +35,11 @@
   </header>
   <main>
     <section class="heading">
-      <div><div class="kicker"><i></i> ДИСПЕТЧЕРСКАЯ <span>/</span> ЛИСТ 01</div><h1>Первое утро<span>.</span></h1>
+      <div><div class="kicker"><i></i> ДИСПЕТЧЕРСКАЯ <span>/</span> ЛИСТ 01</div><h1>Ритм города<span>.</span></h1>
         <p>Найдите жителя и проследите его путь до двери.</p></div>
-      <div class="timebox"><div><small>ГОРОДСКОЕ ВРЕМЯ</small><strong id="clock">07:30</strong></div>
-        <button id="pause" title="Пауза" aria-label="Пауза">Ⅱ</button><button id="speed" aria-label="Скорость" title="Скорость">1×</button></div>
+      <div class="timebox" role="group" aria-label="Городское время"><div><small id="clock-period">День 1 · Утро</small><strong id="clock">07:30</strong></div>
+        <button id="pause" title="Пауза" aria-label="Пауза">Ⅱ</button><button id="speed" aria-label="Скорость" title="Скорость">1×</button>
+        <button id="next-period" title="Довести город до следующего периода">К 12:00 · День</button></div>
     </section>
     <div class="layout">
       <section class="map-card">
@@ -27,6 +47,9 @@
         <div class="board">
           <div class="coordinates">ПЛАН ГОРОДА <span>/</span> ИЗОМЕТРИЯ</div>
           <svg id="map" xmlns="http://www.w3.org/2000/svg" aria-label="Карта города" role="group">
+            <defs><filter id="night-light" color-interpolation-filters="sRGB">
+              <feColorMatrix values=".47 0 0 0 .04  0 .55 0 0 .045  0 0 .72 0 .08  0 0 0 1 0"/>
+            </filter></defs>
             <g id="scene"></g><g id="moving"></g>
             <g id="marker" pointer-events="none" style="display:none"><ellipse rx="7.5" ry="3.4" fill="none" stroke="#b14f35" stroke-width="1.5"/></g>
           </svg>
@@ -47,6 +70,6 @@
     <footer><span>ПОСЛЕДНИЙ ТРАМВАЙ <i>/</i> ПОЛЕВОЙ АТЛАС</span><span>Колесо — масштаб · Перетаскивание — обзор</span></footer>
   </main>
   <script src="game/city.js"></script><script src="game/movement.js"></script><script src="game/starter-line.js"></script>
-  <script src="game/simulation.js"></script><script src="game/art.js"></script><script src="game/map.js"></script><script src="game/app.js"></script>
+  <script src="game/demand.js"></script><script src="game/simulation.js"></script><script src="game/art.js"></script><script src="game/map.js"></script><script src="game/app.js"></script>
 </body>
 </html>

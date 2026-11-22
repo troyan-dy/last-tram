@@ -1,6 +1,7 @@
 (() => {
   'use strict';
   const { BALANCE, distance } = typeof module !== 'undefined' ? require('./movement.js') : globalThis.LastTram;
+  const { dailyRoutine, dailyDemand } = typeof module !== 'undefined' ? require('./demand.js') : globalThis.LastTram;
   const { openLine, moveTrains, planMorning, stepTransit } =
     typeof module !== 'undefined' ? require('./starter-line.js') : globalThis.LastTram;
   const byId = list => new Map(list.map(item => [item.id, item]));
@@ -19,7 +20,7 @@
           : localWorks[(index + n * 3 + 1) % localWorks.length];
         return { id: `p:${home.id}:${n}`, name: names[i % names.length],
           homeId: home.id, workId: work.id, currentBuildingId: home.id, position: { ...home.entrance },
-          departAt: i * BALANCE.morningSpread, morningStarted: false, journey: null, lastJourney: null,
+          routine: dailyRoutine(i, work, localWorks), lastDemandSlot: null, journey: null, lastJourney: null,
           onTrainId: null, coat: (i + home.tint) % 5 };
       });
     });
@@ -29,7 +30,7 @@
     const lookup = { buildings: byId(city.buildings), stops: byId(city.stops), edges: byId(city.edges) };
     const game = { city, lookup, tick: 0, openRing: 0, residents: [], trains: [], routes: [],
       trackIds: new Set(), cash: BALANCE.startingCash, fare: BALANCE.fare,
-      systems: { demand: morningDemand, service: moveTrains, planJourney: planMorning, stepTransit, openLine, ...systems } };
+      systems: { demand: g => dailyDemand(g, depart), service: moveTrains, planJourney: planMorning, stepTransit, openLine, ...systems } };
     game.residents = makeResidents(game);
     game.systems.openLine(game);
     return game;
@@ -43,13 +44,6 @@
     resident.journey = { ...plan, originId: from.id, destinationId: to.id, startedAt: game.tick, leg: 0 };
     resident.currentBuildingId = null;
     return true;
-  }
-
-  function morningDemand(game) {
-    for (const r of game.residents) {
-      if (!r.morningStarted && game.tick >= r.departAt && game.lookup.buildings.get(r.homeId).ring <= game.openRing)
-        r.morningStarted = depart(game, r, r.workId);
-    }
   }
 
   function stepWalk(resident, leg) {
