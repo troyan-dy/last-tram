@@ -15,7 +15,7 @@
 <main>
 <header class="stamp"><span><b>ЛТ /</b> Последний трамвай</span><span class="sub">Этюд 02 · объёмный город</span></header>
 <h1>Сутки у рынка</h1><p class="sub">Одна улица, два направления. С какой стороны будут ждать вагон вечером?</p>
-<div id="cameraBar" hidden class="timebar"><div class="tabs" aria-label="Стартовый масштаб"><button data-camera="district">A · Район</button><button data-camera="street">B · Остановка</button></div><span class="mini">Один кадр · 07:30</span></div>
+<div id="cameraBar" hidden class="timebar"><div class="tabs" aria-label="Масштаб карты"><button id="zoomBack" aria-label="Отдалить">−</button><button id="zoomHome">Вся зона</button><button id="zoomCloser" aria-label="Приблизить">+</button></div><output id="zoomLabel" class="mini"></output></div>
 <div class="intent-only intent-tools" id="artToolbar"><div aria-label="Рисунок метки"><button data-art="A">A · Мысль</button><button data-art="B">B · Билет</button><button data-art="C">C · Путь</button></div><div><button id="flowSwitch">Потоки</button><button id="more">Час пик</button></div></div>
 <section id="filterBox" class="building-only" aria-label="Фильтры перемещений">
 <div class="filter-row"><label>Место <select id="placePicker" aria-label="Выбрать место"></select></label>
@@ -47,7 +47,7 @@
 <div class="layers"><button id="normal" aria-pressed="true">Обычный вид</button><button id="overlay" aria-pressed="false">Слой «Потоки»</button><button id="advance">Через несколько секунд →</button></div>
 <p><b id="whoTitle">У остановки</b> · <span id="why" aria-live="polite"></span></p>
 <div class="layers" aria-label="Выбрать жителя"><button data-name="n">Нина</button><button data-name="o">Олег</button><button data-name="m">Мира</button><button id="clear">Снять выделение</button></div>
-</section><footer class="mini"><a id="other" href="?study=people">Следующий этюд: трое на тротуаре →</a> · <a id="artLink" href="?study=intents">Ателье меток: три рисунка намерений</a> · <a id="filterLink" href="?study=buildings">Потоки у здания</a> · <a id="cameraLink" href="?study=camera">Первый экран: район или остановка</a></footer></main>
+</section><footer class="mini"><a id="other" href="?study=people">Следующий этюд: трое на тротуаре →</a> · <a id="artLink" href="?study=intents">Ателье меток: три рисунка намерений</a> · <a id="filterLink" href="?study=buildings">Потоки у здания</a> · <a id="cameraLink" href="?study=camera">Первый экран: от обзора к остановке</a></footer></main>
 <script>
 // Throwaway visual study: same camera, buildings and line in both demand scenarios.
 const $=id=>document.getElementById(id), clamp=x=>Math.max(0,Math.min(1,x));
@@ -309,15 +309,25 @@ if(buildingStudy){
  $('resetPlaces').onclick=()=>pickSite('');
  $('pool').onclick=e=>{let b=e.target.closest('[data-person]');if(b){inspectPerson(+b.dataset.person);$('watch').querySelector(`[tabindex="0"][data-inspect="${watching}"]`)?.focus()}};
 }
-if(cameraStudy){
+function openCamera(){
  document.title='Последний трамвай · Первый экран';document.querySelector('header .sub').textContent='Этюд 05 · старт игры';
- document.querySelector('h1').textContent='Новая игра. Что видно первым?';document.querySelector('h1 + p').textContent='Сравните два положения камеры. Поезд, люди и город в обоих кадрах на тех же местах.';
+ document.querySelector('h1').textContent='От всей зоны до остановки';document.querySelector('h1 + p').textContent='Наведите курсор на остановку и прокрутите колесо вверх. На крупном плане карту можно перетаскивать.';
  document.querySelector('.timebar:not(#cameraBar)').hidden=true;document.querySelector('.track').hidden=true;document.querySelector('.metrics').hidden=true;document.querySelector('main > p.mini').hidden=true;$('cameraLink').hidden=true;$('cameraBar').hidden=false;
  document.querySelector('.legend span').textContent='Служба движения · утренний выпуск';
- const frames={district:{box:'-52 20 260 120',text:'Район: жилые дворы и рынок связаны одной трамвайной линией.'},street:{box:'-30 61 104 48',text:'Остановка «Дворы»: видны очередь, прохожие и подъезжающий поезд.'}};
- const setCamera=k=>{const f=frames[k];$('map').setAttribute('viewBox',f.box);$('mapTitle').textContent=f.text;document.querySelector('.rail .stamp').textContent=f.text;
-  document.querySelectorAll('[data-camera]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.camera===k));const u=new URL(location.href);u.searchParams.set('start',k);try{history.replaceState(null,'',u)}catch{}};
- document.querySelectorAll('[data-camera]').forEach(b=>b.onclick=()=>setCamera(b.dataset.camera));setCamera(params.get('start')==='street'?'street':'district');
+ const map=$('map'),b=$('city').getBBox(),aspect=260/120,W=Math.max(b.width+16,(b.height+16)*aspect),H=W/aspect;
+ const left=b.x+(b.width-W)/2,top=b.y+(b.height-H)/2,max=4;let z=1,x=left,y=top,drag=null;
+ function paint(){
+  const w=W/z,h=H/z;x=Math.max(left,Math.min(left+W-w,x));y=Math.max(top,Math.min(top+H-h,y));
+  map.setAttribute('viewBox',[x,y,w,h].join(' '));map.style.cursor=drag?'grabbing':z>1?'grab':'zoom-in';
+  $('zoomLabel').textContent=z===1?'Обзор всей зоны':`Масштаб ${z.toLocaleString('ru',{maximumFractionDigits:1})}×`;$('zoomBack').disabled=$('zoomHome').disabled=z===1;$('zoomCloser').disabled=z===max;
+ }
+ function zoomTo(next,anchor){const ax=anchor?.x??(x+W/z/2),ay=anchor?.y??(y+H/z/2),old=z;z=Math.max(1,Math.min(max,next));x=ax-(ax-x)*old/z;y=ay-(ay-y)*old/z;paint()}
+ map.addEventListener('wheel',e=>{if(e.ctrlKey||e.metaKey||!e.deltaY)return;e.preventDefault();const d=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?map.clientHeight:1),pt=new DOMPoint(e.clientX,e.clientY).matrixTransform(map.getScreenCTM().inverse());zoomTo(z*Math.exp(-Math.max(-300,Math.min(300,d))*.0022),pt)},{passive:false});
+ map.style.touchAction='pan-y';map.style.userSelect='none';
+ map.onpointerdown=e=>{if(z<=1||e.button!==0)return;drag={id:e.pointerId,cx:e.clientX,cy:e.clientY,x,y,scale:map.getScreenCTM().a};map.setPointerCapture(e.pointerId);paint()};
+ map.onpointermove=e=>{if(!drag||e.pointerId!==drag.id)return;x=drag.x-(e.clientX-drag.cx)/drag.scale;y=drag.y-(e.clientY-drag.cy)/drag.scale;paint()};
+ map.onlostpointercapture=()=>{drag=null;paint()};
+ $('zoomBack').onclick=()=>zoomTo(z/1.35);$('zoomCloser').onclick=()=>zoomTo(z*1.35);$('zoomHome').onclick=()=>zoomTo(1);paint();
 }
-const initial=cameraStudy?7.5:Number(params.get('hour')??(intents?19:people?13:7.5));choose(Number.isFinite(initial)&&initial>=0&&initial<24?initial*60:450);if(!people&&!intents&&!cameraStudy)requestAnimationFrame(tick);
+const initial=cameraStudy?7.5:Number(params.get('hour')??(intents?19:people?13:7.5));choose(Number.isFinite(initial)&&initial>=0&&initial<24?initial*60:450);if(cameraStudy)openCamera();else if(!people&&!intents)requestAnimationFrame(tick);
 </script></html>
