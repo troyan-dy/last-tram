@@ -17,6 +17,7 @@
 <h1>Сутки у рынка</h1><p class="sub">Одна улица, два направления. С какой стороны будут ждать вагон вечером?</p>
 <div id="cameraBar" hidden class="timebar"><div class="tabs" aria-label="Масштаб карты"><button id="zoomBack" aria-label="Отдалить">−</button><button id="zoomHome">Вся зона</button><button id="zoomCloser" aria-label="Приблизить">+</button></div><output id="zoomLabel" class="mini"></output></div>
 <div id="homesBar" hidden class="timebar"><div class="tabs" aria-label="Жилой квартал"><button data-homes="brick">A · Кирпичная улица</button><button data-homes="blocks">B · Микрорайон</button></div></div>
+<div id="heightBar" hidden class="timebar"><div class="tabs" aria-label="Этажность панельных домов"><button data-height="low">1 · Все дома трёхэтажные</button><button data-height="stepped">2 · Три этажа спереди, до пяти сзади</button></div></div>
 <div class="intent-only intent-tools" id="artToolbar"><div aria-label="Рисунок метки"><button data-art="A">A · Мысль</button><button data-art="B">B · Билет</button><button data-art="C">C · Путь</button></div><div><button id="flowSwitch">Потоки</button><button id="more">Час пик</button></div></div>
 <section id="filterBox" class="building-only" aria-label="Фильтры перемещений">
 <div class="filter-row"><label>Место <select id="placePicker" aria-label="Выбрать место"></select></label>
@@ -48,7 +49,7 @@
 <div class="layers"><button id="normal" aria-pressed="true">Обычный вид</button><button id="overlay" aria-pressed="false">Слой «Потоки»</button><button id="advance">Через несколько секунд →</button></div>
 <p><b id="whoTitle">У остановки</b> · <span id="why" aria-live="polite"></span></p>
 <div class="layers" aria-label="Выбрать жителя"><button data-name="n">Нина</button><button data-name="o">Олег</button><button data-name="m">Мира</button><button id="clear">Снять выделение</button></div>
-</section><footer class="mini"><a id="other" href="?study=people">Следующий этюд: трое на тротуаре →</a> · <a id="artLink" href="?study=intents">Ателье меток: три рисунка намерений</a> · <a id="filterLink" href="?study=buildings">Потоки у здания</a> · <a id="cameraLink" href="?study=camera">Первый экран: от обзора к остановке</a> · <a href="?study=homes">Жилые дома</a></footer></main>
+</section><footer class="mini"><a id="other" href="?study=people">Следующий этюд: трое на тротуаре →</a> · <a id="artLink" href="?study=intents">Ателье меток: три рисунка намерений</a> · <a id="filterLink" href="?study=buildings">Потоки у здания</a> · <a id="cameraLink" href="?study=camera">Первый экран: от обзора к остановке</a> · <a href="?study=homes">Жилые дома</a> · <a href="?study=height">Видно ли путь за домами?</a></footer></main>
 <script>
 // Throwaway visual study: same camera, buildings and line in both demand scenarios.
 const $=id=>document.getElementById(id), clamp=x=>Math.max(0,Math.min(1,x));
@@ -76,8 +77,9 @@ const buildings=[[5,43,25,14,13],[36,43,14,13,11],[67,42,33,15,16],[110,43,24,13
 const trees=[[6,62],[14,65],[46,65],[77,65],[98,62],[106,60],[139,64],[151,63],[182,65],[190,62],[237,62],[269,64],[46,87],[119,86],[130,81],[145,85],[167,84],[178,87],[269,90],[2,134],[17,135],[42,138],[78,136],[94,139],[108,135],[137,140],[153,139],[190,138],[210,139],[242,135],[272,142]];
 let minute=450,moment=0,playing=false,prev=0,p,night,phase,sun;const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function label(x,y,txt){let w=txt.length*2.45+5;return rect(x-w/2,y-4.7,w,6,'#263c42')+`<text x="${x}" y="${y-.25}" fill="#fff7d8" text-anchor="middle" style="font:700 3.25px system-ui">${txt}</text>`}
+function blockHeight(b,i){const floors=heightKind==='stepped'&&b[1]<98?4+i%2:3;return floors*4+3}
 function homesExample(b,i){
- let [x,y,w,d]=b,slab=homesKind==='blocks',h=slab?23+4*(i%3):9+3*(i%3);
+ let [x,y,w,d]=b,slab=homesKind==='blocks',h=slab?blockHeight(b,i):9+3*(i%3);
  let front=slab?['#d6cfb7','#e2dbc6','#c7c6b5'][i%3]:['#bd8063','#cc9478','#b97961'][i%3],side=slab?'#b2b3a4':'#9a705f';
  let g=box(x,y,w,d,h,slab?'#8a9594':'#925f51',front,side);
  const face=(a,z,ww,hh,col)=>iso([[x+a,y+d,z],[x+a+ww,y+d,z],[x+a+ww,y+d,z+hh],[x+a,y+d,z+hh]],col);
@@ -96,7 +98,7 @@ function homesExample(b,i){
  }
  return g+face(w*.43,0,2.7,4,'#425b58');
 }
-function house(b,i){if(homesStudy&&i!==9)return homesExample(b,i);let [x,y,w,d,h]=b,m=i===9,roof=m?'#a9705c':p.roof;
+function house(b,i){if(cameraStudy&&i!==9)return `<g class="housing">${homesExample(b,i)}</g>`;let [x,y,w,d,h]=b,m=i===9,roof=m?'#a9705c':p.roof;
  let g=box(x,y,w,d,h,p.ridge,p.front,p.side)+iso([[x-1,y-1,h],[x+w+1,y-1,h],[x+w+1,y+d*.45,h+4],[x-1,y+d*.45,h+4]],p.ridge)+iso([[x-1,y+d*.45,h+4],[x+w+1,y+d*.45,h+4],[x+w+1,y+d+1,h],[x-1,y+d+1,h]],roof);
  if(!m&&i%3===0)g+=box(x+w*.68,y+d*.4,2,2,h+5,p.ridge,p.side,p.roof);
  for(let j=2;j<w-2;j+=4.8)for(let z=h-2;z>3;z-=6){let lit=night*(.47+.53*clamp(Math.min(minute/60-15,24-minute/60)/2));let glow=lit>(.12+((i*13+Math.round(j*10)+z)%9)/10);g+=iso([[x+j,y+d,z],[x+j+2.5,y+d,z],[x+j+2.5,y+d,z-3],[x+j,y+d,z-3]],glow?'#ffd390':p.glass)}
@@ -114,7 +116,7 @@ function terrain(){let g=land(-150,-140,660,460,p.field);
  for(let x of [65,186])g+=land(x,99,28,4,p.front);
  // Long morning shadows turn and shrink by noon. At night the pools of lamplight take over.
  g+=`<g opacity="${(.07+.12*(1-night)).toFixed(2)}">`;
- for(let [x,y,w,d,h] of buildings)g+=iso([[x,y+d],[x+w,y+d],[x+w+sun*h*.8,y+d+4],[x+sun*h*.8,y+d+4]],'#273d4d');
+ for(const [i,b] of buildings.entries()){let [x,y,w,d,h]=b;if(cameraStudy&&homesKind==='blocks'&&i!==9)h=blockHeight(b,i);g+=iso([[x,y+d],[x+w,y+d],[x+w+sun*h*.8,y+d+4],[x+sun*h*.8,y+d+4]],'#273d4d')}
  g+='</g>';for(let x of [44,87,142,186,214,264]){let [a,b]=pt(x,102);g+=`<ellipse cx="${a}" cy="${b}" rx="12" ry="4.1" fill="url(#lamp)" opacity="${night}"/>`}return g}
 function lamp(x){let g=rect(-.45,-11,.9,11,p.side)+line([[0,-11],[2.5,-12],[4,-11]],p.metal,.6)+disk(3.6,-10.7,1,night>.34?'#ffda94':p.pave);return at(x,103,g)}
 function stop(x){return at(x,102,rect(-.55,-8.5,1.1,8.5,p.side)+rect(-2.25,-10.5,4.5,3.8,'#f2dfa9')+rect(-1.45,-9.7,2.9,1.65,'#af5341'))}
@@ -129,8 +131,14 @@ const swings=[[0,2,1],[4,1,1],[7.5,15,3],[10.5,7,4],[13,5,5],[16,5,6],[19,3,15],
 function volumes(t){let i=1;while(t>swings[i][0])i++;let [a,out,back]=swings[i-1],[b,o,r]=swings[i],v=(t-a)/(b-a),f=Math.round(out+(o-out)*v),s=Math.round(back+(r-back)*v);if(!$('reverse').checked){let total=f+s;f=Math.round(total*.76);s=total-f}return [f,s]}
 function arrow(x,y,d){let col=d>0?'#783a25':'#285d71';return path([[x-5*d,y],[x+5*d,y]],'#fff5d3',1.7)+path([[x-5*d,y],[x+5*d,y],[x+2*d,y-3]],col,.9)+path([[x+5*d,y],[x+2*d,y+3]],col,.9)}
 let fixed=[],litMinute=-1;
-const params=new URLSearchParams(location.search),buildingStudy=params.get('study')==='buildings',intents=buildingStudy||params.get('study')==='intents',people=params.get('study')==='people',homesStudy=params.get('study')==='homes',cameraStudy=homesStudy||params.get('study')==='camera';
-let homesKind=params.get('kind')==='blocks'?'blocks':'brick';
+const params=new URLSearchParams(location.search),buildingStudy=params.get('study')==='buildings',intents=buildingStudy||params.get('study')==='intents',people=params.get('study')==='people',homesStudy=params.get('study')==='homes',heightStudy=params.get('study')==='height',cameraStudy=heightStudy||homesStudy||params.get('study')==='camera';
+let homesKind=homesStudy&&params.get('kind')==='brick'?'brick':'blocks',heightKind=heightStudy&&params.get('height')==='stepped'?'stepped':'low';
+// Identical lots in both height samples. Place the near row close enough to test sightlines.
+if(heightStudy){
+ for(const b of buildings)if(b[1]>130)b[1]=133;
+ buildings.push([37,133,15,15,15],[90,133,22,14,15],[199,133,25,14,15],[109,75,24,13,15]);
+ for(let i=trees.length-1;i>=0;i--){const [tx,ty]=trees[i];if(buildings.some(([x,y,w,d])=>tx>=x&&tx<=x+w&&ty>=y&&ty<=y+d))trees.splice(i,1)}
+}
 let layer=false,later=false,who='';
 const residents={
  n:{name:'Нина',coat:'#b43f3f',early:[69,95],late:[100,95],to:'весь путь пешком',why:'Из Сосновых дворов на рынок. «Две минуты экономии не стоят билета». Проходит мимо «Дворов».'},
@@ -338,11 +346,17 @@ function openCamera(){
  document.querySelector('.legend span').textContent='Служба движения · утренний выпуск';
  if(homesStudy){
   document.title='Последний трамвай · Жилой квартал';document.querySelector('header .sub').textContent='Этюд 06 · жилые дома';
-  document.querySelector('h1').textContent='Какими сделать первые жилые дома?';document.querySelector('h1 + p').textContent='Рынок, трамвай и люди остаются на местах. Сравните силуэты домов, затем приблизьте любой фасад.';
+  document.querySelector('h1').textContent='Жилые кварталы центра';document.querySelector('h1 + p').textContent='Для старта выбран B: панельные дома в несколько этажей. Можно приблизить фасад или сравнить его с кирпичной улицей.';
   $('homesBar').hidden=false;const change=k=>{homesKind=k;litMinute=-1;render();document.querySelectorAll('[data-homes]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.homes===k))};
   document.querySelectorAll('[data-homes]').forEach(b=>b.onclick=()=>change(b.dataset.homes));change(homesKind);
  }
- const map=$('map'),b=homesStudy?{x:-103,y:-1,width:334,height:181}:$('city').getBBox(),aspect=260/120,W=Math.max(b.width+16,(b.height+16)*aspect),H=W/aspect;
+ if(heightStudy){
+  document.title='Последний трамвай · Дома перед путями';document.querySelector('header .sub').textContent='Этюд 07 · высота жилого квартала';
+  document.querySelector('h1').textContent='Видно ли рельсы за домами?';document.querySelector('h1 + p').textContent='На общем плане проследите путь от поезда до рынка. Затем приблизьте его колёсиком. В обоих кадрах дома стоят на тех же местах.';
+  $('heightBar').hidden=false;const change=k=>{heightKind=k;litMinute=-1;render();document.querySelectorAll('[data-height]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.height===k))};
+  document.querySelectorAll('[data-height]').forEach(b=>b.onclick=()=>change(b.dataset.height));change(heightKind);
+ }
+ const map=$('map'),b=homesStudy||heightStudy?{x:-103,y:-1,width:334,height:181}:$('city').getBBox(),aspect=260/120,W=Math.max(b.width+16,(b.height+16)*aspect),H=W/aspect;
  const left=b.x+(b.width-W)/2,top=b.y+(b.height-H)/2,max=4;let z=1,x=left,y=top,drag=null;
  function paint(){
   const w=W/z,h=H/z;x=Math.max(left,Math.min(left+W-w,x));y=Math.max(top,Math.min(top+H-h,y));
