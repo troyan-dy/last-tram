@@ -62,3 +62,31 @@ test('после высадки способ остаётся «с трамва�
   await expect(page.locator('#panel')).toContainText('Крытый рынок');
   await expect(page.locator('#panel')).toContainText('Факт:');
 });
+
+test('два утра: один сид, те же отправления, один фактор и фактическая выручка', async ({ page }) => {
+  await page.getByText('Два утра у рынка',{exact:true}).click({timeout:1500});
+  const start = page.getByRole('button',{name:'Начать контрольное утро'});
+  const finish = page.getByRole('button',{name:'Доиграть до 08:00'});
+  const actual = () => page.evaluate(()=>({walk:g.arr.filter(p=>p.dest===city.dest[1].id&&p.paid===null).length,
+    tram:g.arr.filter(p=>p.dest===city.dest[1].id&&p.paid!==null).length, revenue:g.rev}));
+  await start.click(); await expect(page.locator('#clock')).toHaveText('07:00');
+  await expect(page.locator('#minus')).toBeDisabled();
+  await finish.click(); await expect(page.locator('#clock')).toHaveText('08:00');
+  const base=await actual();
+  await page.getByLabel('Изменение на повторе').selectOption('fare');
+  await page.getByRole('button',{name:'Повторить это утро'}).click();
+  expect(await page.evaluate(()=>[g.net.fare,g.cars.length,g.rev,g.t])).toEqual([20,1,0,0]);
+  await finish.click(); const next=await actual();
+  expect(next.tram).toBeGreaterThan(base.tram);
+  const cells = await page.locator('#morningResults tr').last().locator('td').allTextContents();
+  expect(cells.slice(1,4)).toEqual([String(next.walk), String(next.tram), `${next.revenue} ₽`]);
+  await page.getByLabel('Изменение на повторе').selectOption('train');
+  await page.getByRole('button',{name:'Повторить это утро'}).click();
+  expect(await page.evaluate(()=>[g.net.fare,g.cars.length])).toEqual([30,2]);
+  await finish.click();
+  await page.getByLabel('Изменение на повторе').selectOption('same');
+  await page.getByRole('button',{name:'Повторить это утро'}).click(); await finish.click();
+  expect(await actual()).toEqual(base);
+  await page.locator('#setup').click(); await page.locator('#seedField').fill('Другой'); await page.locator('#start').click();
+  await expect(page.locator('#morningResults tbody tr')).toHaveCount(0);
+});

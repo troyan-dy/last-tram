@@ -37,6 +37,7 @@ dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);bor
 @media(max-width:1100px){.layout{grid-template-columns:1fr}aside{display:grid;grid-template-columns:1.25fr 1fr}.tabs{grid-column:1/-1}.controls{border-left:1px solid var(--line);padding-top:8px}#city{min-width:540px}}
 @media(max-width:460px){aside{display:block}.controls{border-left:none}.hud{grid-template-columns:repeat(2,1fr)}.hud div{border:1px solid var(--line)}.time{font-size:18px}.bar{gap:5px}.brand{gap:5px}}
 #city{min-width:0;max-height:72vh;background:#a9bb9d}
+#morning table{border-collapse:collapse;margin:8px 0;font-variant-numeric:tabular-nums}#morning th,#morning td{text-align:left;padding:5px 10px;border-bottom:1px solid var(--line)}#morning section{overflow:auto}
 </style>
 <main>
 <header><div class="brand"><span class="mark" aria-hidden="true">Т</span><div><div class="eyebrow">Служба движения · игровой прототип</div><h1>Последний трамвай</h1></div></div>
@@ -61,11 +62,16 @@ dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);bor
 <div class="pad controls"><div class="control"><div class="spread"><b>Билет</b><div class="row"><button id="minus" aria-label="Снизить тариф">−</button><output class="cost" id="fare"></output><button id="plus" aria-label="Повысить тариф">+</button></div></div></div>
 <div class="control"><div class="spread"><b>Выпуск вагонов</b><select id="buyLine" aria-label="Линия для нового вагона"></select></div><button style="margin:7px 0 4px;width:100%" class="hot" id="buy">+ Вагон · 75 ₽</button><small>Новый вагон выходит с конечной и сокращает ожидание. Пересадка бесплатна.</small></div></div></aside>
 </div>
+<details class="drawer" id="morning"><summary>Два утра у рынка</summary><section>
+<p>Начните две партии на одном сиде с 07:00. Контрольное утро сбросит текущую сеть. В повторе меняется только цена билета или выпуск поездов на Т1.</p>
+<div class="row"><button id="baseline">Начать контрольное утро</button><label>Изменение на повторе <select id="variant"><option value="fare">Снизить тариф до 20 ₽</option><option value="train">Добавить поезд на Т1</option><option value="same">Без изменений</option></select></label><button id="replay">Повторить это утро</button><button id="untilEight">Доиграть до 08:00</button></div>
+<p id="morningStatus" role="status"></p><table id="morningResults"><thead><tr><th>07:00–08:00</th><th>У рынка пешком</th><th>У рынка с трамваем</th><th>Выручка сети</th><th>Среднее время до рынка</th></tr></thead><tbody></tbody></table><p id="morningDelta"></p></section></details>
 <details class="drawer" id="journal"><summary>Журнал диспетчера · кто пересел и сколько выиграл</summary><section><p class="sub" id="compareLabel"></p><div id="comparison" class="note"></div><div id="log" class="log"></div></section></details>
 </main>
 <dialog id="settings"><h2>Новая партия</h2><p>Один сид повторяет застройку и поток жителей. Новая партия сбросит кассу и сеть.</p><p style="margin:10px 0"><label>Сид города <input id="seedField" size="13" maxlength="18"></label></p><div class="row"><button id="start" class="hot">Начать с этим сидом</button><button id="random">Случайный сид</button><button id="close">Назад</button></div></dialog>
 <script src="game/map.js"></script>
 <script src="game/flows.js"></script>
+<script src="game/morning.js"></script>
 <script>
 "use strict";
 // География и расписание: одна единица времени = 1/10 игровой минуты.
@@ -77,7 +83,7 @@ const ST=[
 const LINKS=[[0,1],[1,2],[0,4],[4,3],[3,1],[3,8],[8,2],[0,5],[5,6],[6,1],[6,7],[7,2],[9,4],[2,10],[6,11],[3,12]];
 const NAMES="Нина Олег Илья Ася Мира Ян Лев Вера Лида Антон Зоя Глеб Майя Игорь Соня Тимур Алла Юрий Рита Фёдор Лена Марк Тася Иван".split(" ");
 const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const fmt=n=>Number((n/10).toFixed(1)).toLocaleString("ru"), rub=n=>n+" ₽", sign=n=>(n>0?"+":"")+n, tickTime=t=>{const m=Math.floor(t/10);return `${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`};
+const fmt=n=>Number((n/10).toFixed(1)).toLocaleString("ru"), rub=n=>n+" ₽", sign=n=>(n>0?"+":"")+n, tickTime=t=>{const m=(420+Math.floor(t/10))%1440;return `${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`};
 function rng(seed){let h=2166136261;for(const c of seed)h=Math.imul(h^c.charCodeAt(0),16777619);return()=>{h=(Math.imul(1664525,h)+1013904223)>>>0;return h/4294967296}}
 const node=(x,y)=>y*X.length+x,stopNode=i=>node(ST[i][1],ST[i][2]),stopPoint=i=>[X[ST[i][1]],Y[ST[i][2]]];
 function shortest(adj,a,b){const ds=new Map([[a,0]]),prev=new Map(),todo=new Set([a]);while(todo.size){let u;for(const v of todo)if(u===undefined||ds.get(v)<ds.get(u))u=v;todo.delete(u);if(u===b)break;
@@ -219,6 +225,7 @@ const phaseName={home:"дома",walk:"идёт пешком",approach:"идёт
 let city,g,ref,tab="watch",pick={type:"station",id:0},tool="",draft=[],editLine=0,paused=false,speed=1,carry=0,previous=0,uiTick=-10,seenArr=0,compareFrom=0;
 let referenceName="",zoom=1,center=null,drag=null,ignoreClick=false,lastPaint=0,launchCar=0,panelMarkup="";
 let flowOn=false,filters=Flows.filters();
+let morningRun=null,morningBase=null,morningRepeat=null;
 const focusOn=(type,id)=>{pick={type,id};filters=Flows.filters();tab="watch"};
 const doorName=id=>{const i=city.dest.findIndex(h=>h.id===id);return i>=0?TARGET[i]:`Дом №${city.doors.findIndex(h=>h.id===id)+1}`};
 const focusDoor=()=>pick.type==="station"?city.dest[pick.id].id:pick.type==="house"?pick.id:null;
@@ -353,7 +360,9 @@ function updateControls(){
  if($("buyLine").innerHTML!==opts){const val=$("buyLine").value;$("buyLine").innerHTML=opts;if([...$("buyLine").options].some(o=>o.value===val))$("buyLine").value=val}
  $("buy").disabled=g.net.bank<75||g.net.fleet.length>=8;
  $("pause").textContent=paused?"▶ Пуск":"Ⅱ Пауза";$("speed").textContent=speed+"×";
- $("clock").textContent=tickTime(g.t);$("clock").title="Время с начала игры, часы:минуты";$("status").textContent=paused?"На паузе":"Диспетчерская · движение открыто";
+  $("clock").textContent=tickTime(g.t);$("clock").title="Городское время";$("status").textContent=paused?"На паузе":"Диспетчерская · движение открыто";
+  if(morningRun){$("minus").disabled=$("plus").disabled=$("buy").disabled=true}
+  document.querySelector('[data-tab="network"]').disabled=!!morningRun;
  $("cash").textContent=rub(g.net.bank);$("revenue").textContent=rub(g.rev);$("arrivals").textContent=g.total;$("saved").textContent=fmt(g.saved)+" мин";
 }
 const btn=(action,text,disabled=false)=>`<button data-act="${action}" ${disabled?"disabled":""}>${text}</button>`;
@@ -418,12 +427,17 @@ function display(force=false){
  drawActors();if(!force&&g.t-uiTick<3)return;uiTick=g.t;updateControls();panel();if($("journal").open)drawJournal();
  if(g.total>seenArr){for(const a of g.arr.slice(-(g.total-seenArr))){const b=counterpart(a);if(b?.paid===null&&a.paid!==null)say(`${a.name}: вместо ходьбы — трамвай. До цели ${fmt(a.time)} мин, выигрыш ${fmt(b.time-a.time)} мин.`)}seenArr=g.total}
 }
-function newGame(seed){
- city=makeCity(seed);focusOn("station",1);flowOn=false;$("flows").setAttribute("aria-pressed","false");speed=1;zoom=1;center=null;drawGround();g=createSim(city,network());for(let i=0;i<24;i++)stepSim(g);
- keepBefore();referenceName="исходная сеть с одним вагоном и билетом 30 ₽";actors.clear();svg("traffic","");svg("pedestrians","");carry=0;uiTick=-10;seenArr=0;paused=false;tool="";drawNetwork();display(true);
+function newGame(seed,variant=null){
+ if(!variant||variant==="base"){morningBase=null;morningRepeat=null}
+ morningRun=variant;
+ city=makeCity(seed);focusOn("station",1);flowOn=false;$("flows").setAttribute("aria-pressed","false");speed=1;zoom=1;center=null;drawGround();
+ const net=network();if(variant==="fare")net.fare=20;if(variant==="train"){net.fleet.push(0);net.bank-=75}
+ g=createSim(city,net);if(!variant)for(let i=0;i<24;i++)stepSim(g);
+ keepBefore();referenceName=`исходная сеть: ${g.cars.length} поезд., билет ${rub(net.fare)}`;actors.clear();svg("traffic","");svg("pedestrians","");carry=0;uiTick=-10;seenArr=0;paused=!!variant;tool="";drawNetwork();display(true);drawMorning();
  say("Нажмите на пешехода. Что ему поможет: дешевле билет или чаще трамвай?")
 }
 function act(a){
+ if(morningRun&&a==="expand"){say("Расширение доступно после контрольного часа.");return}
  if(/^p\d+$/.test(a)){focusOn("person",+a.slice(1))}
  else if(a.startsWith("filter:")){const key=a.slice(7);filters[key]=!filters[key];flowOn=true;$("flows").setAttribute("aria-pressed","true")}
  else if(a==="build"){tool="build";say("Выберите на карте перегон для строительства.")}
@@ -478,7 +492,20 @@ $("city").addEventListener("pointerdown",e=>{ignoreClick=false;if(zoom>1)drag={x
 $("city").addEventListener("pointermove",e=>{if(!drag||!e.buttons)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(!ignoreClick&&Math.hypot(dx,dy)<5)return;ignoreClick=true;
  $("city").setPointerCapture(e.pointerId);const ratio=$("city").viewBox.baseVal.width/$("city").getBoundingClientRect().width;center=[drag.c[0]-dx*ratio,drag.c[1]-dy*ratio];camera()});
 window.addEventListener("pointerup",()=>drag=null);
-function frame(stamp){if(previous&&!paused&&!document.hidden){carry+=Math.min(150,stamp-previous)*.008*speed;const n=Math.floor(carry);carry-=n;if(n){for(let i=0;i<n;i++){stepSim(g);stepSim(ref)}display();lastPaint=stamp}else if(stamp-lastPaint>=32){drawActors();lastPaint=stamp}}previous=stamp;requestAnimationFrame(frame)}
+function drawMorning(){
+ $("baseline").disabled=!!morningRun;$("untilEight").disabled=!morningRun;$("replay").disabled=!morningBase||!!morningRun;$("variant").disabled=$("replay").disabled;
+ $("morningStatus").textContent=`Сид ${city.seed}. `+(morningRun?`${Morning.variants[morningRun]}. Наблюдайте за движением или доиграйте час одной кнопкой.`:morningBase?"Час завершён. Можно повторить его или продолжить игру.":"Для сравнения сначала сыграйте контрольное утро.");
+ $("morningResults").tBodies[0].innerHTML=[morningBase,morningRepeat].filter(Boolean).map(r=>`<tr><td>${Morning.variants[r.variant]}</td><td>${r.walk}</td><td>${r.tram}</td><td>${rub(r.revenue)}</td><td>${r.mean===null?"—":fmt(r.mean)+" мин"}</td></tr>`).join("");
+ $("morningDelta").textContent=morningRepeat?`Разница с контролем: у рынка пешком ${sign(morningRepeat.walk-morningBase.walk)}, с трамваем ${sign(morningRepeat.tram-morningBase.tram)}; выручка сети ${sign(morningRepeat.revenue-morningBase.revenue)} ₽.`:"";
+}
+function advance(ticks){
+ for(let i=0;i<ticks;i++){stepSim(g);stepSim(ref);
+  if(morningRun&&g.t===Morning.end){const result=Morning.result(g,morningRun);if(morningRun==="base")morningBase=result;else morningRepeat=result;
+   morningRun=null;paused=true;carry=0;drawMorning();display(true);break}}
+}
+$("baseline").onclick=()=>newGame(city.seed,"base");$("replay").onclick=()=>{morningRepeat=null;newGame(city.seed,$("variant").value)};
+$("untilEight").onclick=()=>advance(Morning.end-g.t);
+function frame(stamp){if(previous&&!paused&&!document.hidden){carry+=Math.min(150,stamp-previous)*.008*speed;const n=Math.floor(carry);carry-=n;if(n){advance(n);display();lastPaint=stamp}else if(stamp-lastPaint>=32){drawActors();lastPaint=stamp}}previous=stamp;requestAnimationFrame(frame)}
 newGame("ТРАМ-17");requestAnimationFrame(frame);
 </script>
 </html>
