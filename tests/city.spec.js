@@ -30,3 +30,35 @@ test('поезд и обе крайние остановки на одном н�
   await page.locator('#pause').click();
   await expect(train).not.toHaveAttribute('transform',pose);
 });
+
+test('у рынка фильтры скрывают облачка, а не людей; выбор человека сбрасывает фильтры', async ({ page }) => {
+  await page.getByRole('button',{name:'Крытый рынок: показать прибытия'}).click();
+  await page.getByRole('button',{name:'Потоки',exact:true,timeout:1000}).click({timeout:1500});
+  const walking = page.getByRole('button',{name:'Целиком пешком',exact:true});
+  await walking.click();
+  const walker = page.locator('#pedestrians g[data-mode="walk"]:visible').first();
+  await expect(walker).toBeVisible();
+  await expect(walker.locator('.thought')).toBeHidden();
+  await walker.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#panel')).toContainText('При последнем выборе');
+  await page.getByRole('button',{name:'Крытый рынок: показать прибытия'}).click();
+  await expect(walking).toHaveAttribute('aria-pressed','true');
+});
+
+test('после высадки способ остаётся «с трамваем» до двери и фокус сохраняется после прибытия', async ({ page }) => {
+  await page.getByRole('button',{name:'Крытый рынок: показать прибытия'}).click();
+  await page.getByRole('button',{name:'Потоки',exact:true}).click({timeout:1500});
+  await page.getByRole('button',{name:'Целиком пешком',exact:true}).click();
+  const id = await page.evaluate(() => {
+    for(let i=0;i<600;i++){stepSim(g);stepSim(ref);const p=g.people.find(p=>p.dest===city.dest[1].id&&p.phase==='last');
+      if(p){display(true);return p.id}}
+  });
+  expect(id).toBeDefined();
+  const person = page.locator(`[data-pick="person:${id}"]`);
+  await expect(person.locator('.thought')).toBeVisible();
+  await person.focus(); await page.keyboard.press('Enter');
+  await page.evaluate(id=>{while(g.people[id].phase!=='done'){stepSim(g);stepSim(ref)}display(true)},id);
+  await expect(page.locator('#panel')).toContainText('Крытый рынок');
+  await expect(page.locator('#panel')).toContainText('Факт:');
+});
