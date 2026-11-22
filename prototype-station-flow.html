@@ -2,242 +2,415 @@
 <html lang="ru">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Квартал → Вокзал · Последний трамвай</title>
+<title>Последний трамвай · Диспетчерская</title>
 <style>
-  :root { color-scheme:light; --ink:#202e2a; --muted:#53655e; --green:#176451; --pale:#e4f0e8; --edge:#ccd5ca; --paper:#fffef8; }
-  * { box-sizing:border-box }
-  body { margin:0; background:#f4f4eb; color:var(--ink); font:16px/1.45 system-ui,sans-serif; }
-  main { max-width:1160px; padding:24px clamp(14px,3vw,38px) 48px; margin:auto }
-  header { border-top:4px solid var(--green); padding:16px 0 20px }
-  .mast,.row,.heading,.tabs,.stepper,.steps { display:flex; align-items:center; flex-wrap:wrap; gap:8px }
-  .mast,.heading { justify-content:space-between }
-  .kicker,.stamp { font:700 .73rem/1.4 ui-monospace,monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--green) }
-  .stamp { border:1px solid var(--edge); border-radius:3px; padding:3px 7px }
-  h1,h2,h3,p,dl,dd { margin:0 }
-  h1 { font-size:clamp(2rem,5vw,3.4rem); line-height:1.06; letter-spacing:-.055em; margin:13px 0 8px }
-  h2 { font-size:1.2rem; letter-spacing:-.025em } h3 { font-size:1rem }
-  .intro,.muted,small { color:var(--muted) } small { font-size:.84rem }
-  .layout { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(270px,1fr); gap:14px; align-items:start }
-  .panel { border:1px solid var(--edge); background:var(--paper); border-radius:9px; overflow:hidden }
-  .pad { padding:18px } .panelhead { padding:12px 18px; border-bottom:1px solid var(--edge) }
-  .schema { background-color:#f6f7ee; background-image:radial-gradient(#d7dece 1px,transparent 1px); background-size:14px 14px; padding:18px 22px }
-  .places { display:flex; justify-content:space-between; align-items:end; font-weight:750; font-size:.95rem }
-  .place { display:grid; gap:3px; justify-items:start }
-  .place:last-child { justify-items:end }
-  .building { width:58px; height:35px; color:var(--green) }
-  .paths { margin:7px 7px 4px; padding:4px 0 12px; border-inline:2px solid #aab8a9; }
-  .lane { position:relative; padding:5px 12px 7px }
-  .lane-label { color:var(--muted); font-size:.78rem; font-weight:700; padding-left:4px }
-  .track { display:flex; position:relative; align-items:center; justify-content:center; flex-wrap:wrap; gap:5px; min-height:36px }
-  .track::before { content:""; position:absolute; top:50%; left:-13px; right:-13px; border-top:2px dashed #829182 }
-  .rail .track::before { border-top:5px double var(--green) }
-  button { font:inherit; color:inherit; background:var(--paper); border:1px solid #9aaba0; border-radius:5px; cursor:pointer; padding:6px 10px }
-  button:hover:enabled { background:var(--pale) }
-  button:focus-visible,summary:focus-visible { outline:3px solid var(--green); outline-offset:2px }
-  button:disabled { opacity:.47; cursor:default }
-  .person { position:relative; display:inline-flex; align-items:center; gap:4px; border-radius:16px; padding:4px 8px; min-height:32px; font-weight:650; font-size:.85rem; }
-  .person[aria-pressed=true],button.active,button.primary { background:var(--green); color:white; border-color:var(--green) }
-  button.active:hover:enabled,button.primary:hover:enabled,.person[aria-pressed=true]:hover { background:#104c3f }
-  .icon { width:16px; height:16px; flex:none } .empty { position:relative; padding:0 6px; font-size:.84rem; color:var(--muted); background:#f6f7ee }
-  .map-note { font-size:.83rem; margin-top:6px; color:var(--muted) }
-  .controls { border-top:1px solid var(--edge); padding:12px 18px 16px; display:flex; gap:14px 30px; flex-wrap:wrap }
-  .control-title,dt { color:var(--muted); font-size:.82rem }
-  .stepper { gap:6px; margin-top:4px }
-  .stepper button { min-width:34px; min-height:34px; line-height:1; font-weight:700 }
-  output { min-width:42px; text-align:center; font-weight:750; font-variant-numeric:tabular-nums }
-  .stepper small { margin-left:3px }
-  .ticket { border-top:4px solid var(--green) }
-  .ticket h2 { font-size:1.65rem; margin:3px 0 0 }
-  .badge { background:var(--pale); color:var(--green); border-radius:4px; font-size:.8rem; font-weight:700; padding:3px 8px }
-  .times,.numbers { display:grid; gap:10px; margin:14px 0 }
-  .times { grid-template-columns:1fr 1fr; border-top:1px dashed var(--edge); padding-top:12px }
-  .times dd { font-weight:750; font-size:1.3rem }
-  .why { border-left:3px solid var(--green); margin-top:13px; padding:1px 0 1px 12px }
-  .why p { margin-top:4px; font-size:.94rem }
-  .results,.guide { margin-top:14px }
-  .numbers { grid-template-columns:repeat(3,1fr); margin:14px 0 10px; }
-  .numbers>div+div { border-left:1px solid var(--edge); padding-left:14px }
-  .numbers dd { font-size:clamp(1.2rem,3vw,1.85rem); font-weight:750; font-variant-numeric:tabular-nums }
-  .change { background:var(--pale); padding:12px 14px; border-radius:5px; margin:12px 0 0 }
-  .change p+p { margin-top:4px }
-  details { margin-top:12px } summary { cursor:pointer; color:var(--green); font-weight:650 }
-  .scroll { overflow-x:auto } table { border-collapse:collapse; width:100%; margin-top:8px; font-size:.9rem }
-  td,th { text-align:left; border-bottom:1px solid var(--edge); padding:5px 8px 5px 0 }
-  .tabs { gap:4px; margin:12px 0 8px }
-  .steps { margin-top:10px } .steps button,.tabs button { font-size:.9rem }
-  .guide p { color:var(--muted) } .reset { font-size:.83rem }
-  footer { margin-top:15px; color:var(--muted); font-size:.8rem }
-  @media(max-width:820px) { .layout { grid-template-columns:1fr } .schema { padding:15px 12px } .numbers { gap:5px } }
-  @media(max-width:470px) { .pad { padding:13px } .numbers>div+div { padding-left:7px } dt { font-size:.78rem } .lane { padding-inline:6px } .track::before { left:-7px;right:-7px } }
+:root{color-scheme:dark;--ink:#f6edda;--sub:#b2bdb6;--line:#41534e;--panel:#22332f;--yellow:#ffcf69;--blue:#79d2eb}
+*{box-sizing:border-box}body{margin:0;background:#14231f;color:var(--ink);font:15px/1.4 system-ui,sans-serif}
+main{max-width:1670px;margin:auto;padding:12px clamp(8px,2vw,28px) 22px}
+header,.bar,.row,.spread,.tabs,.meters{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.spread,header{justify-content:space-between}header{padding:2px 0 12px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px}.mark{background:var(--yellow);color:#243832;border-radius:4px;font:bold 22px/1 monospace;padding:8px}
+h1,h2,h3,p{margin:0}h1{font-size:clamp(17px,2.2vw,27px);letter-spacing:-.04em}.eyebrow{font:700 10px/1.5 ui-monospace,monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--yellow)}
+h2{font-size:21px;line-height:1.18}h3{font-size:15px;margin:9px 0 4px}small,.sub{color:var(--sub);font-size:13px}
+button,select,input{font:inherit;background:#2c4039;color:var(--ink);border:1px solid #61736a;border-radius:5px;padding:6px 10px}
+button{cursor:pointer}button:hover:enabled,button[aria-pressed=true]{background:#435b50;border-color:#a6bfac}button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+button:disabled{opacity:.45;cursor:default}.hot,button.hot:hover:enabled{background:var(--yellow);color:#222e25;border-color:var(--yellow);font-weight:750}
+.time{font:700 23px/1.1 ui-monospace,monospace;font-variant-numeric:tabular-nums}.bar{padding:10px 0;gap:10px 18px;justify-content:space-between}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(245px,300px);gap:10px;align-items:start}
+.board,aside,.drawer{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.maphead,.mapfoot,.pad{padding:10px 13px}.maphead,.mapfoot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 12px;font-size:13px}
+.viewport{overflow-x:auto;position:relative;background:#a9bb9d;line-height:0}
+#city{width:100%;min-width:540px;height:auto;display:block;user-select:none;touch-action:manipulation}
+#city text{font-family:system-ui,sans-serif}.tag{paint-order:stroke;stroke:#f5efd6;stroke-width:3px;stroke-linejoin:round;fill:#293d37;font-size:9px;font-weight:750}
+[data-pick],[data-stop],[data-edge]{cursor:pointer}svg g[tabindex]:focus-visible{outline:none;filter:drop-shadow(0 0 3px #fff)}
+.mapfoot{background:#1c2d28}.key{white-space:nowrap}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#ffc157;border:1px solid white;margin-right:4px}.dot.wait{background:#74d4e2}.dot.car{width:17px;border-radius:2px;background:#b65037}
+.hud{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}.hud div{padding:8px 12px}.hud div+div{border-left:1px solid var(--line)}.hud b{display:block;font:700 19px/1.3 ui-monospace,monospace}
+.tabs{gap:0;border-bottom:1px solid var(--line)}.tabs button{flex:1;background:transparent;border:0;border-radius:0;padding:9px 3px;font-size:13px}.tabs button.on{color:var(--yellow);box-shadow:inset 0 -2px var(--yellow)}
+.panel h2{margin:4px 0 8px}.panel p+p{margin-top:6px}.cost{font:700 18px/1.4 ui-monospace,monospace;min-width:53px;text-align:center}.control{border-top:1px solid var(--line);padding:9px 0}.controls{padding-top:0}
+.note{background:#293f37;padding:9px 10px;border-left:3px solid var(--yellow);margin:9px 0}.panel ul{padding-left:18px;margin:6px 0}
+.meter{height:5px;background:#42544b;border-radius:4px;overflow:hidden;margin:4px 0}.meter i{display:block;height:100%;background:var(--yellow)}
+.drawer{margin-top:10px}.drawer summary{padding:9px 13px;cursor:pointer;font-weight:650}.drawer section{padding:0 13px 13px}.log{font-size:13px;max-height:165px;overflow:auto}.log div{border-top:1px solid var(--line);padding:4px 0}
+.msg{color:var(--yellow);font-size:13px;min-height:1.45em}.stack{display:grid;gap:7px}.tight{padding:3px 7px;font-size:13px}
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;max-width:min(450px,92vw)}dialog::backdrop{background:#10231dc9}
+@media(max-width:1020px){.layout{grid-template-columns:minmax(0,1fr) 248px}.hud div{padding:7px}.pad{padding:10px}}
+.camera{display:inline-flex;gap:3px}.camera button{padding:1px 8px;font-weight:700}.viewport{touch-action:pan-y}
+@media(max-width:1100px){.layout{grid-template-columns:1fr}aside{display:grid;grid-template-columns:1.25fr 1fr}.tabs{grid-column:1/-1}.controls{border-left:1px solid var(--line);padding-top:8px}#city{min-width:540px}}
+@media(max-width:460px){aside{display:block}.controls{border-left:none}.hud{grid-template-columns:repeat(2,1fr)}.hud div{border:1px solid var(--line)}.time{font-size:18px}.bar{gap:5px}.brand{gap:5px}}
 </style>
-<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute">
-  <defs>
-    <symbol id="walk" viewBox="0 0 20 20"><circle cx="12" cy="3.4" r="2" fill="currentColor"/><path d="m6 10 3-4 3 1 1.3 4 3 1M10 8l-1 5-4 5m4-6 3 2 1 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="tram" viewBox="0 0 20 20"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="4" y="4.5" width="12" height="11" rx="2"/><path d="M4 10h12m-6-5v5m-4 8 2-3m6 3-2-3M8 2h5l-3 2.5"/></g><circle cx="7" cy="13" r="1" fill="currentColor"/><circle cx="13" cy="13" r="1" fill="currentColor"/></symbol>
-    <symbol id="homes" viewBox="0 0 60 36"><g fill="#e4f0e8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M1 34h58M5 34V13l10-8 10 8v21m-1-14h10v14m-2 0V6h20v28"/><path d="M10 16h4m4 0h3m-11 6h4m4 0h3m16-11h3m4 0h3m-10 6h3m4 0h3m-10 6h3m4 0h3M13 34v-6h6v6"/></g></symbol>
-    <symbol id="station" viewBox="0 0 60 36"><g fill="#e4f0e8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M1 34h58M4 34V19h12v-5L30 3l14 11v5h12v15M16 19v15m28-15v15M24 34v-9h12v9M8 23v5m4-5v5m37-5v5m4-5v5"/><circle cx="30" cy="15" r="5"/><path d="M30 11v4l3 1"/></g></symbol>
-  </defs>
-</svg>
 <main>
-  <header>
-    <div class="mast"><span class="kicker">Последний трамвай / опыт № 01</span><span class="stamp">Прототип</span></div>
-    <h1>Квартал → Вокзал</h1>
-    <p class="intro">Почему одни жители идут пешком, а другие садятся в трамвай? Выберите человека, затем измените цену билета или добавьте вагон. Каждый раз сравнивается одно и то же утро.</p>
-  </header>
-  <div class="layout">
-    <section class="panel" aria-labelledby="map-title">
-      <div class="panelhead heading"><h2 id="map-title">Схема района</h2><span class="kicker">Линия 01 · утро</span></div>
-      <div class="schema">
-        <div class="places"><div class="place"><svg class="building" aria-hidden="true"><use href="#homes"/></svg>Жилой квартал</div><div class="place"><svg class="building" aria-hidden="true"><use href="#station"/></svg>Вокзал</div></div>
-        <div class="paths">
-          <div class="lane"><div class="lane-label" id="walk-label"></div><div class="track" id="walkers"></div></div>
-          <div class="lane rail"><div class="lane-label" id="rail-label"></div><div class="track" id="riders"></div></div>
-        </div>
-        <p class="map-note">Нажмите на имя на схеме, чтобы разобрать дорогу жителя.</p>
-      </div>
-      <div class="controls">
-        <div><div class="control-title">Тариф за поездку</div><div class="stepper">
-          <button id="cheaper" aria-label="Снизить тариф на 10 рублей">−</button><output id="fare"></output><button id="dearer" aria-label="Повысить тариф на 10 рублей">+</button>
-        </div></div>
-        <div><div class="control-title">Вагоны на линии</div><div class="stepper">
-          <button id="fewer" aria-label="Убрать вагон">−</button><output id="cars"></output><button id="more" aria-label="Добавить вагон">+</button><small id="wait"></small>
-        </div></div>
-      </div>
-    </section>
-    <aside class="panel pad ticket" id="ticket" aria-label="Карточка выбранного жителя" aria-live="polite"></aside>
-  </div>
-  <section class="panel pad results" aria-labelledby="result-title">
-    <div class="heading"><div><span class="kicker">Прибытия за утро</span><h2 id="result-title">На вокзале</h2></div><button class="reset" id="reset">Вернуть исходное утро</button></div>
-    <dl class="numbers">
-      <div><dt>Приехали трамваем</dt><dd id="arrived"></dd></div>
-      <div><dt>Сэкономлено против ходьбы</dt><dd id="saved"></dd></div>
-      <div><dt>Выручка за билеты</dt><dd id="money"></dd></div>
-    </dl>
-    <div class="change" id="change" aria-live="polite"></div>
-    <details><summary>Дорога каждого: до и после изменения</summary><div class="scroll"><table>
-      <thead><tr><th>Житель</th><th>До</th><th>Сейчас</th><th>Выигрыш за шаг</th></tr></thead><tbody id="report"></tbody>
-    </table></div></details>
-  </section>
-  <section class="panel pad guide" aria-labelledby="guide-title">
-    <div class="heading"><h2 id="guide-title">Попробуйте по шагам</h2><small>Каждый сценарий начинается с исходного утра.</small></div>
-    <div class="tabs" role="tablist" aria-label="Сценарии">
-      <button role="tab" id="tab-price" aria-controls="guide-body">Цена билета</button>
-      <button role="tab" id="tab-service" aria-controls="guide-body">Частота движения</button>
-      <button role="tab" id="tab-shortcut" aria-controls="guide-body">Пешком быстрее</button>
-    </div>
-    <div id="guide-body" role="tabpanel"><p id="guide-note"></p><div class="steps" id="steps"></div><small id="progress" aria-live="polite"></small></div>
-  </section>
-  <footer>Пробная модель: у каждого жителя своя оценка минуты. Интервал равен 12 минутам, делённым на число вагонов; ожидание — половина интервала. Мест хватает всем. Выручка считается до расходов.</footer>
+<header><div class="brand"><span class="mark" aria-hidden="true">Т</span><div><div class="eyebrow">Служба движения · игровой прототип</div><h1>Последний трамвай</h1></div></div>
+<div class="row"><span class="time" id="clock"></span><button id="pause">Ⅱ Пауза</button><button id="speed" title="Скорость симуляции">1×</button><button id="setup" aria-label="Сид и новая партия">☰</button></div></header>
+<div class="bar"><div class="row"><strong id="day"></strong><button hidden class="hot tight" id="nextMorning">▶ Следующее утро</button></div><span class="msg" id="message" role="status"></span></div>
+<div class="layout"><section class="board"><div class="maphead"><strong id="area"></strong><span id="instruction"></span><div class="camera"><button id="zoomOut" aria-label="Отдалить карту">−</button><button id="fit" title="Показать весь район">Обзор</button><button id="zoomIn" aria-label="Приблизить карту">+</button></div></div>
+<div class="viewport"><svg id="city" viewBox="94 112 730 355" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Живая карта района">
+<defs>
+ <pattern id="grass" width="15" height="17" patternUnits="userSpaceOnUse"><rect width="15" height="17" fill="#acbe9c"/><path d="M2 8l2-1m6 8h2" stroke="#97af8c" stroke-width="1"/></pattern>
+ <pattern id="water" width="24" height="16" patternUnits="userSpaceOnUse"><rect width="24" height="16" fill="#83afab"/><path d="M2 8q5-3 10 0m4 5h5" fill="none" stroke="#adc9bd"/></pattern>
+ <symbol id="tree" viewBox="0 0 21 26"><ellipse cx="12" cy="21" rx="8" ry="3" fill="#657a61" opacity=".45"/><path d="M10 12v11" stroke="#655746" stroke-width="2"/><path d="M2 13q-1-6 4-7 1-7 8-4 4 1 3 5 6 6 0 10-9 5-15-4" fill="#638765" stroke="#506e58"/><path d="M5 10q1-6 5-6" fill="none" stroke="#98b285" stroke-width="2"/></symbol>
+ <symbol id="pine" viewBox="0 0 18 26"><ellipse cx="10" cy="22" rx="7" ry="2.5" fill="#62705d" opacity=".5"/><path d="M9 15v9" stroke="#68533f" stroke-width="2"/><path d="M9 1 2 13h3l-4 7h16l-4-7h3Z" fill="#527c68" stroke="#486b59"/></symbol>
+ <symbol id="bench" viewBox="0 0 14 6"><path d="M2 2v4m10-4v4" stroke="#545c4e"/><path d="M1 1h12m-12 2h12" stroke="#956e4b" stroke-width="1.4"/></symbol>
+ <mask id="boundary"><rect width="940" height="590" fill="white"/><rect x="97" y="113" width="723" height="351" rx="18" fill="black"/></mask>
+</defs>
+<g id="ground"></g><g id="railLayer"></g><g id="architecture"></g><g id="shade" pointer-events="none"></g><g id="trace" pointer-events="none"></g><g id="stops"></g><g id="buildLayer"></g><g id="traffic"></g><g id="pedestrians"></g>
+</svg></div>
+<div class="mapfoot"><span><span class="key"><i class="dot"></i>пешеход</span>　<span class="key"><i class="dot wait"></i>к трамваю</span>　<span class="key"><i class="dot car"></i>вагон</span></span><button class="tight" id="order">Заказ города →</button></div>
+<div class="hud"><div><small>Касса</small><b id="cash"></b></div><div><small>Билеты за утро</small><b id="revenue"></b></div><div><small>Прибыли</small><b id="arrivals"></b></div><div><small>Выиграно у ходьбы</small><b id="saved"></b></div></div></section>
+<aside><nav class="tabs" aria-label="Пульт"><button data-tab="watch">Наблюдение</button><button data-tab="network">Сеть</button><button data-tab="goal">Задание</button></nav>
+<div class="pad panel" id="panel"></div>
+<div class="pad controls"><div class="control"><div class="spread"><b>Билет</b><div class="row"><button id="minus" aria-label="Снизить тариф">−</button><output class="cost" id="fare"></output><button id="plus" aria-label="Повысить тариф">+</button></div></div></div>
+<div class="control"><div class="spread"><b>Выпуск вагонов</b><select id="buyLine" aria-label="Линия для нового вагона"></select></div><button style="margin:7px 0 4px;width:100%" class="hot" id="buy">+ Вагон · 75 ₽</button><small>Новый вагон выходит с конечной и сокращает ожидание. Пересадка бесплатна.</small></div></div></aside>
+</div>
+<details class="drawer" id="journal"><summary>Журнал диспетчера · кто пересел и сколько выиграл</summary><section><p class="sub" id="compareLabel"></p><div id="comparison" class="note"></div><div id="log" class="log"></div></section></details>
 </main>
+<dialog id="settings"><h2>Новая партия</h2><p>Один сид повторяет застройку, дома и утренний спрос. Новая партия сбросит кассу и сеть.</p><p style="margin:10px 0"><label>Сид города <input id="seedField" size="13" maxlength="18"></label></p><div class="row"><button id="start" class="hot">Начать с этим сидом</button><button id="random">Случайный сид</button><button id="close">Назад</button></div></dialog>
 <script>
-// Модель одного утра. Время — в минутах, цена билета — в рублях.
-const morning = (() => {
-  const initial = {fare:30, cars:1};
-  // Имя, весь путь пешком, подход к остановке, цена сэкономленной минуты.
-  const residents = [
-    ["Нина",19,3,10], ["Олег",18,3,8], ["Илья",21,2,4], ["Ася",14,3,6],
-    ["Мира",12,5,6], ["Ян",17,4,5], ["Лев",26,2,5], ["Вера",24,2,5]
-  ];
-  function run({fare,cars}) {
-    const wait = 6/cars, ride = 6, last = 2;
-    const people = residents.map(([name,walk,first,value]) => {
-      const tram = first+wait+ride+last, gain = walk-tram, worth = gain*value;
-      const rides = gain>0 && worth>=fare;
-      return {name,walk,first,value,tram,gain,worth,rides,time:rides?tram:walk};
-    });
-    const count = people.filter(p=>p.rides).length;
-    return {fare,cars,wait,ride,last,people,count,money:count*fare,
-      saved:people.reduce((sum,p)=>sum+p.walk-p.time,0)};
+"use strict";
+// География и расписание: одна единица времени = 1/10 игровой минуты.
+const X=[55,178,314,444,585,737,876],Y=[64,185,302,420,538],WALK=3.35,TRAIN=12,DWELL=6;
+const ST=[
+ ["Дворы",1,2],["Сквер",3,2],["Вокзальная",5,2],["Рынок",3,1],["Школа",1,1],["Парк",1,3],
+ ["Мастерские",3,3],["Садовая",5,3],["Почта",5,1],["Сосны",0,1],["Пристань",6,2],["Озёрная",3,4],["Северная",3,0]
+];
+const LINKS=[[0,1],[1,2],[0,4],[4,3],[3,1],[3,8],[8,2],[0,5],[5,6],[6,1],[6,7],[7,2],[9,4],[2,10],[6,11],[3,12]];
+const NAMES="Нина Олег Илья Ася Мира Ян Лев Вера Лида Антон Зоя Глеб Майя Игорь Соня Тимур Алла Юрий Рита Фёдор Лена Марк Тася Иван".split(" ");
+const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=n=>Number((n/10).toFixed(1)).toLocaleString("ru"), rub=n=>n+" ₽", sign=n=>(n>0?"+":"")+n, tickTime=t=>{const m=420+Math.floor(t/10);return `${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`};
+function rng(seed){let h=2166136261;for(const c of seed)h=Math.imul(h^c.charCodeAt(0),16777619);return()=>{h=(Math.imul(1664525,h)+1013904223)>>>0;return h/4294967296}}
+const node=(x,y)=>y*X.length+x,stopNode=i=>node(ST[i][1],ST[i][2]),stopPoint=i=>[X[ST[i][1]],Y[ST[i][2]]];
+function shortest(adj,a,b){const ds=new Map([[a,0]]),prev=new Map(),todo=new Set([a]);while(todo.size){let u;for(const v of todo)if(u===undefined||ds.get(v)<ds.get(u))u=v;todo.delete(u);if(u===b)break;
+ for(const [v,w] of adj[u]||[])if(ds.get(u)+w<(ds.get(v)??Infinity)){ds.set(v,ds.get(u)+w);prev.set(v,u);todo.add(v)}}
+ if(!ds.has(b))return null;let p=[b];while(p[0]!==a)p.unshift(prev.get(p[0]));return {path:p,d:ds.get(b)}}
+function makeCity(seed){
+ const roll=rng(seed),pts=[],adj=[],doors=[];function add(x,y){adj.push([]);return pts.push([x,y])-1}
+ function link(a,b){const w=Math.hypot(pts[a][0]-pts[b][0],pts[a][1]-pts[b][1]);adj[a].push([b,w]);adj[b].push([a,w])}
+ for(const y of Y)for(const x of X)add(x-6,y-8);
+ for(let j=0;j<Y.length;j++)for(let i=0;i<X.length;i++){
+  if(j)link(node(i,j-1),node(i,j));
+  if(i===X.length-1)continue;
+  const x=Math.round(X[i]+(X[i+1]-X[i])*(.40+.2*roll())),street=add(x,Y[j]-8),door=add(x,Y[j]-18);
+  link(node(i,j),street);link(street,node(i+1,j));link(street,door);doors.push({i,j,id:door,x,y:Y[j]-18,style:roll()});
+ }
+ const home=(i,j)=>doors.find(h=>h.i===i&&h.j===j);
+ const dest=[home(5,2),home(3,1),home(3,4)];
+ let origins=[[1,2],[1,1],[2,2],[0,2],[2,1],[3,2],[1,3],[2,3],[4,2],[1,2],[2,2],[0,2]];
+ const people=NAMES.map((name,i)=>{
+  const outer=i>=20,o=outer?[[0,1],[5,4],[2,4],[3,0]][i-20]:origins[(i+(seed==="ТРАМ-17"?0:Math.floor(roll()*origins.length)))%origins.length];
+  const target=outer&&i%2?2: i>4&&i%5===2?1:0;
+  return {id:i,name,home:home(...o).id,dest:dest[target].id,target,value:[7,5,9,6,5,8][i%6],start:i<6?i*3:26+(i-6)*14+Math.floor(roll()*6),outer};
+ });
+ const cache=new Map();function path(a,b){const k=a+":"+b;if(!cache.has(k))cache.set(k,shortest(adj,a,b));return cache.get(k)}
+ return {seed,pts,doors,dest,people,path};
+}
+function network(){return {fare:30,bank:105,edges:[0,1],lines:[[0,1,2],[]],fleet:[0],ring:false,permit:false}}
+function railPath(net,a,b){const adj=ST.map(()=>[]);for(const e of net.edges){const [u,v]=LINKS[e],[x,y]=stopPoint(u),[xx,yy]=stopPoint(v),d=Math.hypot(x-xx,y-yy);adj[u].push([v,d]);adj[v].push([u,d])}return shortest(adj,a,b)}
+function schedule(net,seq){if(seq.length<2)return null;let t=0;const calls=[],segments=[],order=[...seq,...seq.slice(1,-1).reverse()];
+ for(let i=0;i<order.length;i++){const s=order[i],next=order[(i+1)%order.length],r=railPath(net,s,next);if(!r)return null;
+  calls.push({s,in:t,out:t+DWELL});segments.push({a:s,b:s,from:t,to:t+DWELL});t+=DWELL;
+  for(let k=1;k<r.path.length;k++){const a=r.path[k-1],b=r.path[k],[x,y]=stopPoint(a),[xx,yy]=stopPoint(b),end=t+Math.ceil(Math.hypot(xx-x,yy-y)/TRAIN);
+  segments.push({a,b,from:t,to:end});t=end}
+ }return {calls,segments,period:t}}
+function createSim(city,net,day=1){
+ const g={city,net,day,t:0,rev:0,saved:0,arr:[],logs:[],events:[],cars:[],lines:net.lines.map(l=>schedule(net,l)),done:false};
+ g.people=city.people.filter(d=>!d.outer||net.ring).map(d=>({...d,phase:"home",at:d.home,paid:null,legs:[],leg:0,rethink:false}));
+ net.fleet.forEach((l,i)=>{const n=net.fleet.filter(x=>x===l).length,prior=net.fleet.slice(0,i).filter(x=>x===l).length;g.cars.push({id:i,l,offset:Math.floor(g.lines[l].period*(prior+.55)/n),since:0})});return g
+}
+const mod=(a,b)=>((a%b)+b)%b;
+function carPos(g,c,sub=0){const line=g.lines[c.l],phase=mod(g.t+sub-c.since+c.offset,line.period),s=line.segments.find(k=>phase<k.to),[x,y]=stopPoint(s.a),[xx,yy]=stopPoint(s.b),r=(phase-s.from)/(s.to-s.from);
+ return {x:x+(xx-x)*r,y:y+(yy-y)*r,angle:s.a===s.b?0:Math.atan2(yy-y,xx-x)*180/Math.PI,stop:s.a===s.b?s.a:null}}
+function foot(city,a,b){const p=city.path(a,b);return {kind:"foot",path:p.path,d:p.d,dt:p.path.slice(1).reduce((n,v,i)=>{const [x,y]=city.pts[v],[xx,yy]=city.pts[p.path[i]];return n+Math.ceil(Math.hypot(x-xx,y-yy)/WALK)},0)}}
+function rides(g,l,from,ready){
+ const line=g.lines[l],best=new Map();if(!line)return [];
+ for(const car of g.cars.filter(c=>c.l===l))for(const [i,call] of line.calls.entries()){if(call.s!==from)continue;
+  const epoch=car.since-car.offset,cycle=Math.ceil((ready-(epoch+call.out))/line.period),base=epoch+cycle*line.period,depart=base+call.out;
+  for(let k=1;k<line.calls.length;k++){const j=(i+k)%line.calls.length,at=line.calls[j],end=base+at.in+(j<=i?line.period:0);
+   if(at.s===from||best.get(at.s)?.end<=end)continue;
+   best.set(at.s,{kind:"ride",l,car:car.id,from,to:at.s,board:Math.max(ready,base+call.in),depart,end});
   }
-  function compare(before,after) {
-    return after.people.map((p,i)=>({p,was:before.people[i],minutes:before.people[i].time-p.time}));
+ }return [...best.values()]
+}
+function choose(g,p){
+ const city=g.city,t=g.t,walk=foot(city,p.at,p.dest);let best=null;
+ function finish(legs,r,xf){const tail=foot(city,stopNode(r.to),p.dest),end=r.end+tail.dt;
+  if(!best||end<best.end)best={legs:[...legs,r,tail],end,xf};}
+ for(let l=0;l<2;l++)for(const s of g.net.lines[l]){
+  const first=foot(city,p.at,stopNode(s));for(const r of rides(g,l,s,t+first.dt)){
+   finish([first],r,false);
+   const other=1-l;if(!g.net.lines[other].includes(r.to))continue;
+   for(const r2 of rides(g,other,r.to,r.end+1))finish([first,r],r2,true);
   }
-  return {initial,run,compare};
-})();
+ }
+ const gain=best?t+walk.dt-best.end:0,worth=Math.max(0,gain*p.value/10),use=best&&gain>0&&worth+1e-8>=g.net.fare;
+ const legs=use?best.legs:[walk],r=best?.legs.find(l=>l.kind==="ride");
+ p.decision={walk:walk.dt,tram:best?best.end-t:null,gain,worth,fare:g.net.fare,use:!!use,wait:r?r.depart-(t+best.legs[0].dt):0,xf:best?.xf};
+ p.legs=legs;p.leg=0;p.rethink=false;beginLeg(g,p);if(p.phase==="wait")boardIfReady(g,p);
+}
+function boardIfReady(g,p){const r=p.legs[p.leg];if(g.t<r.board||g.t>r.depart)return;
+ if(p.paid===null){p.paid=p.decision.fare;g.rev+=p.paid;g.net.bank+=p.paid}p.phase="ride"}
+function beginLeg(g,p){
+ while(p.leg<p.legs.length){const s=p.legs[p.leg];if(s.kind==="ride"){p.phase="wait";return}
+  if(s.path.length>1){p.phase=p.paid!==null?"last":p.decision.use?"approach":"walk";p.seg=0;p.segStart=g.t;return}p.leg++}
+ p.phase="done";p.end=g.t;p.time=g.t-p.start;p.gain=foot(g.city,p.home,p.dest).dt-p.time;g.arr.push(p);g.saved+=p.gain;
+}
+function motion(g,p,sub=0){const s=p.legs[p.leg],a=g.city.pts[s.path[p.seg]],b=g.city.pts[s.path[p.seg+1]],dt=Math.ceil(Math.hypot(a[0]-b[0],a[1]-b[1])/WALK);return {a,b,dt,r:Math.min(1,(g.t+sub-p.segStart)/dt)}}
+function stepSim(g){if(g.done)return;g.t++;
+ for(const p of g.people){
+  if(p.phase==="done")continue;
+  if(p.phase==="home"){if(g.t<Math.max(1,p.start))continue;p.start=g.t;choose(g,p)}
+  if(["walk","approach","last"].includes(p.phase)){const m=motion(g,p);if(m.r>=1){p.at=p.legs[p.leg].path[++p.seg];p.segStart=g.t;
+   if(p.rethink&&p.at!==p.dest){choose(g,p)}else if(p.seg===p.legs[p.leg].path.length-1){p.leg++;beginLeg(g,p)}
+  }}
+  if(p.phase==="wait")boardIfReady(g,p);
+  if(p.phase==="ride"){const r=p.legs[p.leg];if(g.t>=r.end){p.at=stopNode(r.to);p.leg++;beginLeg(g,p)}}
+ }
+ if(g.rev>=180||g.saved>=450)g.net.permit=true;
+ g.done=g.arr.length===g.people.length;
+}
+function reconsider(g){for(const p of g.people)if(p.paid===null){if(p.phase==="wait")choose(g,p);else if(["walk","approach"].includes(p.phase))p.rethink=true}}
+function addCar(g,l){if(!g.lines[l]||g.net.bank<75||g.net.fleet.length>=8)return false;
+ const line=g.lines[l],active=g.cars.filter(c=>c.l===l),phases=active.map(c=>mod(g.t-c.since+c.offset,line.period)),terminals=[line.calls[0],line.calls[g.net.lines[l].length-1]];
+ const gap=x=>phases.length?Math.min(...phases.map(v=>Math.min(mod(x-v,line.period),mod(v-x,line.period)))):line.period;
+ const offset=terminals.sort((a,b)=>gap(b.in)-gap(a.in))[0].in;g.net.bank-=75;g.cars.push({id:g.net.fleet.length,l,offset,since:g.t});g.net.fleet.push(l);reconsider(g);return true}
+function baseline(city,ring){const net=network();net.ring=ring;const g=createSim(city,net);while(!g.done&&g.t<1600)stepSim(g);return g}
 </script>
 <script>
-const $ = id => document.getElementById(id);
-const put = (id,text) => { $(id).textContent=text };
-const signed = n => n>0 ? `+${n}` : n<0 ? `−${-n}` : "0";
-const mode = p => p.rides?"трамвай":"пешком";
-let now, before, selected, lastAction, guide, step;
-const guides = {
-  price:{note:"Нина могла бы приехать быстрее, но идёт пешком. Проверьте, сколько стоит для неё выигрыш и что останется от выручки при бесплатном проезде.",
-    steps:[["Выбрать Нину","Нина"],["Билет за 20 ₽",{fare:20}],["Бесплатный проезд",{fare:0}]]},
-  service:{note:"Олегу невыгодна поездка при долгом ожидании. Оставьте цену прежней и проверьте, поможет ли второй вагон тем, кто шёл пешком, и тем, кто уже ездил.",
-    steps:[["Выбрать Олега","Олег"],["Добавить вагон",{cars:2}],["Посмотреть путь Льва","Лев"]]},
-  shortcut:{note:"От дома Миры до вокзала есть короткий пеший путь. Можно ли убедить её сесть в трамвай ценой или частотой движения?",
-    steps:[["Выбрать Миру","Мира"],["Бесплатный проезд",{fare:0}],["Добавить вагон",{cars:2}]]}
-};
-function reset(key="price") {
-  now=morning.run(morning.initial); before=now; selected="Нина"; lastAction="";
-  guide=key; step=0; draw();
+// Вид города. Все координаты людей и вагонов берутся из текущего состояния рейса.
+const COLORS=["#b34231","#345f8a"],TARGET=["Вокзал","Крытый рынок","Лодочная станция"];
+const phaseName={home:"дома",walk:"идёт пешком",approach:"идёт к остановке",wait:"ждёт вагон",ride:"едет в трамвае",last:"идёт от остановки",done:"на месте"};
+let city,g,ref,tab="watch",pick={type:"station",id:0},tool="",draft=[],editLine=0,queued=null,paused=false,speed=1,carry=0,previous=0,uiTick=-10,modeMsg="",seenArr=0,ended=false;
+let referenceName="",zoom=1,center=null,drag=null,ignoreClick=false,lastPaint=0;
+const svg=(id,html)=>{$(id).innerHTML=html},pt=a=>a.join(","),routePoints=ids=>ids.map(i=>pt(stopPoint(i))).join(" ");
+function house(h){
+ const x=h.x,y=h.y,w=31+Math.round(h.style*22),hei=12+Math.round(h.style*7),col=["#ce9e78","#bd997d","#b3a68a","#9fae9e"][Math.floor(h.style*4)],left=x-w/2;
+ if(h.style>.69){
+  const stories=h.style>.88?3:2,hh=stories*6+5;
+  return `<g transform="translate(${left} ${y})"><path d="M0 0l6 3h${w}v-${hh}l-6-4" fill="#566958" opacity=".28"/>
+  <rect y="${-hh}" width="${w}" height="${hh}" fill="${h.style>.84?"#d0ab89":"#c6c3aa"}" stroke="#827e6c" stroke-width=".8"/>
+  <path d="M-1 ${-hh}l5-6h${w}l-4 6z" fill="#88958b" stroke="#6a786f" stroke-width=".8"/><path d="M${w} ${-hh}l4-6v${hh}l-4 6z" fill="#9b9f8d"/>
+  ${Array.from({length:stories},(_,s)=>Array.from({length:Math.floor(w/8)},(_,i)=>`<rect x="${3+i*8}" y="${-hh+3+s*6}" width="4" height="3" fill="#67807e"/><path d="M${3+i*8} ${-hh+6+s*6}h5" stroke="#f0dec0"/>`).join("")).join("")}
+  <rect x="${w/2-2}" y="-5" width="5" height="5" fill="#685f51"/><path d="M${w/2} 0v10" stroke="#e7dbbf" stroke-width="5"/></g>`}
+ let wins="";for(let i=left+4;i<x+w/2-3;i+=8)wins+=`<rect x="${i}" y="${y-9}" width="4" height="5" fill="#557272"/><path d="M${i},${y-6}h4" stroke="#d5d6b8"/>`;
+ return `<g><rect x="${left+3}" y="${y-hei-10}" width="${w+2}" height="${hei+13}" fill="#596753" opacity=".27"/><rect x="${left}" y="${y-hei}" width="${w}" height="${hei}" rx="1" fill="${col}" stroke="#776e58" stroke-width=".8"/>
+ <path d="M${left-2} ${y-hei}l5 -11h${w-6}l5 11z" fill="${h.style>.5?"#8a6960":"#728582"}" stroke="#656d61" stroke-width=".8"/><path d="M${left+4} ${y-hei-9}h${w-9}" stroke="#c9b49b"/>
+ <rect x="${left+8}" y="${y-hei-14}" width="4" height="7" fill="#a58874"/>${wins}<rect x="${x-2}" y="${y-6}" width="5" height="6" fill="#685f4b"/><path d="M${x} ${y}v10" stroke="#eadfbd" stroke-width="5"/></g>`;
 }
-function apply(settings) {
-  before=now;
-  now=morning.run({...now,...settings});
-  lastAction=now.fare!==before.fare?`Тариф: ${before.fare} → ${now.fare} ₽`:
-    `Вагоны: ${before.cars} → ${now.cars} · ожидание: ${before.wait} → ${now.wait} мин`;
+function landmark(h,i){
+ const x=h.x,y=h.y,color=["#a86248","#779181","#73979e"][i],title=TARGET[i];
+ if(i===1)return `<g data-pick="station:1" tabindex="0" role="button" aria-label="Крытый рынок: показать прибытия" transform="translate(${x} ${y})"><title>Крытый рынок</title>
+ <rect x="-39" y="-30" width="78" height="30" rx="3" fill="#d5c7a7"/><rect x="-36" y="-26" width="72" height="22" fill="#c7a780" stroke="#7d735d"/>
+ ${Array.from({length:9},(_,k)=>`<path d="M${-36+k*8} -30h8l1 12h-8z" fill="${k%2?"#f1dfb3":"#ad6852"}"/>`).join("")}
+ ${[-29,-12,5,22].map((n,k)=>`<rect x="${n}" y="-14" width="12" height="10" fill="#745e48"/><path d="M${n+1} -11h10" stroke="${k%2?"#a5aa73":"#d58d58"}" stroke-width="4"/>`).join("")}
+ <path d="M-36 0v-20m72 20v-20M0 0v10" stroke="#9d8b70" stroke-width="2"/><rect x="-23" y="-42" width="46" height="10" rx="3" fill="#405b45"/><text y="-34" text-anchor="middle" fill="#fff1d6" font-size="7" font-weight="800">РЫНОК</text></g>`;
+ if(i===2)return `<g data-pick="station:2" tabindex="0" role="button" aria-label="Лодочная станция: показать прибытия" transform="translate(${x} ${y})"><ellipse cy="-10" rx="37" ry="15" fill="url(#water)" stroke="#879e8b"/><path d="M-20 0v-20m0 15h25" fill="none" stroke="#946f51" stroke-width="6"/><path d="M8-14q9-8 18 0-9 5-18 0" fill="#ddceaa" stroke="#726955"/><path d="M0 0v10" stroke="#daceb4" stroke-width="4"/><text class="tag" y="-29" text-anchor="middle">Пристань</text></g>`;
+ return `<g data-pick="station:${i}" tabindex="0" role="button" aria-label="${title}: показать прибытия" transform="translate(${x} ${y})"><title>${title}: прибытия</title>
+ <rect x="-38" y="-29" width="79" height="33" fill="#66705d" opacity=".35"/><rect x="-37" y="-25" width="74" height="25" fill="#dfc9a3" stroke="#807a64"/>
+ <path d="M-40-24l7-11h66l7 11z" fill="${color}" stroke="#686657"/><path d="M-14-26 0-40l14 14v26h-28z" fill="#e7cfa0" stroke="#8c8067"/>
+ ${[-30,-20,18,28].map(dx=>`<rect x="${dx}" y="-17" width="6" height="11" fill="#66817e"/>`).join("")}
+ <path d="M-5 0v-10a5 5 0 0 1 10 0V0" fill="#576a61"/><circle cy="-24" r="5" fill="#fff0cf" stroke="#7c795f"/><path d="M0-28v4l3 1" fill="none" stroke="#5a675f"/>
+ <rect x="-30" y="-54" width="60" height="12" rx="3" fill="#293f38"/><text y="-45" fill="#fff2ca" text-anchor="middle" font-size="8" font-weight="800">${["ВОКЗАЛ","РЫНОК","ПРИСТАНЬ"][i]}</text>
+ <path d="M0 0v10" stroke="#ecdfc0" stroke-width="6"/></g>`;
 }
-function mapPeople(id,group) {
-  $(id).innerHTML=group.map(p=>`<button class="person" data-name="${p.name}" aria-pressed="${p.name===selected}" aria-label="${p.name}, ${mode(p)}"><svg class="icon" aria-hidden="true"><use href="#${p.rides?"tram":"walk"}"/></svg>${p.name}</button>`).join("") || '<span class="empty">Никого</span>';
+function drawGround(){
+ const roll=rng(city.seed+"-ландшафт");let a='<rect width="940" height="590" fill="url(#grass)"/><path d="M908 0q-30 104 0 202t-3 185q-26 110-7 203h55V0" fill="url(#water)"/>';
+ for(const x of X)a+=`<path d="M${x} 0v590" stroke="#d4cbb3" stroke-width="23"/><path d="M${x} 0v590" stroke="#b9b8a6" stroke-width="12"/>`;
+ for(const y of Y)a+=`<path d="M0 ${y}h900" stroke="#d4cbb3" stroke-width="23"/><path d="M0 ${y}h900" stroke="#b9b8a6" stroke-width="12"/>`;
+ for(const x of X)for(const y of Y){
+  a+=`<path d="M${x} ${y-11}v22" stroke="#b9b8a6" stroke-width="12"/>`;
+  if(x===444||x===737)for(let j=-4;j<=4;j+=2.5)a+=`<path d="M${x+14} ${y+j}h5" stroke="#f1e8cf" stroke-width="1.5"/>`;
+ }
+ let b="";for(let ix=0;ix<X.length-1;ix++)for(let iy=0;iy<Y.length-1;iy++){
+  const x=X[ix]+19,y=Y[iy]+18,w=X[ix+1]-X[ix]-38,h=Y[iy+1]-Y[iy]-36;
+  a+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="${(ix+iy)%3===0?"#99b391":"#b6bea1"}" stroke="#9cab90"/>`;
+  if(ix===3&&iy===2){a+=`<rect x="${x+1}" y="${y+1}" width="${w-2}" height="${h-2}" rx="8" fill="#98b48c"/><path d="M${x} ${y+6}l${w} ${h-12}m-${w} 0l${w} -${h-12}" stroke="#e0d3af" stroke-width="4"/><ellipse cx="${x+w/2}" cy="${y+h/2}" rx="14" ry="8" fill="#d9d9bb" stroke="#839680"/><ellipse cx="${x+w/2}" cy="${y+h/2}" rx="11" ry="5.5" fill="#81b2ae"/><path d="M${x+w/2} ${y+h/2}v-6q-3-6-5 0m5 1q3-7 5-1" fill="none" stroke="#d0e5d9"/>`;
+  }else if((ix+iy)%4===0){a+=`<path d="M${x+3} ${y+h-3}l${w*.55} ${-h*.52}h${w*.42}" stroke="#ded4b4" stroke-width="4" fill="none"/>`;
+  }else{const hw=23+12*roll();b+=house({x:x+w*.45,y:y+29,w:hw,style:roll()})}
+  for(let z=0;z<3;z++){
+   const tx=x+3+roll()*(w-15),ty=y+1+roll()*(h*.4);b+=`<use href="#${roll()>.2?"tree":"pine"}" x="${tx}" y="${ty}" width="14" height="19"/>`;
+  }b+=`<use href="#bench" x="${x+w-19}" y="${y+h*.46}" width="11" height="5"/>`;
+ }
+ for(const h of city.doors){const i=city.dest.indexOf(h);b+=i<0?house(h):landmark(h,i)}
+ for(const [x,y,text] of [[193,248,"СОСНОВЫЕ ДВОРЫ"],[480,378,"СКВЕР МАЯКОВ"],[31,109,"ЛЕСНАЯ СЛОБОДА"]])b+=`<text x="${x}" y="${y}" fill="#496350" font-size="7.5" font-weight="800" letter-spacing="1" pointer-events="none">${text}</text>`;
+ svg("ground",a);svg("architecture",b);
 }
-function drawTicket() {
-  const p=now.people.find(p=>p.name===selected);
-  let title,why;
-  if(p.gain<0) {
-    title="Пешком быстрее"; why=`С трамваем дорога дольше на ${-p.gain} мин. Даже бесплатный билет не вернёт это время.`;
-  } else if(p.gain===0) {
-    title="Пешком столько же"; why="Трамвай не экономит ни минуты. При равном времени житель выбирает ходьбу, даже если билет бесплатный.";
-  } else {
-    title=p.rides?"Выигрыш стоит билета":"Билет дороже выигрыша";
-    why=`Выигрыш — ${p.gain} мин. При оценке ${p.value} ₽ за минуту за такую экономию можно отдать до <b>${p.worth} ₽</b>. Билет стоит <b>${now.fare} ₽</b>${p.rides ? (p.worth===now.fare?" — ровно на пределе.":"."):" — это слишком дорого."}`;
-  }
-  $("ticket").innerHTML=`<span class="kicker">Карточка жителя</span><div class="heading"><h2>${p.name}</h2><span class="badge">${p.rides?"Едет трамваем":"Идёт пешком"}</span></div>
-    <small>Жилой квартал → Вокзал</small>
-    <dl class="times"><div><dt>Целиком пешком</dt><dd>${p.walk} мин</dd></div><div><dt>С трамваем</dt><dd>${p.tram} мин</dd></div></dl>
-    <small>До остановки ${p.first} + ожидание ${now.wait} + в вагоне ${now.ride} + до вокзала ${now.last} = ${p.tram} мин.</small>
-    <div class="why"><h3>${title}</h3><p>${why}</p></div>`;
+function access(i){return i<9||g.net.ring}
+function camera(){
+ const box=g.net.ring?[10,4,920,565]:[91,108,755,368],w=box[2]/zoom,h=box[3]/zoom;
+ const xy=center||[box[0]+box[2]/2,box[1]+box[3]/2];
+ const x=Math.max(box[0],Math.min(box[0]+box[2]-w,xy[0]-w/2)),y=Math.max(box[1],Math.min(box[1]+box[3]-h,xy[1]-h/2));
+ center=[x+w/2,y+h/2];$("city").setAttribute("viewBox",[x,y,w,h].join(" "));$("zoomOut").disabled=zoom===1;$("zoomIn").disabled=zoom===2.5;
 }
-function drawResult() {
-  put("arrived",`${now.count} из ${now.people.length}`); put("saved",`${now.saved} мин`); put("money",`${now.money} ₽`);
-  const diff=morning.compare(before,now);
-  const moved=diff.filter(d=>d.p.rides!==d.was.rides);
-  $("change").innerHTML=lastAction?`<p><b>${lastAction}.</b> К предыдущему шагу: время жителей — ${signed(now.saved-before.saved)} мин выигрыша; выручка — ${before.money} → ${now.money} ₽ (${signed(now.money-before.money)} ₽).</p>
-    <p>${moved.length?moved.map(d=>`${d.p.name} → ${mode(d.p)} (${signed(d.minutes)} мин)`).join(" · "):"Никто не сменил способ добраться до вокзала."}</p>`:
-    `<p><b>Исходное утро.</b> Из квартала прибыли все ${now.people.length}: трамваем — ${now.count}, пешком — ${now.people.length-now.count}. Выручка: ${now.count} × ${now.fare} ₽ = ${now.money} ₽.</p>`;
-  $("report").innerHTML=diff.map(({p,was,minutes})=>`<tr><th scope="row">${p.name}</th><td>${mode(was)}, ${was.time} мин</td><td>${mode(p)}, ${p.time} мин</td><td>${signed(minutes)} мин</td></tr>`).join("");
+function drawNetwork(){
+ camera();
+ svg("shade",g.net.ring?"":'<rect width="940" height="590" mask="url(#boundary)" fill="#405747" opacity=".29"/><rect x="97" y="113" width="723" height="351" rx="18" fill="none" stroke="#607c62" stroke-dasharray="5 6"/>');
+ let rails="";for(const e of g.net.edges){
+  const [a,b]=LINKS[e],points=routePoints([a,b]);rails+=`<polyline points="${points}" fill="none" stroke="#8a8372" stroke-width="7" stroke-dasharray="2 4"/><polyline points="${points}" stroke="#545c56" stroke-width="4" fill="none"/><polyline points="${points}" stroke="#d4ceba" stroke-width="2" fill="none"/>`;
+  const [x,y]=stopPoint(a),[xx,yy]=stopPoint(b),n=Math.ceil(Math.hypot(xx-x,yy-y)/65);for(let k=1;k<n;k++){
+   const bx=x+(xx-x)*k/n,by=y+(yy-y)*k/n;rails+=`<path d="M${bx+6} ${by+10}v-15l-7 2" fill="none" stroke="#787c6c" stroke-width="1"/>`;}
+ }svg("railLayer",rails);
+ let s="";for(let i=0;i<ST.length;i++){if(!access(i))continue;const [x,y]=stopPoint(i),service=g.net.lines.map((l,j)=>l.includes(i)?j:-1).filter(j=>j>=0),editing=tool==="line";
+ s+=`<g transform="translate(${x} ${y})" data-stop="${i}" role="button" tabindex="0" aria-label="Остановка ${ST[i][0]}"><title>${ST[i][0]}</title>
+ <circle r="${editing?12:6}" fill="${editing?"#ffdc80":service.length?"#f6eed7":"#c2c4ac"}" stroke="${COLORS[service[0]]||"#717d6a"}" stroke-width="2"/><circle r="2" fill="#43594e"/>
+ <rect x="-10" y="6" width="20" height="3" fill="#7b8575"/><text class="tag" text-anchor="middle" y="20">${ST[i][0]}</text><circle r="13" fill="transparent"/></g>`}
+ svg("stops",s);
+ let overlay="";if(tool==="build")LINKS.forEach(([a,b],e)=>{if(!access(a)||!access(b)||g.net.edges.includes(e))return;
+ const [x,y]=stopPoint(a),[xx,yy]=stopPoint(b);overlay+=`<g data-edge="${e}" tabindex="0" role="button" aria-label="Проложить ${ST[a][0]} — ${ST[b][0]}"><title>Путь · 40 ₽</title><path d="M${x} ${y}L${xx} ${yy}" stroke="#22604a" stroke-width="6" stroke-dasharray="7 4"/><path d="M${x} ${y}L${xx} ${yy}" stroke="transparent" stroke-width="18"/><circle cx="${(x+xx)/2}" cy="${(y+yy)/2}" r="8" fill="#235640"/><text x="${(x+xx)/2}" y="${(y+yy)/2+4}" fill="white" text-anchor="middle" font-size="13">+</text></g>`});
+ if(tool==="line")draft.forEach((a,i)=>{const [x,y]=stopPoint(a);if(i){const route=railPath(g.net,draft[i-1],a);overlay+=`<polyline points="${routePoints(route.path)}" fill="none" stroke="#ffc452" stroke-width="4" stroke-dasharray="6 4" pointer-events="none"/>`}overlay+=`<text class="tag" x="${x+8}" y="${y-9}" pointer-events="none">${i+1}</text>`});
+ svg("buildLayer",overlay);$("area").textContent=g.net.ring?"Расширенный район · 13 остановок":"Центральный район · ЖК «Сосновые дворы»";
+ $("instruction").textContent=tool==="build"?"Выберите пунктирный перегон · 40 ₽":tool==="line"?"Нажимайте остановки в порядке движения":"Карта движения / прямой эфир";
 }
-function draw() {
-  const focus=document.activeElement, restore=focus?.dataset.name;
-  mapPeople("walkers",now.people.filter(p=>!p.rides)); mapPeople("riders",now.people.filter(p=>p.rides));
-  put("walk-label",`Пешком · ${now.people.length-now.count}`); put("rail-label",`Трамваем · ${now.count}`);
-  put("fare",`${now.fare} ₽`); put("cars",now.cars); put("wait",`ждать ${now.wait} мин`);
-  $("cheaper").disabled=now.fare===0; $("dearer").disabled=now.fare===60;
-  $("fewer").disabled=now.cars===1; $("more").disabled=now.cars===3;
-  drawTicket(); drawResult();
-  for(const key of Object.keys(guides)) {
-    const tab=$("tab-"+key); tab.classList.toggle("active",key===guide); tab.setAttribute("aria-selected",String(key===guide));
-  }
-  const g=guides[guide];
-  $("guide-body").setAttribute("aria-labelledby","tab-"+guide); put("guide-note",g.note);
-  $("steps").innerHTML=g.steps.map(([label],i)=>`<button data-step="${i}" ${i===step?'class="primary"':'disabled'}>${i+1}. ${label}</button>`).join("");
-  put("progress",step<0?"Свободный режим. Нажмите на название сценария, чтобы начать заново.":step===g.steps.length?"Сценарий пройден. Можно продолжить опыт с текущими настройками.":"");
-  if(restore) document.querySelector(`[data-name="${restore}"]`).focus();
+function ppos(p){
+ if(p.phase==="ride"){const r=p.legs[p.leg],q=carPos(g,g.cars[r.car],carry);return [q.x,q.y]}
+ if(!["walk","approach","last"].includes(p.phase))return g.city.pts[p.at];
+ const m=motion(g,p,carry);return [m.a[0]+(m.b[0]-m.a[0])*m.r,m.a[1]+(m.b[1]-m.a[1])*m.r]
 }
-document.querySelector(".schema").onclick=e=>{
-  const button=e.target.closest("[data-name]"); if(button){selected=button.dataset.name;draw()}
-};
-for(const [id,key,delta] of [["cheaper","fare",-10],["dearer","fare",10],["fewer","cars",-1],["more","cars",1]]) {
-  $(id).onclick=()=>{apply({[key]:now[key]+delta});step=-1;draw()};
+let actors=new Map();
+function actor(key,layer,markup,label){if(actors.has(key))return actors.get(key);
+ const el=document.createElementNS("http://www.w3.org/2000/svg","g");el.dataset.pick=key;el.setAttribute("role","button");el.setAttribute("tabindex","0");el.setAttribute("aria-label",label);el.innerHTML=markup;$(layer).append(el);actors.set(key,el);return el}
+function drawActors(){
+ const chosen=pick.type+":"+pick.id;
+ for(const c of g.cars){const key="car:"+c.id,q=carPos(g,c,carry),el=actor(key,"traffic",`<title>Вагон №${c.id+1}</title><circle class="halo" r="15" fill="none" stroke="#ffc649" stroke-width="2.8"/><g class="body"><rect x="-15" y="-5" width="31" height="12" rx="4" fill="#42564b" opacity=".35"/><rect x="-16" y="-6" width="32" height="12" rx="4" fill="${COLORS[c.l]}" stroke="#493f34"/><rect x="-12" y="-4.3" width="24" height="8.6" rx="2" fill="#f4daa5"/><path d="M-9-3v6m4-6v6m10-6v6m4-6v6" stroke="#749899" stroke-width="2"/><path d="m-3 0 4-3 4 3-4 2z" fill="none" stroke="#585c54"/><circle cx="14" cy="-3" r="1.3" fill="#ffed9c"/></g><rect x="-16" y="-9" width="32" height="18" fill="transparent"/>`,`Вагон ${c.id+1}, линия ${c.l+1}`);
+ el.setAttribute("transform",`translate(${q.x} ${q.y})`);el.querySelector(".body").setAttribute("transform",`rotate(${q.angle})`);el.querySelector(".halo").style.display=chosen===key?"":"none"}
+ for(const p of g.people){const key="person:"+p.id,hidden=["home","ride","done"].includes(p.phase);
+  if(hidden&&!actors.has(key))continue;
+  const el=actor(key,"pedestrians",`<title>${p.name}</title><circle class="halo" r="8.4" fill="#fff4bd" fill-opacity=".45" stroke="#293b31" stroke-width="1.1"/><ellipse cx="1.4" cy="1" rx="3.8" ry="1.7" fill="#516552" opacity=".5"/><path class="legs" fill="none" stroke="#363f3a" stroke-width="1.7" stroke-linecap="round"/><path class="coat" d="M-2.9-1.4q-1-5 2.8-5.4 4 .1 3.3 5.4z" stroke="#4e574b" stroke-width=".7"/><circle cy="-7.6" r="2.2" fill="#eac8a4" stroke="#665946" stroke-width=".8"/><circle cy="-3" r="8" fill="transparent"/>`,p.name);
+  el.style.display=hidden?"none":"";if(hidden)continue;const [x,y]=ppos(p),j=p.phase==="wait"?p.id%4:0;
+  el.setAttribute("transform",`translate(${x+j*3} ${y+(p.id%3-1)*1.7}) scale(1.28)`);el.querySelector(".coat").setAttribute("fill",p.phase==="walk"?"#ffb950":"#61bfcc");el.querySelector(".halo").style.display=chosen===key?"":"none";
+  const stride=p.phase==="wait"?0:Math.sin((g.t+carry)*.9+p.id)*1.5;el.querySelector(".legs").setAttribute("d",`M-1 -1l${-1+stride} 2.8M1 -1l${1-stride} 2.8`);
+ }
+ let trace="";if(pick.type==="person"){const p=g.people.find(p=>p.id===pick.id);if(p&&!["home","done"].includes(p.phase)){
+  const [x,y]=ppos(p);for(const [i,s] of p.legs.entries()){if(i<p.leg)continue;const points=s.kind==="foot"?(i===p.leg?[pt([x,y]),...s.path.slice((p.seg||0)+1).map(k=>pt(city.pts[k]))].join(" "):s.path.map(k=>pt(city.pts[k])).join(" ")):null;
+   if(points)trace+=`<polyline points="${points}" stroke="#9e5d18" stroke-width="2.5" fill="none" stroke-dasharray="3 3"/>`}
+  trace+=`<rect x="${x-19}" y="${y-24}" width="38" height="10" rx="3" fill="#263e33"/><text x="${x}" y="${y-16}" fill="#fff4cf" text-anchor="middle" font-size="8">${p.name}</text>`;
+ }}svg("trace",trace);
 }
-$("reset").onclick=()=>reset(guide);
-for(const key of Object.keys(guides)) $("tab-"+key).onclick=()=>reset(key);
-$("steps").onclick=e=>{
-  if(!e.target.matches("button[data-step]") || +e.target.dataset.step!==step) return;
-  const action=guides[guide].steps[step][1]; if(typeof action==="string") selected=action; else apply(action);
-  step++; draw(); ($("steps").querySelector(".primary")||$("tab-"+guide)).focus();
-};
-reset();
+const labelLine=l=>`Т${l+1}`;
+function say(s){modeMsg=s;$("message").textContent=s}
+function log(s){g.logs.unshift(`${tickTime(g.t)} · ${s}`)}
+function keepBefore(){
+ if(g.done)return;const {city:map,...state}=g;ref={...structuredClone(state),city:map};
+ while(!ref.done&&ref.t<1800)stepSim(ref);
+ referenceName=`как прошло бы это утро без решения в ${tickTime(g.t)} (тариф ${rub(g.net.fare)}, вагонов ${g.cars.length})`;
+}
+function updateControls(){
+ $("fare").value=rub(g.net.fare);$("minus").disabled=g.net.fare===0;$("plus").disabled=g.net.fare===60;
+ const opts=g.net.lines.flatMap((s,i)=>s.length?[`<option value="${i}">${labelLine(i)} · ${g.cars.filter(c=>c.l===i).length} ваг.</option>`]:[]).join("");
+ if($("buyLine").innerHTML!==opts){const val=$("buyLine").value;$("buyLine").innerHTML=opts;if([...$("buyLine").options].some(o=>o.value===val))$("buyLine").value=val}
+ $("buy").disabled=g.net.bank<75||g.net.fleet.length>=8;
+ $("pause").textContent=paused?"▶ Пуск":"Ⅱ Пауза";$("pause").disabled=g.done;$("speed").textContent=speed+"×";
+ $("clock").textContent=tickTime(g.t);$("day").textContent=`Смена ${String(g.day).padStart(2,"0")}  /  ${g.done?"Утро завершено":paused?"На паузе":"Утренний выпуск"}`;
+ $("nextMorning").hidden=!g.done;
+ $("cash").textContent=rub(g.net.bank);$("revenue").textContent=rub(g.rev);$("arrivals").textContent=`${g.arr.length} / ${g.people.length}`;$("saved").textContent=fmt(g.saved)+" мин";
+}
+const btn=(action,text,disabled=false)=>`<button data-act="${action}" ${disabled?"disabled":""}>${text}</button>`;
+function watchPanel(){
+ if(pick.type==="person"){
+  const p=g.people.find(p=>p.id===pick.id),d=p.decision;let why="Ещё не вышел из дома.",detail="";
+  if(d){why=d.tram===null?"Отсюда нет действующей связи.":d.gain<=0?"Пешком не дольше, чем с трамваем.":!d.use?`За ${fmt(d.gain)} мин экономии готов(а) заплатить ${Math.floor(d.worth)} ₽. Билет за ${d.fare} ₽ дороже.`:`Экономия ${fmt(d.gain)} мин стоит для жителя ${Math.floor(d.worth)} ₽. Билет за ${d.fare} ₽ подходит.`;
+   detail=`<p class="sub">При последнем выборе от текущей точки: пешком ${fmt(d.walk)} мин; с трамваем ${d.tram===null?"нет пути":fmt(d.tram)+" мин (ожидание до отправления "+fmt(d.wait)+" мин"+(d.xf?", с пересадкой":"")+")"}.</p>`}
+  if(p.phase==="wait")detail+=`<p>Ждёт №${p.legs[p.leg].car+1} · ${ST[p.legs[p.leg].from][0]}</p>`;
+  if(p.phase==="ride"){const r=p.legs[p.leg];detail+=`<p>В вагоне №${r.car+1} → ${ST[r.to][0]}</p>`}
+  if(p.phase==="done"){const b=ref.people.find(x=>x.id===p.id);detail+=`<p><b>Факт: ${fmt(p.time)} мин.</b> ${comparePerson(p,b)}</p>`}
+  return `<div class="eyebrow">Житель / ${phaseName[p.phase]}</div><h2>${p.name}</h2><p>${p.outer?"Внешнее кольцо":"Жилой квартал"} → ${TARGET[p.target]}</p><div class="note">${why}</div>${detail}`;
+ }
+ if(pick.type==="car"){const c=g.cars[pick.id],riders=g.people.filter(p=>p.phase==="ride"&&p.legs[p.leg].car===c.id),q=carPos(g,c);
+ return `<div class="eyebrow">Подвижной состав / ${labelLine(c.l)}</div><h2>Вагон №${c.id+1}</h2><p>${q.stop===null?"На перегоне":"На остановке «"+ST[q.stop][0]+"»"}</p><p class="sub">${g.net.lines[c.l].map(i=>ST[i][0]).join(" → ")}</p><h3>В салоне: ${riders.length}</h3><div class="row">${riders.map(p=>btn("p"+p.id,p.name)).join("")||"Свободно"}</div>`}
+ if(pick.type==="stop"){const i=pick.id,wait=g.people.filter(p=>p.phase==="wait"&&p.legs[p.leg].from===i);
+ return `<div class="eyebrow">Остановка</div><h2>${ST[i][0]}</h2><p>${g.net.lines.map((l,j)=>l.includes(i)?labelLine(j):"").filter(Boolean).join(" · ")||"Без маршрута"}</p><h3>На платформе: ${wait.length}</h3><div class="row">${wait.map(p=>btn("p"+p.id,p.name)).join("")||"Никто не ждёт"}</div>`}
+ const target=pick.id,a=g.arr.filter(p=>p.target===target),rail=a.filter(p=>p.paid!==null),en=g.people.filter(p=>p.target===target&&!["home","done"].includes(p.phase));
+ const subjects=en.filter(p=>p.phase==="walk").slice(0,3);
+ return `<div class="eyebrow">Место назначения / с 07:00</div><h2>${TARGET[target]}</h2><p><b>${a.length}</b> на месте · <b>${en.length}</b> в дороге</p><p class="sub">Из квартала: ${a.filter(p=>!p.outer&&p.paid===null).length} пешком / ${a.filter(p=>!p.outer&&p.paid!==null).length} трамваем.${g.net.ring?` Из кольца: ${a.filter(p=>p.outer&&p.paid===null).length} / ${a.filter(p=>p.outer&&p.paid!==null).length}.`:""}</p>
+ <div class="note">${a.length?`Последнее прибытие: ${a.at(-1).name}, ${fmt(a.at(-1).time)} мин. Билеты прибывших: ${rub(rail.reduce((s,p)=>s+p.paid,0))}.`:"Пока никто не прибыл. На карте видно, кто уже вышел из дома."}</div><h3>Идут сюда пешком</h3><div class="row">${subjects.map(p=>btn("p"+p.id,p.name)).join("")||"Сейчас никого"}</div>`;
+}
+function comparePerson(p,b){if(!b||b.phase!=="done")return "";const d=b.time-p.time;
+ return `${b.paid===null?(p.paid===null?"Пешком, как раньше":"Вместо ходьбы — трамвай"):(p.paid===null?"Вместо трамвая — пешком":"Трамвай, как раньше")}; ${d>0?"быстрее на "+fmt(d)+" мин":d<0?"дольше на "+fmt(-d)+" мин":"время прежнее"}.`}
+function netPanel(){
+ let sub="";if(tool==="build"){sub=`<div class="note">Нажмите на зелёный пунктир между остановками. Один перегон стоит 40 ₽. Затем включите остановку в маршрут.</div>${btn("cancel","Готово")}`}
+ else if(tool==="line"){
+  sub=`<div class="note"><b>Маршрут ${labelLine(editLine)}</b><br>${draft.map(i=>ST[i][0]).join(" → ")||"Выберите первую остановку"}<br><small>Обратно вагон идёт в обратном порядке. Меняются только остановки, пути остаются.</small></div><div class="row">${btn("undo","↶",!draft.length)}${btn("save","Назначить на завтра",draft.length<2)}${btn("cancel","Отмена")}</div>`;
+ }else{sub=`<div class="row">${btn("build","Проложить пути")}${btn("line0","Изменить Т1")}${btn("line1",g.net.lines[1].length?"Изменить Т2":"Назначить Т2")}</div>`}
+ const next=queued||{lines:g.net.lines,fleet:g.net.fleet};
+ const move=next.lines[1].length?`<h3>Назначения на завтра</h3><div class="row">${g.cars.map(c=>btn("move"+c.id,`№${c.id+1}: ${labelLine(next.fleet[c.id]??c.l)} ⇄`)).join("")}</div>`:"";
+ return `<div class="eyebrow">Путевое хозяйство</div><h2>Сеть района</h2>${g.net.lines.map((l,i)=>l.length?`<p><b>${labelLine(i)}</b> · ${l.map(s=>ST[s][0]).join(" → ")}</p>`:"").join("")}<p class="sub">${g.net.edges.length} перегонов · ${g.cars.length} ваг. · места без ограничений</p>${sub}${move}${queued?`<div class="note">На следующее утро: ${queued.lines.map((l,i)=>l.length?labelLine(i)+" "+l.map(s=>ST[s][0]).join(" → "):"").filter(Boolean).join("; ")}.</div>`:""}<div style="margin-top:9px">${dayButton()}</div>`;
+}
+const dayButton=()=>btn(g.done?"next":"finish",g.done?"▶ Следующее утро":"Досчитать это утро →");
+function summaryOfTrips(){
+ const pairs=g.arr.map(p=>[p,ref.people.find(b=>b.id===p.id)]).filter(([,b])=>b?.phase==="done");
+ const changed=pairs.filter(([p,b])=>p.paid!==null&&b.paid===null);
+ const slower=pairs.filter(([p,b])=>p.paid===null&&b.paid!==null);
+ const delta=pairs.reduce((sum,[p,b])=>sum+b.time-p.time,0),money=pairs.reduce((sum,[p,b])=>sum+(p.paid||0)-(b.paid||0),0);
+ return {pairs,changed,slower,delta,money};
+}
+function goalPanel(){const d=g.net,s=summaryOfTrips();return `${g.done?`<div class="eyebrow">Итог смены / ${g.arr.length} прибытий</div><h2>Кто пересел</h2><p>${s.changed.length?s.changed.map(([p,b])=>btn("p"+p.id,p.name+" · "+fmt(b.time-p.time)+" мин")).join(" "):"Новых пассажиров нет."}</p>
+ <div class="note">${s.delta>=0?"Дополнительно сэкономлено":"Дополнительно потрачено"} ${fmt(Math.abs(s.delta))} мин. Изменение выручки: ${sign(s.money)} ₽.</div><p class="sub">Сравнение: ${referenceName}.</p><hr style="border:0;border-top:1px solid var(--line)">`:""}<div class="eyebrow">Городской заказ</div><h2>${d.ring?"Связать окраины":"Открыть внешнее кольцо"}</h2>
+ ${d.ring?`<p>Найдите поток с окраины к вокзалу или лодочной станции. Постройте связь и довезите хотя бы одного жителя кольца.</p><div class="note">${g.arr.some(p=>p.outer&&p.paid!==null)?"Выполнено: поездка из кольца завершена.":"Считаются только завершённые поездки из кольца."}</div>`:`<p>За одно утро соберите 180 ₽ за билеты <b>или</b> сэкономьте жителям 45 минут.</p>
+ <h3>Билеты · ${rub(g.rev)} / 180 ₽</h3><div class="meter"><i style="width:${Math.min(100,g.rev/1.8)}%"></i></div>
+ <h3>Выигрыш · ${fmt(g.saved)} / 45 мин</h3><div class="meter"><i style="width:${Math.max(0,Math.min(100,g.saved/4.5))}%"></i></div><p class="sub">${d.permit?"Право на расширение получено.":"Выполните любую из двух целей."} Цена кольца: 165 ₽.</p>${btn("expand","Открыть кольцо · 165 ₽",!d.permit||d.bank<165)}`}
+ <div class="control" style="margin-top:12px">${dayButton()}</div>`}
+function panel(){const el=$("panel");const content=tab==="watch"?watchPanel():tab==="network"?netPanel():goalPanel();if(el.innerHTML!==content){
+ const focused=el.contains(document.activeElement)?document.activeElement.dataset.act:null;el.innerHTML=content;if(focused)el.querySelector(`[data-act="${focused}"]`)?.focus({preventScroll:true})}
+ document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab))}
+function drawJournal(){
+ $("compareLabel").textContent=`С чем сравниваем: ${referenceName}. Считаются завершённые перемещения тех же жителей.`;
+ const {pairs:same,delta,money:r,changed,slower}=summaryOfTrips();
+ $("comparison").textContent=same.length?`Те же ${same.length} прибывших: изменение времени ${fmt(-delta)} мин; изменение выручки ${sign(r)} ₽. Пересели в трамвай: ${changed.map(([p])=>p.name).join(", ")||"никто"}. Теперь пешком: ${slower.map(([p])=>p.name).join(", ")||"никто"}.`:"Сравнение появится после первого прибытия.";
+ const rows=same.slice().reverse().map(([p,b])=>`<div><b>${tickTime(p.end)} · ${p.name} → ${TARGET[p.target]}</b> · ${fmt(p.time)} мин. ${comparePerson(p,b)}</div>`);
+ $("log").innerHTML=[...g.logs.slice(0,12).map(s=>`<div>${esc(s)}</div>`),...rows].join("");
+}
+function display(force=false){
+ drawActors();if(!force&&!g.done&&g.t-uiTick<3)return;uiTick=g.t;updateControls();panel();if($("journal").open)drawJournal();
+ if(g.arr.length>seenArr){for(const a of g.arr.slice(seenArr)){const b=ref.people.find(p=>p.id===a.id);if(b?.paid===null&&a.paid!==null)say(`${a.name}: вместо ходьбы — трамвай. До цели ${fmt(a.time)} мин, выигрыш ${fmt(b.time-a.time)} мин.`)}seenArr=g.arr.length}
+ if(g.done&&!ended){ended=true;paused=true;tool="";tab="goal";say(`Утро завершено: ${g.arr.length} прибытий, ${rub(g.rev)} за билеты. Можно начать следующую смену.`);drawNetwork();updateControls();panel()}
+}
+function morning(net,day,warm=false){
+ g=createSim(city,net,day);ref=baseline(city,net.ring);referenceName="тот же сид и спрос, исходная сеть с одним вагоном и билетом 30 ₽";actors.clear();svg("traffic","");svg("pedestrians","");ended=false;carry=0;uiTick=-10;seenArr=0;paused=false;tool="";queued=null;
+ if(warm)for(let i=0;i<24;i++)stepSim(g);drawNetwork();display(true);
+}
+function newGame(seed){city=makeCity(seed);pick={type:"station",id:0};tab="watch";speed=1;zoom=1;center=null;drawGround();morning(network(),1,true);say("Нажмите на пешехода. Что ему поможет: дешевле билет или чаще трамвай?")}
+function syncQueue(){if(!queued)queued={lines:g.net.lines.map(l=>[...l]),fleet:[...g.net.fleet]};while(queued.fleet.length<g.net.fleet.length)queued.fleet.push(g.net.fleet[queued.fleet.length])}
+function act(a){
+ if(/^p\d+$/.test(a)){pick={type:"person",id:+a.slice(1)};tab="watch"}
+ else if(a==="build"){tool="build";say("Выберите на карте перегон для строительства.")}
+ else if(a==="line0"||a==="line1"){tool="line";editLine=+a.slice(-1);draft=[];say("Выберите первую остановку, затем следующую на построенных рельсах.")}
+ else if(a==="cancel"){tool="";say("Режим наблюдения.")}
+ else if(a==="undo")draft.pop();
+ else if(a==="save"&&draft.length>=2){syncQueue();queued.lines[editLine]=[...draft];tool="";say("Расписание сохранено. Оно вступит в силу следующим утром.")}
+ else if(a.startsWith("move")){syncQueue();const id=+a.slice(4);queued.fleet[id]=1-queued.fleet[id];say(`Вагон №${id+1}: ${labelLine(queued.fleet[id])} со следующего утра.`)}
+ else if(a==="finish"){while(!g.done&&g.t<1800)stepSim(g);if(g.done)log("Смена досчитана по действующему расписанию.")}
+ else if(a==="next"&&g.done){const last=g;if(queued){g.net.lines=queued.lines;g.net.fleet=queued.fleet}morning(g.net,g.day+1);ref=last;referenceName=`прошлая смена №${last.day}, только жители, участвовавшие в обеих сменах`;say("Новое утро. Те же жители снова выходят из домов.")}
+ else if(a==="expand"&&g.net.permit&&!g.net.ring&&g.net.bank>=165){g.net.bank-=165;g.net.ring=true;zoom=1;center=null;log("Открыто внешнее кольцо · −165 ₽");say("Вся граница открыта. Стройте пути сейчас; жители кольца выйдут следующим утром.")}
+ drawNetwork();display(true)
+}
+$("panel").onclick=e=>{const b=e.target.closest("[data-act]");if(b)act(b.dataset.act)};
+document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;tool="";drawNetwork();panel()});
+$("order").onclick=()=>{tab="goal";tool="";drawNetwork();panel()};
+$("nextMorning").onclick=()=>act("next");
+function chooseOnMap(e){
+ if(ignoreClick){ignoreClick=false;return}
+ const el=e.target.closest("[data-edge],[data-stop],[data-pick]");if(!el)return;
+ if(el.dataset.edge!==undefined&&tool==="build"){const n=+el.dataset.edge;if(g.net.bank<40){say("Для перегона нужно 40 ₽.");return}
+  if(!g.net.edges.includes(n)){g.net.edges.push(n);g.net.bank-=40;const [a,b]=LINKS[n];log(`Путь ${ST[a][0]} — ${ST[b][0]} · −40 ₽`);say("Рельсы готовы. Добавьте остановки этого участка в маршрут.")}}
+ else if(el.dataset.stop!==undefined){const n=+el.dataset.stop;
+  if(tool==="line"){if(draft.includes(n)){say("Эта остановка уже есть в маршруте.");return}
+   if(draft.length&&!railPath(g.net,draft.at(-1),n)){say("Сначала проложите рельсы до этой остановки.");return}draft.push(n)}
+  else{tool="";tab="watch";pick={type:"stop",id:n}}}
+ else if(el.dataset.pick){if(tool)return;const [type,id]=el.dataset.pick.split(":");pick={type,id:+id};tab="watch"}
+ drawNetwork();display(true)
+}
+$("city").onclick=chooseOnMap;$("city").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();chooseOnMap(e)}};
+for(const [id,d] of [["minus",-10],["plus",10]])$(id).onclick=()=>{keepBefore();g.net.fare+=d;reconsider(g);log(`Новый тариф: ${rub(g.net.fare)}`);say(g.done?"Тариф назначен на следующее утро.":"Тариф изменён. Пешеходы проверят выбор на ближайшем узле улицы.");display(true)};
+$("buy").onclick=()=>{const l=+$("buyLine").value;keepBefore();if(addCar(g,l)){if(queued)syncQueue();log(`Вагон №${g.cars.length} назначен на ${labelLine(l)} · −75 ₽`);say(g.done?"Вагон приобретён для следующей смены.":"Вагон вышел с конечной. Жители видят обновлённое расписание.");display(true)}};
+$("pause").onclick=()=>{paused=!paused;carry=0;display(true)};$("speed").onclick=()=>{speed=({1:3,3:6,6:1})[speed];display(true)};
+$("journal").ontoggle=()=>{if($("journal").open)drawJournal()};
+let wasPaused=false;$("setup").onclick=()=>{wasPaused=paused;paused=true;$("seedField").value=city.seed;$("settings").showModal();display(true)};
+$("settings").onclose=()=>{paused=g.done||wasPaused;carry=0;display(true)};$("close").onclick=()=>$("settings").close();
+$("random").onclick=()=>{$("seedField").value="ТРАМ-"+crypto.getRandomValues(new Uint32Array(1))[0].toString(36).slice(0,6).toUpperCase()};
+$("start").onclick=()=>{const seed=$("seedField").value.trim()||"ТРАМ-17";wasPaused=false;$("settings").close();newGame(seed)};
+$("zoomIn").onclick=()=>{zoom=Math.min(2.5,zoom+.5);if(pick.type==="person"){const p=g.people.find(p=>p.id===pick.id);if(p)center=ppos(p)}camera()};
+$("zoomOut").onclick=()=>{zoom=Math.max(1,zoom-.5);camera()};$("fit").onclick=()=>{zoom=1;center=null;camera()};
+$("city").addEventListener("pointerdown",e=>{ignoreClick=false;if(zoom>1)drag={x:e.clientX,y:e.clientY,c:[...center]}});
+$("city").addEventListener("pointermove",e=>{if(!drag||!e.buttons)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(!ignoreClick&&Math.hypot(dx,dy)<5)return;ignoreClick=true;
+ $("city").setPointerCapture(e.pointerId);const ratio=$("city").viewBox.baseVal.width/$("city").getBoundingClientRect().width;center=[drag.c[0]-dx*ratio,drag.c[1]-dy*ratio];camera()});
+window.addEventListener("pointerup",()=>drag=null);
+function frame(stamp){if(previous&&!paused&&!g.done&&!document.hidden){carry+=Math.min(150,stamp-previous)*.008*speed;const n=Math.floor(carry);carry-=n;if(n){for(let i=0;i<n&&!g.done;i++)stepSim(g);display();lastPaint=stamp}else if(stamp-lastPaint>=32){drawActors();lastPaint=stamp}}previous=stamp;requestAnimationFrame(frame)}
+newGame("ТРАМ-17");requestAnimationFrame(frame);
 </script>
 </html>
