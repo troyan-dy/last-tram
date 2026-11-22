@@ -4,6 +4,7 @@
 <title>Последний трамвай · Сутки у рынка</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f5f1e5;color:#213c36;font:15px/1.45 system-ui,sans-serif}main{max-width:1140px;margin:auto;padding:16px clamp(12px,3vw,38px) 28px}header,.row,.rail,.legend,.timebar,.tabs,.metrics{display:flex;align-items:center;gap:10px;flex-wrap:wrap}header,.rail,.timebar{justify-content:space-between}header{border-bottom:1px solid #bcbfad;padding-bottom:8px}.stamp{font:700 11px/1.4 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.13em}.stamp b{color:#9b3e26}.sub{color:#59665c}h1{font:600 clamp(30px,4.5vw,54px)/1.04 Georgia,serif;letter-spacing:-.048em;margin:14px 0 4px}p{margin:2px 0 12px}button{font:inherit;background:#fffcf3;color:#264138;border:1px solid #aab5a5;border-radius:5px;padding:6px 11px;cursor:pointer}button[aria-pressed=true]{background:#29483d;color:#fff9e7}button:hover{border-color:#324f42}button:focus-visible,input:focus-visible{outline:3px solid #b95330;outline-offset:2px}.stage{border:1px solid #acb4a4;border-radius:7px;overflow:hidden}.rail,.legend{padding:6px 12px;background:#fffdf3}.rail small,.legend{font-size:12px}.rail b{font:700 17px/1.2 ui-monospace,monospace}svg{display:block;width:100%;height:auto;background:#263d4b}.legend{justify-content:space-between}.timebar{margin:12px 0 8px}.tabs{gap:4px}.tabs button{font-size:13px}.track{display:flex;align-items:center;gap:12px;color:#536355;font:12px ui-monospace,monospace}input[type=range]{width:100%;accent-color:#b45736;cursor:pointer}.metrics{margin-top:14px;gap:10px 22px;align-items:start}.metrics section{flex:1 1 280px;border-top:1px solid #b7bda9;padding-top:7px}.metrics strong{font:600 20px/1.3 Georgia,serif}.metrics label{display:block;margin:5px 0 0;cursor:pointer}input[type=checkbox]{accent-color:#29483d}.metrics p{margin:4px 0;font-size:14px}.mini{font-size:12px;color:#5c685c}.legend i{display:inline-block;width:8px;height:9px;background:#f5b44b;border:1px solid #594d3b;margin:0 3px 0 6px}.legend i.blue{background:#55cbd0} @media(max-width:650px){.tabs button{padding:5px 7px}.rail,.legend{padding:5px 7px}.legend{gap:3px}.metrics{margin-top:8px}main{padding-top:9px}.stage svg{min-height:170px}}
+.people-only,[hidden]{display:none!important}.people-study .day-only,.people-study #play,.people-study .track,.people-study .metrics,.people-study main>p.mini{display:none!important}.people-study .people-only:not([hidden]){display:block!important}.people-study .layers{display:flex!important;gap:8px;align-items:center;flex-wrap:wrap}.people-study [data-who]{cursor:pointer}.people-panel{border-top:1px solid #b7bda9;margin-top:12px;padding-top:8px}.people-panel p{margin:8px 0}.layers button{font-size:13px}.people-study .legend span:first-child{display:none}
 </style>
 <main>
 <header class="stamp"><span><b>ЛТ /</b> Последний трамвай</span><span class="sub">Этюд 02 · объёмный город</span></header>
@@ -13,7 +14,8 @@
 <svg id="map" viewBox="-54 21 296 129" role="img" aria-labelledby="mapTitle mapDesc" xmlns="http://www.w3.org/2000/svg">
 <title id="mapTitle">Изометрическая улица с трамваем</title><desc id="mapDesc"></desc>
 <defs><radialGradient id="lamp"><stop stop-color="#ffd47b" stop-opacity=".63"/><stop offset=".55" stop-color="#e9ad5d" stop-opacity=".23"/><stop offset="1" stop-color="#e9ad5d" stop-opacity="0"/></radialGradient></defs>
-<g id="ground"></g><g id="city"></g></svg>
+<g id="ground"></g><g id="city"></g><g id="watch"></g></svg>
+<div class="people-only rail" id="keyline"></div>
 <div class="legend"><span><i></i> весь путь пешком　<i class="blue"></i> у посадочной площадки</span><span>Т1 · Дворы — Рынок</span></div>
 </section>
 <div class="timebar"><div class="tabs" aria-label="Час наблюдения"><button data-hour="7.5">07:30 · Утро</button><button data-hour="13">13:00 · День</button><button data-hour="19">19:00 · Вечер</button><button data-hour="1">01:00 · Ночь</button></div><button id="play" aria-pressed="false">▶ Прожить сутки</button></div>
@@ -22,7 +24,11 @@
 <section><div class="stamp sub">В этом кадре</div><strong id="period"></strong><p id="flow"></p></section>
 <section><div class="stamp sub">Сравнить на той же улице</div><label><input type="checkbox" id="reverse" checked> Вечером больше людей едут домой</label><label><input type="checkbox" id="arrows"> Подсветить направления на тротуарах</label></section>
 </div><p class="mini">Эскиз движения: часы и число фигур нужны для сравнения. Это не статистика прибытий.</p>
-</main>
+<section class="people-only people-panel">
+<div class="layers"><button id="normal" aria-pressed="true">Обычный вид</button><button id="overlay" aria-pressed="false">Слой «Потоки»</button><button id="advance">Через несколько секунд →</button></div>
+<p><b id="whoTitle">У остановки</b> · <span id="why" aria-live="polite"></span></p>
+<div class="layers" aria-label="Выбрать жителя"><button data-name="n">Нина</button><button data-name="o">Олег</button><button data-name="m">Мира</button><button id="clear">Снять выделение</button></div>
+</section><footer class="mini"><a id="other" href="?study=people">Следующий этюд: трое на тротуаре →</a></footer></main>
 <script>
 // Throwaway visual study: same camera, buildings and line in both demand scenarios.
 const $=id=>document.getElementById(id), clamp=x=>Math.max(0,Math.min(1,x));
@@ -76,13 +82,49 @@ function tram(x){let g=box(-11,-3.4,22,6.8,6,'#baab8c','#c8654c','#824e45');
  for(let j=-9;j<10;j+=4)g+=iso([[j,3.4,5],[j+2.8,3.4,5],[j+2.8,3.4,2.6],[j,3.4,2.6]],night>.36?'#ffd685':'#bad3c8');
  g+=path([[-3,0,6],[.5,0,10],[4,0,8],[.8,0,6]],'#35494e',.7);
  return at(x,110,g)}
-function pedestrian(x,y,i,rider,dir,walking){let c=rider?'#6ad4d2':'#f4b94e',leg=walking?Math.sin(moment*4+i)*.85:0;
+function pedestrian(x,y,i,rider,dir,walking,coat){let c=coat??(rider?'#6ad4d2':'#f4b94e'),leg=walking?Math.sin(moment*4+i)*.85:0;
  let g=poly([[-1,0],[3,0],[4,1],[.5,1]],p.shade)+line([[-1-dir*leg,0],[-.2,-2.2],[.8+dir*leg,.1]],'#273841',.75)+poly([[-.8,-4.9],[1,-4.7],[1.6,-1.6],[-1.45,-1.5]],c)+disk(0,-5.7,1.12,i%3?'#dbac89':'#986e54')+poly([[-1,-5.8],[-.3,-7],[.9,-6.6],[1.1,-5.9]],'#334954');
  return at(x,y,g)}
 const swings=[[0,2,1],[4,1,1],[7.5,15,3],[10.5,7,4],[13,5,5],[16,5,6],[19,3,15],[22,2,5],[24,2,1]];
 function volumes(t){let i=1;while(t>swings[i][0])i++;let [a,out,back]=swings[i-1],[b,o,r]=swings[i],v=(t-a)/(b-a),f=Math.round(out+(o-out)*v),s=Math.round(back+(r-back)*v);if(!$('reverse').checked){let total=f+s;f=Math.round(total*.76);s=total-f}return [f,s]}
 function arrow(x,y,d){let col=d>0?'#783a25':'#285d71';return path([[x-5*d,y],[x+5*d,y]],'#fff5d3',1.7)+path([[x-5*d,y],[x+5*d,y],[x+2*d,y-3]],col,.9)+path([[x+5*d,y],[x+2*d,y+3]],col,.9)}
 let fixed=[],litMinute=-1;
+const params=new URLSearchParams(location.search),people=params.get('study')==='people';
+let layer=false,later=false,who='';
+const residents={
+ n:{name:'Нина',coat:'#b43f3f',early:[69,95],late:[100,95],to:'весь путь пешком',why:'Из Сосновых дворов на рынок. «Две минуты экономии не стоят билета». Проходит мимо «Дворов».'},
+ o:{name:'Олег',coat:'#458880',early:[56,99],late:[77,100],to:'поездка на трамвае',why:'Из Сосновых дворов на рынок. «Успею на ближайший Т1». Подходит к «Дворам» и остаётся ждать.'},
+ m:{name:'Мира',coat:'#925b91',early:[200,101],late:[214,96],to:'поездка на трамвае',why:'Из Сосновых дворов на рынок. «На Т1 я добралась быстрее». Уже вышла из поезда у рынка и идёт до входа.'}
+};
+function badge(k){let tr=k!=='n',ink='#233b40',bg=tr?'#8be2df':'#ffda85';
+ let plate=tr?rect(-3.4,-3.4,6.8,6.8,ink)+rect(-2.8,-2.8,5.6,5.6,bg):disk(0,0,3.6,ink)+disk(0,0,3,bg);
+ let sign=tr?rect(-1.8,-1.9,3.6,3,ink)+rect(-1.25,-1.45,2.5,1,bg)+line([[-1.4,2],[-.7,1.2],[.7,1.2],[1.4,2]],ink,.55):
+   disk(.45,-1.65,.55,ink)+line([[-1.4,1.9],[-.4,.5],[.15,-.8],[1.4,0]],ink,.7)+line([[-.45,.3],[.75,1],[1.25,2]],ink,.7);
+ return `<g transform="translate(0 -12)">${plate+sign}</g>`}
+function drawPeople(add){
+ let trace='',marks='';const door=[220,88];
+ for(const [i,[k,r]] of Object.entries(residents).entries()){
+  const [x,y]=later?r.late:r.early,chosen=who===k;
+  const leg=(a,col,rail=false)=>{if(a.length<2)return '';let body=path(a,'#263c42',2.4)+path(a,col,1.4);return rail?body:`<g stroke-dasharray="2 1.4">${body}</g>`};
+  if(chosen){
+   if(k==='o')trace=leg([[x,y],[77,100]],'#ffda85')+leg([[77,100],[80,110],[200,110],[200,101]],'#8be2df',true)+leg([[200,101],[220,96],door],'#ffda85');
+   else trace=leg([[x,y],[220,y],door],'#ffda85');
+  }
+  let ring=chosen?at(x,y,`<ellipse rx="3.9" ry="1.8" fill="none" stroke="#203b40" stroke-width="1.5"/><ellipse rx="3.9" ry="1.8" fill="none" stroke="#fff9da" stroke-width=".7"/>`):'';
+  add(x,y,ring+pedestrian(x,y,i,k!=='n',1,k!=='o'||!later,r.coat));
+  marks+=at(x,y,`<g data-who="${k}"><title>${r.name}</title>${layer?badge(k):''}${rect(-4,-(layer?16:8),8,layer?18:10,'transparent')}</g>`);
+ }
+ let tx=later?182:200;add(tx,110,tram(tx));$('watch').innerHTML=marks;
+ return trace;
+}
+function peopleReadout(){
+ const r=residents[who];$('whoTitle').textContent=r?`${r.name} · ${r.to}`:'У остановки';
+ $('why').textContent=r?r.why:'Смотрите на людей, переключите кадр или выберите одного жителя. Одежда остаётся той же.';
+ $('keyline').textContent=layer?'Круг с пешеходом — весь путь пешком. Квадрат с трамваем — поездка с Т1, включая путь до и после поезда.':'Обычный вид · одежда и поведение жителей, без служебных значков.';
+ $('normal').setAttribute('aria-pressed',!layer);$('overlay').setAttribute('aria-pressed',layer);
+ $('advance').textContent=later?'← В исходный кадр':'Через несколько секунд →';
+ document.querySelectorAll('[data-name]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.name===who));
+}
 function render(){let t=minute/60,[out,back]=volumes(t),actors=fixed.slice(),put=(x,y,art)=>actors.push([pt(x,y)[1],art]);
  if(litMinute!==Math.floor(minute)){litMinute=Math.floor(minute);p=palette(t);night=clamp(1-Math.min((t-4.5)/3.4,(21.2-t)/3.6));sun=Math.cos((t-7)*Math.PI/12);
   $('ground').innerHTML=terrain();actors=[];buildings.forEach((b,i)=>put(b[0]+b[2]/2,b[1]+b[3],house(b,i)));trees.forEach(([x,y],i)=>put(x,y,tree(x,y,i)));
@@ -91,12 +133,13 @@ function render(){let t=minute/60,[out,back]=volumes(t),actors=fixed.slice(),put
   for(let i=0;i<n;i++){let q=i<waiting,ix=i-waiting,progress=q?0:((ix+.36+.29*Math.sin(ix*4.2+d))/walkers+moment*(.014+(ix%3)*.001))%1;
    let x=q?(d>0?80-i*3:200+i*3):(d>0?45+progress*170:215-progress*170),y=q?100: d>0?95.5:118.8;put(x,y,pedestrian(x,y,i,q,d,!q))}
  }
- group(out,1);group(back,-1);let tx=140-56*Math.cos(moment*.14+.62);put(tx,110,tram(tx));
- let traces=$('arrows').checked?[61,112,170].map(x=>arrow(x,94,1)+arrow(x,122,-1)).join(''):'';
+ let traces='';
+ if(people){traces=drawPeople(put);peopleReadout()}else{group(out,1);group(back,-1);let tx=140-56*Math.cos(moment*.14+.62);put(tx,110,tram(tx));
+ traces=$('arrows').checked?[61,112,170].map(x=>arrow(x,94,1)+arrow(x,122,-1)).join(''):''}
  $('city').innerHTML=traces+actors.sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join('');
  phase=t<5||t>=22?'Ночь':t<11?'Утро':t<17?'День':'Вечер';let hh=Math.floor(t),mm=Math.floor(minute)%60,hm=[hh,mm].map(i=>String(i).padStart(2,'0')).join(':');
  $('clock').textContent=hm;$('time').value=Math.floor(minute);$('time').setAttribute('aria-valuetext',hm);
- let flow=`К площади: ${out} · К жилым дворам: ${back}`;$('period').textContent=phase;$('flow').textContent=flow;$('mapDesc').textContent=`${phase}, ${hm}. ${flow}.`;
+ let flow=`К площади: ${out} · К жилым дворам: ${back}`;$('period').textContent=phase;$('flow').textContent=flow;$('mapDesc').textContent=people?`${phase}. Нина, Олег и Мира на тротуаре между дворами и рынком.`:`${phase}, ${hm}. ${flow}.`;
  document.querySelectorAll('[data-hour]').forEach(b=>b.setAttribute('aria-pressed',Math.abs(+b.dataset.hour*60-minute)<1));
 }
 function setPlay(on){playing=on;prev=0;$('play').textContent=on?'Ⅱ Остановить часы':'▶ Прожить сутки';$('play').setAttribute('aria-pressed',on)}
@@ -104,5 +147,13 @@ function choose(m){setPlay(false);minute=m;moment=0;render()}
 $('play').onclick=()=>setPlay(!playing);$('time').oninput=e=>choose(+e.target.value);
 document.querySelectorAll('[data-hour]').forEach(b=>b.onclick=()=>choose(+b.dataset.hour*60));$('reverse').onchange=render;$('arrows').onchange=render;
 function tick(ts){if(!prev)prev=ts;let dt=(ts-prev)/1000;if(dt>=.075){prev=ts;dt=Math.min(dt,.3);if(!reduced||playing){moment+=dt;if(playing)minute=(minute+dt*32)%1440;render()}}requestAnimationFrame(tick)}
-const initial=Number(new URLSearchParams(location.search).get('hour')??7.5);choose(Number.isFinite(initial)&&initial>=0&&initial<24?initial*60:450);requestAnimationFrame(tick);
+if(people){
+ $('other').href='?hour=7.5';$('other').textContent='← Сутки у рынка';
+ document.body.classList.add('people-study');document.title='Последний трамвай · Трое на тротуаре';document.querySelector('h1').textContent='Трое на тротуаре';document.querySelector('h1 + p').textContent='Один момент в двух видах. Кто пройдёт мимо остановки, кто ждёт Т1, а кто уже вышел?';
+ $('map').setAttribute('viewBox','-36 47 195 86');$('map').setAttribute('role','group');
+ const select=k=>{who=k;render()};$('watch').onclick=e=>{const k=e.target.closest('[data-who]')?.dataset.who;if(k)select(k)};
+ document.querySelectorAll('[data-name]').forEach(b=>b.onclick=()=>select(b.dataset.name));$('clear').onclick=()=>select('');
+ $('normal').onclick=()=>{layer=false;render()};$('overlay').onclick=()=>{layer=true;render()};$('advance').onclick=()=>{later=!later;render()};
+}
+const initial=Number(params.get('hour')??(people?13:7.5));choose(Number.isFinite(initial)&&initial>=0&&initial<24?initial*60:450);if(!people)requestAnimationFrame(tick);
 </script></html>
