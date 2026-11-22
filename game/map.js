@@ -120,14 +120,17 @@
       scene.innerHTML=`<g class="scenery">${scenery}</g>`+stops.map(s=>stopSign(s,served.has(s.id))).join('')+labels;
       moving.replaceChildren(); nodes.clear(); fit();
     }
-    function sprite(type,id,name,inner,pos,drawn) {
+    function sprite(type,id,name,inner,pos,drawn,variant='') {
       drawn.add(id);
       let g=nodes.get(id);
       if (!g) {
         g=el('g'); g.dataset.type=type; g.dataset.id=id; g.setAttribute('tabindex','0');
         g.setAttribute('role','button'); g.setAttribute('aria-label',name);
-        g.innerHTML=`<title>${name}</title>${inner}`;
         nodes.set(id,g); moving.append(g);
+      }
+      if (g.dataset.variant!==variant) {
+        g.innerHTML=`<title>${name}</title>${inner}`;
+        g.dataset.variant=variant;
       }
       g.setAttribute('transform',`translate(${project(pos.x,pos.y)})`);
     }
@@ -138,7 +141,7 @@
       if (game!==lastGame || signature!==key) { build(game); lastGame=game; signature=key; }
       const drawn=new Set();
       for (const train of game.trains)
-        sprite('train',train.id,train.name,art.train(false),train.position,drawn);
+        sprite('train',train.id,train.name,art.train(train.axis==='y'),train.position,drawn,train.axis);
       for (const r of game.residents) {
         if (r.onTrainId || (!r.journey && !(focus?.id===r.id || (game.tick===0 && r===game.residents[0])))) continue;
         sprite('resident',r.id,r.name,art.person(r)+'<circle class="hit" cy="-4.2" r="5.3" fill="transparent"/>',r.position,drawn);

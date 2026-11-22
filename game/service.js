@@ -37,10 +37,12 @@
   }
 
   const xy = ({x,y}) => ({x,y});
+  const trackAxis = (from,to) => Math.abs(to.y-from.y) > Math.abs(to.x-from.x) ? 'y' : 'x';
   function segment(frames, a, b, from, to, includeEnd) {
     const n = Math.ceil(distance(from, to) / BALANCE.trainSpeed);
+    const axis = trackAxis(from,to);
     for (let k = 1; k <= n - Number(!includeEnd); k++) {
-      frames.push({ a, b, atStopId: null, position: {
+      frames.push({ a, b, axis, atStopId: null, position: {
         x: from.x + (to.x-from.x)*k/n, y: from.y + (to.y-from.y)*k/n } });
     }
   }
@@ -58,9 +60,11 @@
     const trips = [...paths, ...paths.slice().reverse().map(p => [...p].reverse())];
     for (const [i,path] of trips.entries()) {
       const id = path[0], direction = i < paths.length ? 1 : -1;
+      const incoming = trips[(i+trips.length-1)%trips.length];
+      const axis = trackAxis(g.lookup.stops.get(incoming.at(-2)), g.lookup.stops.get(id));
       calls.push({ stopId: id, phase: frames.length, direction });
       for (let dwell = BALANCE.dwellTicks; dwell >= 0; dwell--)
-        frames.push({ a:id, b:id, position:xy(g.lookup.stops.get(id)), atStopId:id, dwell, direction });
+        frames.push({ a:id, b:id, axis, position:xy(g.lookup.stops.get(id)), atStopId:id, dwell, direction });
       for (let j=1; j<path.length; j++) {
         const a=path[j-1], b=path[j];
         segment(frames, a, b, g.lookup.stops.get(a), g.lookup.stops.get(b), j < path.length-1);
@@ -142,7 +146,8 @@
     const stop=call.stopId, position=xy(g.lookup.stops.get(stop));
     const earliest=cut+1+frames.length;
     const hold=mod(call.phase-offset-earliest,r.schedule.period);
-    for (let k=0;k<hold;k++) frames.push({a:stop,b:stop,position,atStopId:null});
+    const axis = frames.at(-1)?.axis ?? f.axis;
+    for (let k=0;k<hold;k++) frames.push({a:stop,b:stop,axis,position,atStopId:null});
     t.runs=t.runs.filter(run=>run.start<=cut);
     if (frames.length) t.runs.push({start:cut+1,frames,routeId:null});
     t.runs.push({start:earliest+hold,schedule:r.schedule,offset,routeId:r.id});
