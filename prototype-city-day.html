@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Последний трамвай · Сутки у рынка</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f1e5;color:#213c36;font:15px/1.45 system-ui,sans-serif}main{max-width:1140px;margin:auto;padding:16px clamp(12px,3vw,38px) 28px}header,.row,.rail,.legend,.timebar,.tabs,.metrics{display:flex;align-items:center;gap:10px;flex-wrap:wrap}header,.rail,.timebar{justify-content:space-between}header{border-bottom:1px solid #bcbfad;padding-bottom:8px}.stamp{font:700 11px/1.4 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.13em}.stamp b{color:#9b3e26}.sub{color:#59665c}h1{font:600 clamp(30px,4.5vw,54px)/1.04 Georgia,serif;letter-spacing:-.048em;margin:14px 0 4px}p{margin:2px 0 12px}button{font:inherit;background:#fffcf3;color:#264138;border:1px solid #aab5a5;border-radius:5px;padding:6px 11px;cursor:pointer}button[aria-pressed=true]{background:#29483d;color:#fff9e7}button:hover{border-color:#324f42}button:focus-visible,input:focus-visible{outline:3px solid #b95330;outline-offset:2px}.stage{border:1px solid #acb4a4;border-radius:7px;overflow:hidden}.rail,.legend{padding:6px 12px;background:#fffdf3}.rail small,.legend{font-size:12px}.rail b{font:700 17px/1.2 ui-monospace,monospace}svg{display:block;width:100%;height:auto;background:#263d4b}.legend{justify-content:space-between}.timebar{margin:12px 0 8px}.tabs{gap:4px}.tabs button{font-size:13px}.track{display:flex;align-items:center;gap:12px;color:#536355;font:12px ui-monospace,monospace}input[type=range]{width:100%;accent-color:#b45736;cursor:pointer}.metrics{margin-top:14px;gap:10px 22px;align-items:start}.metrics section{flex:1 1 280px;border-top:1px solid #b7bda9;padding-top:7px}.metrics strong{font:600 20px/1.3 Georgia,serif}.metrics label{display:block;margin:5px 0 0;cursor:pointer}input[type=checkbox]{accent-color:#29483d}.metrics p{margin:4px 0;font-size:14px}.mini{font-size:12px;color:#5c685c}.legend i{display:inline-block;width:8px;height:9px;background:#f5b44b;border:1px solid #594d3b;margin:0 3px 0 6px}.legend i.blue{background:#55cbd0} @media(max-width:650px){.tabs button{padding:5px 7px}.rail,.legend{padding:5px 7px}.legend{gap:3px}.metrics{margin-top:8px}main{padding-top:9px}.stage svg{min-height:170px}}
+.people-only,[hidden]{display:none!important}.people-study .day-only,.people-study #play,.people-study .track,.people-study .metrics,.people-study main>p.mini{display:none!important}.people-study .people-only:not([hidden]){display:block!important}.people-study .layers{display:flex!important;gap:8px;align-items:center;flex-wrap:wrap}.people-study [data-who]{cursor:pointer}.people-panel{border-top:1px solid #b7bda9;margin-top:12px;padding-top:8px}.people-panel p{margin:8px 0}.layers button{font-size:13px}.people-study .legend span:first-child{display:none}
+</style>
+<style>
+.intent-only{display:none}.intent-study .intent-only{display:block}.intent-study .intent-tools{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin:10px 0}.intent-study .intent-tools div{display:flex;flex-wrap:wrap;gap:4px}.intent-study .intent-tools button{font-size:13px}.intent-study .people-panel,.intent-study .timebar,.intent-study .legend,.intent-study #keyline{display:none!important}.intent-study .intent-foot{padding:7px 12px;background:#fffdf5;font-size:13px}.intent-study .intent-notes{margin:8px 0}.intent-notes #subject{font-weight:700}.intent-study [data-inspect]{cursor:pointer}.intent-study [data-inspect]:focus-visible{outline:none;filter:drop-shadow(0 0 1px #ffac20)}.intent-notes output{display:block}.intent-study .viewport{overflow-x:auto}.intent-study .viewport svg{min-width:560px}.intent-study .intent-notes label{cursor:pointer}.intent-study .intent-notes button{font-size:13px}
+</style>
+<style>
+.building-only{display:none}.building-study .building-only{display:block}.building-study #filterBox{background:#fffcf2;border:1px solid #bac3b1;border-radius:6px;padding:8px 12px;margin:8px 0}.building-study .filter-row{display:flex;gap:8px 20px;align-items:center;flex-wrap:wrap}.filter-row fieldset{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;border:0;padding:0;margin:0}.filter-row legend{font-size:12px;font-weight:700;color:#506151}.filter-row label{cursor:pointer}.filter-row select{font:inherit;max-width:100%}.filter-row input{accent-color:#29483d}.building-study [data-place]{cursor:pointer}.building-study [data-place]:focus-visible{outline:2px solid #ffd67e}.building-study #filterNote{display:block;font-size:13px;margin-top:5px}.building-study .intent-foot #symbols{display:none}.building-study .intent-foot #artKey{font-size:12px}.building-study .intent-notes{margin-bottom:12px}.building-study #pool{font-size:12px}.building-study #pool button{font-size:12px;padding:3px 7px;margin:3px 3px 0 0}
+</style>
+<main>
+<header class="stamp"><span><b>ЛТ /</b> Последний трамвай</span><span class="sub">Этюд 02 · объёмный город</span></header>
+<h1>Сутки у рынка</h1><p class="sub">Одна улица, два направления. С какой стороны будут ждать вагон вечером?</p>
+<div id="cameraBar" hidden class="timebar"><div class="tabs" aria-label="Масштаб карты"><button id="zoomBack" aria-label="Отдалить">−</button><button id="zoomHome">Вся зона</button><button id="zoomCloser" aria-label="Приблизить">+</button></div><output id="zoomLabel" class="mini"></output></div>
+<div id="homesBar" hidden class="timebar"><div class="tabs" aria-label="Жилой квартал"><button data-homes="brick">A · Кирпичная улица</button><button data-homes="blocks">B · Микрорайон</button></div></div>
+<div id="heightBar" hidden class="timebar"><div class="tabs" aria-label="Этажность панельных домов"><button data-height="low">1 · Все дома трёхэтажные</button><button data-height="stepped">2 · Три этажа спереди, до пяти сзади</button></div></div>
+<div class="intent-only intent-tools" id="artToolbar"><div aria-label="Рисунок метки"><button data-art="A">A · Мысль</button><button data-art="B">B · Билет</button><button data-art="C">C · Путь</button></div><div><button id="flowSwitch">Потоки</button><button id="more">Час пик</button></div></div>
+<section id="filterBox" class="building-only" aria-label="Фильтры перемещений">
+<div class="filter-row"><label>Место <select id="placePicker" aria-label="Выбрать место"></select></label>
+<fieldset id="directions"><legend>Направление</legend><label><input id="arrive" type="checkbox" checked> К зданию</label><label><input id="depart" type="checkbox" checked> Из здания</label></fieldset>
+<fieldset id="tripModes"><legend>Всё перемещение</legend><label><input id="byFoot" type="checkbox" checked> Целиком пешком</label><label><input id="byTram" type="checkbox" checked> С трамваем</label></fieldset>
+<button id="resetPlaces">Весь квартал</button></div>
+<strong id="focusTitle"></strong>
+<output id="filterNote" aria-live="polite"></output>
+<label class="mini"><input id="dimOthers" type="checkbox" checked> Приглушать жителей без облачков</label></section>
+<div class="intent-only intent-tools"><div class="stamp">Момент у остановки</div><div><button data-scene="0">1 · Поезд на остановке</button><button data-scene="1">2 · Мира вышла</button><button data-scene="2">3 · Пешком до входа</button></div></div>
+<section class="stage" aria-label="Улица у рынка">
+<div class="rail"><span class="stamp">Сосновые дворы / Рыночная площадь</span><b id="clock">07:30</b></div>
+<div class="viewport"><svg id="map" viewBox="-54 21 296 129" role="img" aria-labelledby="mapTitle mapDesc" xmlns="http://www.w3.org/2000/svg">
+<title id="mapTitle">Изометрическая улица с трамваем</title><desc id="mapDesc"></desc>
+<defs><radialGradient id="lamp"><stop stop-color="#ffd47b" stop-opacity=".63"/><stop offset=".55" stop-color="#e9ad5d" stop-opacity=".23"/><stop offset="1" stop-color="#e9ad5d" stop-opacity="0"/></radialGradient></defs>
+<g id="ground"></g><g id="city"></g><g id="watch"></g></svg></div>
+<div class="intent-only intent-foot"><div id="symbols"></div><span id="artKey"></span></div>
+<div class="people-only rail" id="keyline"></div>
+<div class="legend"><span><i></i> весь путь пешком　<i class="blue"></i> у посадочной площадки</span><span>Т1 · Дворы — Рынок</span></div>
+</section>
+<section class="intent-only intent-notes"><div class="building-only" id="pool"></div><output id="residentInfo" aria-live="polite"></output></section>
+<div class="timebar"><div class="tabs" aria-label="Час наблюдения"><button data-hour="7.5">07:30 · Утро</button><button data-hour="13">13:00 · День</button><button data-hour="19">19:00 · Вечер</button><button data-hour="1">01:00 · Ночь</button></div><button id="play" aria-pressed="false">▶ Прожить сутки</button></div>
+<label class="track">00:00<input type="range" id="time" min="0" max="1439" value="450" step="1" aria-label="Время суток">23:59</label>
+<div class="metrics">
+<section><div class="stamp sub">В этом кадре</div><strong id="period"></strong><p id="flow"></p></section>
+<section><div class="stamp sub">Сравнить на той же улице</div><label><input type="checkbox" id="reverse" checked> Вечером больше людей едут домой</label><label><input type="checkbox" id="arrows"> Подсветить направления на тротуарах</label></section>
+</div><p class="mini">Эскиз движения: часы и число фигур нужны для сравнения. Это не статистика прибытий.</p>
+<section class="people-only people-panel">
+<div class="layers"><button id="normal" aria-pressed="true">Обычный вид</button><button id="overlay" aria-pressed="false">Слой «Потоки»</button><button id="advance">Через несколько секунд →</button></div>
+<p><b id="whoTitle">У остановки</b> · <span id="why" aria-live="polite"></span></p>
+<div class="layers" aria-label="Выбрать жителя"><button data-name="n">Нина</button><button data-name="o">Олег</button><button data-name="m">Мира</button><button id="clear">Снять выделение</button></div>
+</section><footer class="mini"><a id="other" href="?study=people">Следующий этюд: трое на тротуаре →</a> · <a id="artLink" href="?study=intents">Ателье меток: три рисунка намерений</a> · <a id="filterLink" href="?study=buildings">Потоки у здания</a> · <a id="cameraLink" href="?study=camera">Первый экран: от обзора к остановке</a> · <a href="?study=homes">Жилые дома</a> · <a href="?study=height">Видно ли путь за домами?</a></footer></main>
+<script>
+// Throwaway visual study: same camera, buildings and line in both demand scenarios.
+const $=id=>document.getElementById(id), clamp=x=>Math.max(0,Math.min(1,x));
+const pt=(x,y,z=0)=>[.90*x-.65*y,.28*x+.64*y-z], points=a=>a.map(v=>v.map(x=>x.toFixed(2)).join(',')).join(' ');
+const poly=(a,c)=>`<polygon points="${points(a)}" fill="${c}"/>`, line=(a,c,w)=>`<polyline points="${points(a)}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
+const rect=(x,y,w,h,c)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`, disk=(x,y,r,c)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/>`;
+const iso=(a,c)=>poly(a.map(v=>pt(...v)),c), path=(a,c,w)=>line(a.map(v=>pt(...v)),c,w);
+const land=(x,y,w,d,c)=>iso([[x,y],[x+w,y],[x+w,y+d],[x,y+d]],c);
+const at=(x,y,g)=>{let [a,b]=pt(x,y);return `<g transform="translate(${a} ${b})">${g}</g>`};
+function box(x,y,w,d,h,top,front,side){return iso([[x,y+d],[x+w,y+d],[x+w,y+d,h],[x,y+d,h]],front)+iso([[x+w,y+d],[x+w,y],[x+w,y,h],[x+w,y+d,h]],side)+iso([[x,y,h],[x+w,y,h],[x+w,y+d,h],[x,y+d,h]],top)}
+// Character colours stay independent of the ambient light.
+const keys=['field','lot','garden','pave','road','front','side','roof','ridge','leaf','shade','glass','metal'];
+const palettes=[
+ [0, '1d3242 293f4a 2f4950 52606a 394954 637583 485b6c 465e72 637c91 42685f 304c4a 435965 aab8b3'],
+ [5, '304657 43555c 47605b 777b77 525e63 8a9294 687783 6c7a88 8996a1 5b7d68 3c6055 617781 a6b6af'],
+ [7.5,'a5ae96 b6bd9d a4b28f e0cda8 b9af98 ebd1a1 bfad90 b87f62 d39d78 81a37b 597d67 789798 788583'],
+ [13,'acc1aa c0ccaa adc29f e0dbc1 c5c3af e2cfaa b3b7a0 a58072 c39d86 81a88b 5e8775 719a9d 829391'],
+ [17,'acac91 bfbb9a adb18d e4c8a5 bfae99 eac399 baa58e b77f67 d09778 90a27a 6c856b 8b9c96 909b91'],
+ [19,'33495b 425762 496061 758087 5b6971 92939b 687987 646e82 8b8996 618276 40675f 768891 a3b1ae'],
+ [21,'243b4b 304751 364e51 5e6972 435360 73818d 516577 4d657a 70869b 527468 39574f 526a75 a1b0b1'],
+ [24,'1d3242 293f4a 2f4950 52606a 394954 637583 485b6c 465e72 637c91 42685f 304c4a 435965 aab8b3']
+].map(([t,s])=>[t,s.split(' ').map(h=>[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)))]);
+function palette(t){let i=1;while(t>palettes[i][0])i++;let [ta,a]=palettes[i-1],[tb,b]=palettes[i],f=(t-ta)/(tb-ta);return Object.fromEntries(keys.map((k,j)=>[k,`rgb(${a[j].map((v,n)=>Math.round(v+(b[j][n]-v)*f)).join(',')})`]))}
+const buildings=[[5,43,25,14,13],[36,43,14,13,11],[67,42,33,15,16],[110,43,24,13,13],[142,46,14,12,11],[172,42,27,15,16],[240,42,28,18,11],[12,73,29,14,13],[68,75,20,13,12],[202,69,34,19,16],[251,75,18,13,11],[8,142,27,15,15],[63,147,22,13,11],[116,147,25,13,14],[174,145,21,16,15],[242,144,24,14,13]];
+const trees=[[6,62],[14,65],[46,65],[77,65],[98,62],[106,60],[139,64],[151,63],[182,65],[190,62],[237,62],[269,64],[46,87],[119,86],[130,81],[145,85],[167,84],[178,87],[269,90],[2,134],[17,135],[42,138],[78,136],[94,139],[108,135],[137,140],[153,139],[190,138],[210,139],[242,135],[272,142]];
+let minute=450,moment=0,playing=false,prev=0,p,night,phase,sun;const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function label(x,y,txt){let w=txt.length*2.45+5;return rect(x-w/2,y-4.7,w,6,'#263c42')+`<text x="${x}" y="${y-.25}" fill="#fff7d8" text-anchor="middle" style="font:700 3.25px system-ui">${txt}</text>`}
+function blockHeight(b,i){const floors=heightKind==='stepped'&&b[1]<98?4+i%2:3;return floors*4+3}
+function homesExample(b,i){
+ let [x,y,w,d]=b,slab=homesKind==='blocks',h=slab?blockHeight(b,i):9+3*(i%3);
+ let front=slab?['#d6cfb7','#e2dbc6','#c7c6b5'][i%3]:['#bd8063','#cc9478','#b97961'][i%3],side=slab?'#b2b3a4':'#9a705f';
+ let g=box(x,y,w,d,h,slab?'#8a9594':'#925f51',front,side);
+ const face=(a,z,ww,hh,col)=>iso([[x+a,y+d,z],[x+a+ww,y+d,z],[x+a+ww,y+d,z+hh],[x+a,y+d,z+hh]],col);
+ if(slab){
+  g+=shift(0,-h,box(x+w*.62,y+d*.35,4,3,1.8,'#a7b0a5','#a2a391','#838e88'));
+  for(let z=1;z<h;z+=4)g+=face(0,z,w,.27,'#a8aa9c');
+  for(let j=1;j<w-2;j+=4.4){
+   for(let z=2;z<h-2;z+=4){g+=face(j,z,2.45,2.5,'#607d7e');if(j>w*.5&&j<w*.8)g+=face(j-.45,z-.6,3.3,1.45,i%2?'#9daeb2':'#af8e77')}
+  }
+ }else{
+  const ridge=['#a56950','#737f7b','#946950'][i%3];g+=iso([[x-1,y-1,h],[x+w+1,y-1,h],[x+w+1,y+d*.5,h+4.7],[x-1,y+d*.5,h+4.7]],'#b49379')+iso([[x-1,y+d*.5,h+4.7],[x+w+1,y+d*.5,h+4.7],[x+w+1,y+d+1,h],[x-1,y+d+1,h]],ridge);
+  g+=shift(0,-h-3,box(x+w*.65,y+d*.32,1.65,1.8,3,'#a57b64','#b8876a','#835f53'))+face(0,h-1,w,1,'#ead0ad');
+  for(let j=2;j<w-3;j+=5)for(let z=2;z<h-3;z+=5){
+   g+=face(j-.4,z-.4,3.2,3.8,'#e4c7a6')+face(j,z,2.4,3,'#5f7877')+face(j+1,z,.26,3,'#c9ad90');
+  }
+ }
+ return g+face(w*.43,0,2.7,4,'#425b58');
+}
+function house(b,i){if(cameraStudy&&i!==9)return `<g class="housing">${homesExample(b,i)}</g>`;let [x,y,w,d,h]=b,m=i===9,roof=m?'#a9705c':p.roof;
+ let g=box(x,y,w,d,h,p.ridge,p.front,p.side)+iso([[x-1,y-1,h],[x+w+1,y-1,h],[x+w+1,y+d*.45,h+4],[x-1,y+d*.45,h+4]],p.ridge)+iso([[x-1,y+d*.45,h+4],[x+w+1,y+d*.45,h+4],[x+w+1,y+d+1,h],[x-1,y+d+1,h]],roof);
+ if(!m&&i%3===0)g+=box(x+w*.68,y+d*.4,2,2,h+5,p.ridge,p.side,p.roof);
+ for(let j=2;j<w-2;j+=4.8)for(let z=h-2;z>3;z-=6){let lit=night*(.47+.53*clamp(Math.min(minute/60-15,24-minute/60)/2));let glow=lit>(.12+((i*13+Math.round(j*10)+z)%9)/10);g+=iso([[x+j,y+d,z],[x+j+2.5,y+d,z],[x+j+2.5,y+d,z-3],[x+j,y+d,z-3]],glow?'#ffd390':p.glass)}
+ let ex=x+w*.5;g+=iso([[ex,y+d],[ex+3,y+d],[ex+3,y+d,5],[ex,y+d,5]],'#354d52');
+ if(m){for(let j=0;j<w;j+=4){let e=Math.min(w,j+4);g+=iso([[x+j,y+d,8],[x+e,y+d,8],[x+e,y+d+5,5],[x+j,y+d+5,5]],j%8?'#e1cfad':'#ba715d')}let [a,b]=pt(x+w*.5,y+d*.5,h+7);g+=label(a,b,'РЫНОК')}
+ return g}
+function tree(x,y,i){let h=i%3===0?13:10;return at(x,y,rect(-.65,-5,1.3,5,p.shade)+poly([[-.4,-h-2],[-4.2,-7],[-3,-3],[.4,-2]],p.leaf)+poly([[-.4,-h-2],[4.4,-7],[3.1,-3],[.4,-2]],p.shade))}
+function terrain(){let g=land(-150,-140,660,460,p.field);
+ for(let x of [-40,59,164,234])for(let [y,d] of [[0,66],[72,18],[124,70]])g+=land(x,y,x===59?98:x===164?62:92,d,y===72?p.garden:p.lot);
+ for(let x of [55,160,230])g+=land(x-2,-80,4,300,p.pave);
+ for(let [y,d,c] of [[69,4,p.pave],[99,10,p.pave],[110,11,p.road],[121,6,p.pave]])g+=land(-110,y-d/2,550,d,c);
+ for(let x=-70;x<360;x+=4.5)g+=path([[x,107],[x,113]],p.side,1);
+ for(let y of [108.4,111.6])g+=path([[-80,y],[370,y]],p.metal,.85);
+ for(let x of [55,160,230])for(let k=0;k<4;k++)g+=land(x-2.5+k*1.5,114,.85,4,p.pave);
+ for(let x of [65,186])g+=land(x,99,28,4,p.front);
+ // Long morning shadows turn and shrink by noon. At night the pools of lamplight take over.
+ g+=`<g opacity="${(.07+.12*(1-night)).toFixed(2)}">`;
+ for(const [i,b] of buildings.entries()){let [x,y,w,d,h]=b;if(cameraStudy&&homesKind==='blocks'&&i!==9)h=blockHeight(b,i);g+=iso([[x,y+d],[x+w,y+d],[x+w+sun*h*.8,y+d+4],[x+sun*h*.8,y+d+4]],'#273d4d')}
+ g+='</g>';for(let x of [44,87,142,186,214,264]){let [a,b]=pt(x,102);g+=`<ellipse cx="${a}" cy="${b}" rx="12" ry="4.1" fill="url(#lamp)" opacity="${night}"/>`}return g}
+function lamp(x){let g=rect(-.45,-11,.9,11,p.side)+line([[0,-11],[2.5,-12],[4,-11]],p.metal,.6)+disk(3.6,-10.7,1,night>.34?'#ffda94':p.pave);return at(x,103,g)}
+function stop(x){return at(x,102,rect(-.55,-8.5,1.1,8.5,p.side)+rect(-2.25,-10.5,4.5,3.8,'#f2dfa9')+rect(-1.45,-9.7,2.9,1.65,'#af5341'))}
+function tram(x){let g=box(-11,-3.4,22,6.8,6,'#baab8c','#c8654c','#824e45');
+ for(let j=-9;j<10;j+=4)g+=iso([[j,3.4,5],[j+2.8,3.4,5],[j+2.8,3.4,2.6],[j,3.4,2.6]],night>.36?'#ffd685':'#bad3c8');
+ g+=path([[-3,0,6],[.5,0,10],[4,0,8],[.8,0,6]],'#35494e',.7);
+ return at(x,110,g)}
+function pedestrian(x,y,i,rider,dir,walking,coat){let c=coat??(rider?'#6ad4d2':'#f4b94e'),leg=walking?Math.sin(moment*4+i)*.85:0;
+ let g=poly([[-1,0],[3,0],[4,1],[.5,1]],p.shade)+line([[-1-dir*leg,0],[-.2,-2.2],[.8+dir*leg,.1]],'#273841',.75)+poly([[-.8,-4.9],[1,-4.7],[1.6,-1.6],[-1.45,-1.5]],c)+disk(0,-5.7,1.12,i%3?'#dbac89':'#986e54')+poly([[-1,-5.8],[-.3,-7],[.9,-6.6],[1.1,-5.9]],'#334954');
+ return at(x,y,g)}
+const swings=[[0,2,1],[4,1,1],[7.5,15,3],[10.5,7,4],[13,5,5],[16,5,6],[19,3,15],[22,2,5],[24,2,1]];
+function volumes(t){let i=1;while(t>swings[i][0])i++;let [a,out,back]=swings[i-1],[b,o,r]=swings[i],v=(t-a)/(b-a),f=Math.round(out+(o-out)*v),s=Math.round(back+(r-back)*v);if(!$('reverse').checked){let total=f+s;f=Math.round(total*.76);s=total-f}return [f,s]}
+function arrow(x,y,d){let col=d>0?'#783a25':'#285d71';return path([[x-5*d,y],[x+5*d,y]],'#fff5d3',1.7)+path([[x-5*d,y],[x+5*d,y],[x+2*d,y-3]],col,.9)+path([[x+5*d,y],[x+2*d,y+3]],col,.9)}
+let fixed=[],litMinute=-1;
+const params=new URLSearchParams(location.search),buildingStudy=params.get('study')==='buildings',intents=buildingStudy||params.get('study')==='intents',people=params.get('study')==='people',homesStudy=params.get('study')==='homes',heightStudy=params.get('study')==='height',cameraStudy=heightStudy||homesStudy||params.get('study')==='camera';
+let homesKind=homesStudy&&params.get('kind')==='brick'?'brick':'blocks',heightKind=heightStudy&&params.get('height')==='stepped'?'stepped':'low';
+// Identical lots in both height samples. Place the near row close enough to test sightlines.
+if(heightStudy){
+ for(const b of buildings)if(b[1]>130)b[1]=133;
+ buildings.push([37,133,15,15,15],[90,133,22,14,15],[199,133,25,14,15],[109,75,24,13,15]);
+ for(let i=trees.length-1;i>=0;i--){const [tx,ty]=trees[i];if(buildings.some(([x,y,w,d])=>tx>=x&&tx<=x+w&&ty>=y&&ty<=y+d))trees.splice(i,1)}
+}
+let layer=false,later=false,who='';
+const residents={
+ n:{name:'Нина',coat:'#b43f3f',early:[69,95],late:[100,95],to:'весь путь пешком',why:'Из Сосновых дворов на рынок. «Две минуты экономии не стоят билета». Проходит мимо «Дворов».'},
+ o:{name:'Олег',coat:'#458880',early:[56,99],late:[77,100],to:'поездка на трамвае',why:'Из Сосновых дворов на рынок. «Успею на ближайший Т1». Подходит к «Дворам» и остаётся ждать.'},
+ m:{name:'Мира',coat:'#925b91',early:[200,101],late:[214,96],to:'поездка на трамвае',why:'Из Сосновых дворов на рынок. «На Т1 я добралась быстрее». Уже вышла из поезда у рынка и идёт до входа.'}
+};
+function badge(k){let tr=k!=='n',ink='#233b40',bg=tr?'#8be2df':'#ffda85';
+ let plate=tr?rect(-3.4,-3.4,6.8,6.8,ink)+rect(-2.8,-2.8,5.6,5.6,bg):disk(0,0,3.6,ink)+disk(0,0,3,bg);
+ let sign=tr?rect(-1.8,-1.9,3.6,3,ink)+rect(-1.25,-1.45,2.5,1,bg)+line([[-1.4,2],[-.7,1.2],[.7,1.2],[1.4,2]],ink,.55):
+   disk(.45,-1.65,.55,ink)+line([[-1.4,1.9],[-.4,.5],[.15,-.8],[1.4,0]],ink,.7)+line([[-.45,.3],[.75,1],[1.25,2]],ink,.7);
+ return `<g transform="translate(0 -12)">${plate+sign}</g>`}
+function drawPeople(add){
+ let trace='',marks='';const door=[220,88];
+ for(const [i,[k,r]] of Object.entries(residents).entries()){
+  const [x,y]=later?r.late:r.early,chosen=who===k;
+  const leg=(a,col,rail=false)=>{if(a.length<2)return '';let body=path(a,'#263c42',2.4)+path(a,col,1.4);return rail?body:`<g stroke-dasharray="2 1.4">${body}</g>`};
+  if(chosen){
+   if(k==='o')trace=leg([[x,y],[77,100]],'#ffda85')+leg([[77,100],[80,110],[200,110],[200,101]],'#8be2df',true)+leg([[200,101],[220,96],door],'#ffda85');
+   else trace=leg([[x,y],[220,y],door],'#ffda85');
+  }
+  let ring=chosen?at(x,y,`<ellipse rx="3.9" ry="1.8" fill="none" stroke="#203b40" stroke-width="1.5"/><ellipse rx="3.9" ry="1.8" fill="none" stroke="#fff9da" stroke-width=".7"/>`):'';
+  add(x,y,ring+pedestrian(x,y,i,k!=='n',1,k!=='o'||!later,r.coat));
+  marks+=at(x,y,`<g data-who="${k}"><title>${r.name}</title>${layer?badge(k):''}${rect(-4,-(layer?16:8),8,layer?18:10,'transparent')}</g>`);
+ }
+ let tx=later?182:200;add(tx,110,tram(tx));$('watch').innerHTML=marks;
+ return trace;
+}
+function peopleReadout(){
+ const r=residents[who];$('whoTitle').textContent=r?`${r.name} · ${r.to}`:'У остановки';
+ $('why').textContent=r?r.why:'Смотрите на людей, переключите кадр или выберите одного жителя. Одежда остаётся той же.';
+ $('keyline').textContent=layer?'Круг с пешеходом — весь путь пешком. Квадрат с трамваем — поездка с Т1, включая путь до и после поезда.':'Обычный вид · одежда и поведение жителей, без служебных значков.';
+ $('normal').setAttribute('aria-pressed',!layer);$('overlay').setAttribute('aria-pressed',layer);
+ $('advance').textContent=later?'← В исходный кадр':'Через несколько секунд →';
+ document.querySelectorAll('[data-name]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.name===who));
+}
+// Three treatments of the same itinerary: mode and destination belong to the trip, action to the current frame.
+const tint={tram:'#9be0d7',foot:'#ffdb91'},ink='#233d3e',paper='#fff7df';
+const destinations={market:'Рынок',park:'Парк',station:'Вокзал'};
+const actions={walk:'идёт пешком',approach:'к остановке',wait:'ждёт поезд',ride:'в поезде',exit:'выходит',last:'идёт ко входу'};
+const cast=[
+ ['Мира','tram','market','#915d90',[[200,113.4,'ride'],[202,101,'exit'],[215,94,'last']]],
+ ['Нина','foot','market','#ba584c',[[145,96,'walk'],[152,96,'walk'],[160,96,'walk']]],
+ ['Олег','tram','park','#4e877d',[[231,96,'approach'],[220,98,'approach'],[207,100,'wait']]],
+ ['Лев','foot','park','#777fac',[[169,119,'walk'],[165,119,'walk'],[160,119,'walk']]],
+ ['Яна','tram','station','#ba8655',[[193,100,'wait'],[193,100,'wait'],[193,100,'wait']]],
+ ['Ася','tram','park','#657caf',[[187,99,'wait'],[187,99,'wait'],[187,99,'wait']]],
+ ['Тимур','foot','station','#94815f',[[209,119,'walk'],[215,119,'walk'],[222,119,'walk']]],
+ ['Марк','foot','market','#6f8c5b',[[152,95,'walk'],[160,95,'walk'],[167,95,'walk']]]
+];
+let art=['A','B','C'].includes(params.get('variant'))?params.get('variant'):'A',shot=[1,2].includes(+params.get('frame'))?+params.get('frame'):0,rush=params.get('rush')==='1',showIntent=true,watching=0;
+const siteAt=i=>i===9?'market':i===5?'station':'home'+i;
+const sites={...destinations,...Object.fromEntries(buildings.map((_,i)=>[siteAt(i),destinations[siteAt(i)]||`Дом №${i+1}`]))};
+// Origins of the eight active trips, not the place a resident happens to be standing next to.
+const fromSite=['station','home8','market','market','home3','station','market','park'];
+let site='';
+function matching(i){if(!site)return true;const r=cast[i];return (($('arrive').checked&&r[2]===site)||($('depart').checked&&fromSite[i]===site))&&(r[1]==='foot'?$('byFoot').checked:$('byTram').checked)}
+function setFocus(place,person=-1){
+ if(site!==place||!place)for(const id of ['arrive','depart','byFoot','byTram'])$(id).checked=true;
+ site=place;watching=person;$('placePicker').value=place;litMinute=-1;render();
+}
+function inspectPerson(i){if(buildingStudy)setFocus('',i);else{watching=i;render()}}
+function siteShape(id,body){const active=id===site,attrs=active?' style="filter:drop-shadow(0 0 1px #fff4c6) drop-shadow(0 0 1px #342e22)"':'';
+ return `<g data-place="${id}" tabindex="0" role="button" aria-label="Выбрать: ${sites[id]}" aria-pressed="${active}"${attrs}><title>${sites[id]}</title>${body}</g>`}
+function buildingBody(b,i){let drawing=house(b,i);if(!buildingStudy)return drawing;const id=siteAt(i);if(id==='station'){const [x,y,w,d,h]=b,[u,v]=pt(x+w*.52,y+d*.5,h+7);drawing+=label(u,v,'ВОКЗАЛ')}return siteShape(id,drawing)}
+const shift=(x,y,s)=>`<g transform="translate(${x} ${y})">${s}</g>`;
+const rounded=(x,y,w,h,r,c,stroke='none',sw=.25)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${c}" stroke="${stroke}" stroke-width="${sw}"/>`;
+const word=(x,y,str,size,color,anchor='middle',bold=650)=>`<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${color}" style="font:${bold} ${size}px system-ui,sans-serif">${str}</text>`;
+function glyph(kind,col=ink){
+ if(kind==='market')return poly([[-2.1,-1.7],[1.9,-1.7],[2.6,-.1],[-2.7,-.1]],col)+line([[-2,0],[-2,2],[2,2],[2,0]],col,.5)+line([[-1.1,1.8],[-1.1,.6],[.6,.6]],col,.42)+line([[-.7,-1.45],[-.9,-.35]],paper,.38)+line([[.85,-1.45],[1,-.35]],paper,.38);
+ if(kind==='park')return line([[0,-1],[0,2.2]],col,.65)+poly([[0,-2.6],[-2,-.6],[-1.3,-.6],[-2.3,1],[2.3,1],[1.3,-.6],[2,-.6]],col);
+ if(kind==='station')return poly([[-2.5,-.9],[0,-2.7],[2.5,-.9]],col)+rounded(-2,-1,4,3.1,.2,col)+disk(0,-.5,.95,paper)+line([[0,-1],[0,-.5],[.4,-.25]],col,.26)+rect(-.5,1.1,1,1.1,paper);
+ if(kind==='tram')return rounded(-1.8,-2,3.6,3.5,.65,col)+rounded(-1.25,-1.45,2.5,1.35,.2,paper)+line([[-1.5,2.2],[-.8,1.35],[.8,1.35],[1.5,2.2]],col,.5)+disk(-.9,.72,.25,paper)+disk(.9,.72,.25,paper);
+ return disk(.3,-1.9,.61,col)+line([[-1.8,2.1],[-.65,.8],[.05,-.9],[.7,.1],[1.7,.25]],col,.53)+line([[-.4,.3],[.8,1.1],[1.2,2.2]],col,.56)+line([[0,-.9],[-1,-.5],[-1.5,.1]],col,.46);
+}
+const dims={A:[18,12],B:[32,9.3],C:[27,8.6]};
+function artwork(r,act){
+ const [,mode,dest]=r,bg=tint[mode],d=destinations[dest],a=actions[act];
+ if(art==='A'){ // A thought: landmark is the big picture; a little pin keeps the trip mode.
+  return rounded(-8.2,-5.9,16.4,10.7,4.4,paper,ink,.42)+disk(0,5.8,.85,paper)+disk(-.8,7,.45,paper)+shift(-.35,-2,`<g transform="scale(1.35)">${glyph(dest)}</g>`)+word(0,3.25,a,1.8,ink)+shift(7,-4.4,disk(0,0,2.65,ink)+disk(0,0,2.3,bg)+`<g transform="scale(.76)">${glyph(mode)}</g>`);
+ }
+ if(art==='B'){ // B ticket: destination and action in words; the fixed coloured stub stays attached.
+  return rounded(-16,-4.6,32,9.2,1.2,paper,ink,.4)+rounded(-15.7,-4.3,7.4,8.6,.85,bg)+shift(-12,0,glyph(mode))+`<path d="M-8,-4 v8" stroke="${ink}" stroke-width=".3" stroke-dasharray=".6 .65"/>`+word(-6.4,-.65,d,3.2,ink,'start',760)+word(-6.4,2.7,a,2.05,ink,'start')+shift(12.5,-.4,`<g transform="scale(.78)">${glyph(dest)}</g>`);
+ }
+ // C trip strip: destination at right, active leg signalled by the light bead; the mode sits at left.
+ let tr=mode==='tram',slots=tr?[-5.7,-.6,4.6]:[-.6],active=tr?({approach:0,wait:0,ride:1,exit:2,last:2})[act]:0;
+ let strip=rounded(-13.5,-4.3,27,8.6,1.8,ink,paper,.32)+shift(-10.4,-.1,rounded(-2.45,-2.5,4.9,5,.8,bg)+`<g transform="scale(.77)">${glyph(mode)}</g>`)+line([[-7,-.65],[7.4,-.65]],'#95aaa3',.44);
+ slots.forEach((x,j)=>{strip+=disk(x,-.65,j===active?1.2:.57,j===active?bg:'#b4c5b9')});
+ return strip+word(.2,3,a,1.85,paper)+shift(10.1,-.4,disk(0,0,2.65,paper)+`<g transform="scale(.79)">${glyph(dest)}</g>`);
+}
+function intentScene(put){
+  const list=cast.slice(0,rush?8:3),[w,h]=dims[art],boxes=[],records=[];let unmarked='';
+ for(let i=0;i<list.length;i++){const r=list[i],[x,y,act]=r[4][shot],[u,v]=pt(x,y),matches=!buildingStudy||matching(i),chosen=matches&&i===watching;
+  const sprite=act==='ride'?at(x,y,shift(0,-3.7,rounded(-.74,.35,1.4,.65,.3,r[3])+disk(0,-.1,.63,'#e0b892')+rounded(-.59,-.64,1.13,.3,.12,'#493c42'))):
+   (chosen?at(x,y,`<ellipse rx="3.2" ry="1.45" fill="none" stroke="#fff5cf" stroke-width="1.2"/><ellipse rx="3.2" ry="1.45" fill="none" stroke="${ink}" stroke-width=".45"/>`):'')+pedestrian(x,y,i,r[1]==='tram',1,!['wait','ride'].includes(act),r[3]);
+  const opacity=!matches&&$('dimOthers').checked ? 0.5 : 1;
+  put(x,act==='ride'?y+6:y,`<g data-resident="${i}" opacity="${opacity}">${sprite}</g>`);
+  if(!matches||(buildingStudy&&watching>=0&&!chosen)){
+   unmarked+=`<g data-inspect="${i}" role="button" tabindex="0" aria-label="Выбрать жителя: ${r[0]}"><title>${r[0]}</title>${rect(u-2.8,v-8,5.6,9,'transparent')}</g>`;
+   continue;
+  }
+  const anchor=v-(act==='ride'?5.5:7.3);
+  let cx=Math.max(36+w/2,Math.min(178-w/2,u)),cy=anchor-h/2-2.8;
+  if(showIntent){
+   const ox=cx,oy=cy;
+   place:for(let row=0;row<8;row++)for(let dx of [0,-.5,.5,-1,1,-1.5,1.5,-2,2]){
+    const a=Math.max(36+w/2,Math.min(178-w/2,ox+dx*(w+2))),b=oy-row*(h+2);
+    if(b-h/2<50||boxes.some(o=>Math.abs(o.cx-a)<w+1.8&&Math.abs(o.cy-b)<h+1.8))continue;
+    cx=a;cy=b;break place;
+   }
+   boxes.push({cx,cy});
+  }
+  records.push({u,v,anchor,cx,cy,r,act,i,chosen});
+ }
+ let lines='',marks='',targets='';for(const {u,v,anchor,cx,cy,r,act,i,chosen} of records){
+  let z=`${r[0]} · ${actions[act]} · ${destinations[r[2]]} · ${r[1]==='tram'?'поездка на трамвае':'весь путь пешком'}`;
+  if(showIntent){
+   let points=[[u,anchor],[cx,cy+h/2]];lines+=line(points,paper,1.05)+line(points,ink,.43);
+   marks+=`<g data-inspect="${i}" data-mode="${r[1]}" data-dest="${r[2]}" data-action="${act}" role="button" aria-label="${z}" tabindex="0"><title>${z}</title>${shift(cx,cy,artwork(r,act))}</g>`;
+  }
+  targets+=`<g data-inspect="${i}" role="${showIntent?'presentation':'button'}" ${showIntent?'':`aria-label="${z}" tabindex="0"`}><title>${z}</title>${rect(u-2.8,v-8,5.6,9,'transparent')}</g>`;
+ }
+ const tx=[200,200,185][shot];put(tx,110,tram(tx));
+ $('watch').innerHTML=lines+unmarked+targets+marks;
+  const r=list[watching];$('residentInfo').textContent=r?`${r[0]} · ${buildingStudy?sites[fromSite[watching]]+' → '+destinations[r[2]]+'. Сейчас: '+actions[r[4][shot][2]]:actions[r[4][shot][2]]+' → '+destinations[r[2]]}. Всё перемещение: ${r[1]==='tram'?'поездка на трамвае':'целиком пешком'}.`:'';
+  if(buildingStudy){
+   $('directions').hidden=$('tripModes').hidden=$('dimOthers').parentElement.hidden=!site;
+   $('resetPlaces').hidden=!site&&!r;
+   $('focusTitle').textContent=site?`В фокусе: ${sites[site]}`:r?`В фокусе: ${r[0]}`:'Обзор квартала';
+   $('placePicker').options[0].textContent=r?'Выбрать здание…':'Весь квартал';
+   $('filterNote').textContent=site?`В пути сейчас: ${records.length} из ${list.length}. `+(records.length?'Нажмите на любого жителя, чтобы перейти к его поездке.':'Совпадений нет. Измените фильтры или выберите другого участника на карте.'):r?'':'Нажмите на здание, чтобы отобрать его потоки, или на жителя, чтобы посмотреть его поездку.';
+   $('pool').innerHTML=site&&records.length?'В выборке: '+records.map(({r,i})=>`<button data-person="${i}">${r[0]}</button>`).join(''):'';
+  }
+ $('artKey').textContent=showIntent?({A:'Рисунок в облачке — место назначения, подпись — действие. Маленький значок сбоку — способ всего пути.',B:'На билете крупно написано куда, под ним — что делает житель. На цветном корешке — способ всего пути.',C:'Слева — способ всего пути, справа — цель. Светлая точка показывает этап: до поезда, в нём или после высадки. Под ней — текущее действие.'})[art]:'Обычный город. Включите «Потоки», чтобы увидеть намерения всех жителей.';
+ document.querySelectorAll('[data-art]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.art===art));document.querySelectorAll('[data-scene]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.scene===shot));
+ $('more').setAttribute('aria-pressed',rush);$('flowSwitch').setAttribute('aria-pressed',showIntent);
+ return '';
+}
+function render(){let t=minute/60,[out,back]=volumes(t),actors=fixed.slice(),put=(x,y,art)=>actors.push([pt(x,y)[1],art]);
+ if(litMinute!==Math.floor(minute)){litMinute=Math.floor(minute);p=palette(t);night=clamp(1-Math.min((t-4.5)/3.4,(21.2-t)/3.6));sun=Math.cos((t-7)*Math.PI/12);
+  $('ground').innerHTML=terrain();actors=[];buildings.forEach((b,i)=>put(b[0]+b[2]/2,b[1]+b[3],buildingBody(b,i)));trees.forEach(([x,y],i)=>put(x,y,tree(x,y,i)));
+  if(buildingStudy){let [u,v]=pt(142,79);put(142,80,siteShape('park',land(122,74,30,10,p.garden)+label(u,v,'ПАРК')))}
+   for(let x of [44,87,142,186,214,264])put(x,103,lamp(x));for(let x of [82,202])put(x,102,stop(x));
+   if(cameraStudy){const [x,y]=pt(80,80,19);put(80,90,label(x,y,'СОСНОВЫЕ ДВОРЫ'))}
+   fixed=actors.slice()}
+ function group(n,d){let waiting=n>=3?Math.max(1,Math.floor(n*.34)):0,walkers=n-waiting;
+  for(let i=0;i<n;i++){let q=i<waiting,ix=i-waiting,progress=q?0:((ix+.36+.29*Math.sin(ix*4.2+d))/walkers+moment*(.014+(ix%3)*.001))%1;
+    let x=q?(d>0?80-i*3:200+i*3):(d>0?45+progress*170:215-progress*170),y=q?100: d>0?95.5:118.8;
+    const coat=cameraStudy?cast[(i+(d>0?0:3))%cast.length][3]:undefined;put(x,y,pedestrian(x,y,i,q,d,!q,coat))}
+ }
+ let traces='';
+ if(intents)traces=intentScene(put);else if(people){traces=drawPeople(put);peopleReadout()}else{group(out,1);group(back,-1);let tx=140-56*Math.cos(moment*.14+.62);put(tx,110,tram(tx));
+ traces=$('arrows').checked?[61,112,170].map(x=>arrow(x,94,1)+arrow(x,122,-1)).join(''):''}
+ $('city').innerHTML=traces+actors.sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join('');
+ phase=t<5||t>=22?'Ночь':t<11?'Утро':t<17?'День':'Вечер';let hh=Math.floor(t),mm=Math.floor(minute)%60,hm=[hh,mm].map(i=>String(i).padStart(2,'0')).join(':');
+ $('clock').textContent=hm;$('time').value=Math.floor(minute);$('time').setAttribute('aria-valuetext',hm);
+ let flow=`К площади: ${out} · К жилым дворам: ${back}`;$('period').textContent=phase;$('flow').textContent=flow;$('mapDesc').textContent=intents?`Намерения жителей у рынка. ${$('residentInfo').textContent}`:people?`${phase}. Нина, Олег и Мира на тротуаре между дворами и рынком.`:`${phase}, ${hm}. ${flow}.`;
+ document.querySelectorAll('[data-hour]').forEach(b=>b.setAttribute('aria-pressed',Math.abs(+b.dataset.hour*60-minute)<1));
+}
+function setPlay(on){playing=on;prev=0;$('play').textContent=on?'Ⅱ Остановить часы':'▶ Прожить сутки';$('play').setAttribute('aria-pressed',on)}
+function choose(m){setPlay(false);minute=m;moment=0;render()}
+$('play').onclick=()=>setPlay(!playing);$('time').oninput=e=>choose(+e.target.value);
+document.querySelectorAll('[data-hour]').forEach(b=>b.onclick=()=>choose(+b.dataset.hour*60));$('reverse').onchange=render;$('arrows').onchange=render;
+function tick(ts){if(!prev)prev=ts;let dt=(ts-prev)/1000;if(dt>=.075){prev=ts;dt=Math.min(dt,.3);if(!reduced||playing){moment+=dt;if(playing)minute=(minute+dt*32)%1440;render()}}requestAnimationFrame(tick)}
+if(people){
+ $('other').href='?hour=7.5';$('other').textContent='← Сутки у рынка';
+ document.body.classList.add('people-study');document.title='Последний трамвай · Трое на тротуаре';document.querySelector('h1').textContent='Трое на тротуаре';document.querySelector('h1 + p').textContent='Один момент в двух видах. Кто пройдёт мимо остановки, кто ждёт Т1, а кто уже вышел?';
+ $('map').setAttribute('viewBox','-36 47 195 86');$('map').setAttribute('role','group');
+ const select=k=>{who=k;render()};$('watch').onclick=e=>{const k=e.target.closest('[data-who]')?.dataset.who;if(k)select(k)};
+ document.querySelectorAll('[data-name]').forEach(b=>b.onclick=()=>select(b.dataset.name));$('clear').onclick=()=>select('');
+ $('normal').onclick=()=>{layer=false;render()};$('overlay').onclick=()=>{layer=true;render()};$('advance').onclick=()=>{later=!later;render()};
+}
+if(intents){
+ document.querySelector('.people-panel').hidden=true;
+ $('symbols').innerHTML=Object.entries(destinations).map(([k,d])=>`<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px"><svg viewBox="-3 -3 6 6" width="18" height="18" style="width:18px;background:none" aria-hidden="true">${glyph(k)}</svg>${d}</span>`).join('');
+ document.body.classList.add('intent-study','people-study');document.title='Последний трамвай · Ателье меток';document.querySelector('header .sub').textContent='Этюд 03 · слой «Потоки»';document.querySelector('h1').textContent='У кого что на уме?';document.querySelector('h1 + p').textContent='Те же жители у рынка. Переключите рисунок метки, затем посмотрите, что меняется, когда Мира выходит из поезда.';
+ $('map').setAttribute('viewBox','33 48 149 88');$('map').setAttribute('role','group');$('artLink').hidden=true;
+  const variant=k=>{if(buildingStudy)return;art=k;let url=new URL(location.href);url.searchParams.set('variant',art);try{history.replaceState(null,'',url)}catch{}render()};
+ document.querySelectorAll('[data-art]').forEach(b=>b.onclick=()=>variant(b.dataset.art));document.querySelectorAll('[data-scene]').forEach(b=>b.onclick=()=>{shot=+b.dataset.scene;render()});
+ $('more').onclick=()=>{rush=!rush;if(!rush&&watching>=3)watching=0;render()};$('flowSwitch').onclick=()=>{showIntent=!showIntent;render()};
+  const inspect=e=>{const g=e.target.closest('[data-inspect]');if(!g)return;inspectPerson(+g.dataset.inspect);if(e.type==='keydown')$('watch').querySelector(`[tabindex="0"][data-inspect="${watching}"]`)?.focus()};
+ $('watch').onclick=inspect;$('watch').onkeydown=e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();inspect(e)}};
+  document.addEventListener('keydown',e=>{if(!buildingStudy&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();variant('ABC'[('ABC'.indexOf(art)+(e.key==='ArrowLeft'?2:1))%3])}});
+}
+if(buildingStudy){
+ art='A';rush=true;watching=-1;site=Object.hasOwn(sites,params.get('place'))?params.get('place'):'';
+ document.body.classList.add('building-study');$('artToolbar').hidden=true;$('artLink').hidden=false;$('filterLink').hidden=true;
+ $('filterBox').append($('residentInfo'));
+ document.title='Последний трамвай · Фокус на карте';document.querySelector('h1').textContent='Здание и его жители';document.querySelector('header .sub').textContent='Этюд 04 · фокус на карте';
+ document.querySelector('h1 + p').textContent='Нажмите на рынок с полосатым навесом, вокзал или дом. Отберите тех, кто направляется туда или начал в нём свой путь.';$('map').setAttribute('aria-label','Карта с доступными для выбора зданиями');
+ $('placePicker').innerHTML='<option value="">Весь квартал</option>'+Object.entries(sites).map(([id,n])=>`<option value="${id}">${n}</option>`).join('');$('placePicker').value=site;
+ if(site&&params.get('direction')==='in')$('depart').checked=false;
+ if(site&&params.get('mode')==='tram')$('byFoot').checked=false;
+ function pickSite(id){setFocus(id)}
+ const selectOnMap=e=>{const id=e.target.closest('[data-place]')?.dataset.place;if(id){pickSite(id);if(e.type==='keydown')$('city').querySelector(`[data-place="${id}"]`)?.focus()}};
+ $('city').onclick=selectOnMap;$('city').onkeydown=e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();selectOnMap(e)}};
+ $('placePicker').onchange=e=>pickSite(e.target.value);
+ for(const id of ['arrive','depart','byFoot','byTram','dimOthers'])$(id).onchange=render;
+ $('resetPlaces').onclick=()=>pickSite('');
+ $('pool').onclick=e=>{let b=e.target.closest('[data-person]');if(b){inspectPerson(+b.dataset.person);$('watch').querySelector(`[tabindex="0"][data-inspect="${watching}"]`)?.focus()}};
+}
+function openCamera(){
+ document.title='Последний трамвай · Первый экран';document.querySelector('header .sub').textContent='Этюд 05 · старт игры';
+ document.querySelector('h1').textContent='От всей зоны до остановки';document.querySelector('h1 + p').textContent='Наведите курсор на остановку и прокрутите колесо вверх. На крупном плане карту можно перетаскивать.';
+ document.querySelector('[data-hour]').closest('.timebar').hidden=true;document.querySelector('.track').hidden=true;document.querySelector('.metrics').hidden=true;document.querySelector('main > p.mini').hidden=true;$('cameraLink').hidden=true;$('cameraBar').hidden=false;
+ document.querySelector('.legend span').textContent='Служба движения · утренний выпуск';
+ if(homesStudy){
+  document.title='Последний трамвай · Жилой квартал';document.querySelector('header .sub').textContent='Этюд 06 · жилые дома';
+  document.querySelector('h1').textContent='Жилые кварталы центра';document.querySelector('h1 + p').textContent='Для старта выбран B: панельные дома в несколько этажей. Можно приблизить фасад или сравнить его с кирпичной улицей.';
+  $('homesBar').hidden=false;const change=k=>{homesKind=k;litMinute=-1;render();document.querySelectorAll('[data-homes]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.homes===k))};
+  document.querySelectorAll('[data-homes]').forEach(b=>b.onclick=()=>change(b.dataset.homes));change(homesKind);
+ }
+ if(heightStudy){
+  document.title='Последний трамвай · Дома перед путями';document.querySelector('header .sub').textContent='Этюд 07 · высота жилого квартала';
+  document.querySelector('h1').textContent='Видно ли рельсы за домами?';document.querySelector('h1 + p').textContent='На общем плане проследите путь от поезда до рынка. Затем приблизьте его колёсиком. В обоих кадрах дома стоят на тех же местах.';
+  $('heightBar').hidden=false;const change=k=>{heightKind=k;litMinute=-1;render();document.querySelectorAll('[data-height]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.height===k))};
+  document.querySelectorAll('[data-height]').forEach(b=>b.onclick=()=>change(b.dataset.height));change(heightKind);
+ }
+ const map=$('map'),b=homesStudy||heightStudy?{x:-103,y:-1,width:334,height:181}:$('city').getBBox(),aspect=260/120,W=Math.max(b.width+16,(b.height+16)*aspect),H=W/aspect;
+ const left=b.x+(b.width-W)/2,top=b.y+(b.height-H)/2,max=4;let z=1,x=left,y=top,drag=null;
+ function paint(){
+  const w=W/z,h=H/z;x=Math.max(left,Math.min(left+W-w,x));y=Math.max(top,Math.min(top+H-h,y));
+  map.setAttribute('viewBox',[x,y,w,h].join(' '));map.style.cursor=drag?'grabbing':z>1?'grab':'zoom-in';
+  $('zoomLabel').textContent=z===1?'Обзор всей зоны':`Масштаб ${z.toLocaleString('ru',{maximumFractionDigits:1})}×`;$('zoomBack').disabled=$('zoomHome').disabled=z===1;$('zoomCloser').disabled=z===max;
+ }
+ function zoomTo(next,anchor){const ax=anchor?.x??(x+W/z/2),ay=anchor?.y??(y+H/z/2),old=z;z=Math.max(1,Math.min(max,next));x=ax-(ax-x)*old/z;y=ay-(ay-y)*old/z;paint()}
+ map.addEventListener('wheel',e=>{if(e.ctrlKey||e.metaKey||!e.deltaY)return;e.preventDefault();const d=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?map.clientHeight:1),pt=new DOMPoint(e.clientX,e.clientY).matrixTransform(map.getScreenCTM().inverse());zoomTo(z*Math.exp(-Math.max(-300,Math.min(300,d))*.0022),pt)},{passive:false});
+ map.style.touchAction='pan-y';map.style.userSelect='none';
+ map.onpointerdown=e=>{if(z<=1||e.button!==0)return;drag={id:e.pointerId,cx:e.clientX,cy:e.clientY,x,y,scale:map.getScreenCTM().a};map.setPointerCapture(e.pointerId);paint()};
+ map.onpointermove=e=>{if(!drag||e.pointerId!==drag.id)return;x=drag.x-(e.clientX-drag.cx)/drag.scale;y=drag.y-(e.clientY-drag.cy)/drag.scale;paint()};
+ map.onlostpointercapture=()=>{drag=null;paint()};
+ $('zoomBack').onclick=()=>zoomTo(z/1.35);$('zoomCloser').onclick=()=>zoomTo(z*1.35);$('zoomHome').onclick=()=>zoomTo(1);paint();
+}
+const initial=cameraStudy?7.5:Number(params.get('hour')??(intents?19:people?13:7.5));choose(Number.isFinite(initial)&&initial>=0&&initial<24?initial*60:450);if(cameraStudy)openCamera();else if(!people&&!intents)requestAnimationFrame(tick);
+</script></html>
