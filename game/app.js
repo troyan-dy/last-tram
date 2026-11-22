@@ -10,7 +10,7 @@
   function select(type,id) { focus={type,id}; render(); }
   function watch() {
     const first = game.residents.find(r=>r.journey && !r.onTrainId) ??
-      game.residents.find(r=>game.lookup.buildings.get(r.homeId).ring<=game.openRing && !r.morningStarted) ?? game.residents[0];
+      game.residents.find(r=>game.lookup.buildings.get(r.homeId).ring<=game.openRing && !r.lastJourney) ?? game.residents[0];
     select('resident',first.id);
   }
 
