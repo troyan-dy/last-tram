@@ -1,0 +1,194 @@
+<!doctype html>
+<!-- Сравнение спрайтов на одном постановочном кадре; ?variant=A, B, C или all. -->
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>До рынка пешком · Последний трамвай</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f0e7;color:#222d2a;font:15px/1.45 system-ui,sans-serif}
+main{max-width:1590px;margin:auto;padding:24px clamp(12px,3vw,48px) 90px}
+header,.tools,.caption,footer,nav{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header{justify-content:space-between;border-bottom:1px solid #a5a69b;padding-bottom:12px}
+.folio,.num,.legend,.stamp{font:700 11px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase}
+.stamp{background:#28483f;color:#ffefbf;padding:4px 8px}
+h1,h2,h3,p{margin:0}h1,h2{font-family:Georgia,serif;font-weight:normal}
+h1{font-size:clamp(31px,4vw,61px);line-height:1.12;margin-top:20px;letter-spacing:-.045em}h2{font-size:clamp(18px,2vw,31px);line-height:1.1;letter-spacing:-.04em}
+.lead{color:#4a5650;margin:5px 0 17px}.tools{gap:8px;margin:10px 0 16px}
+button{font:inherit;cursor:pointer;color:inherit;background:transparent;border:1px solid #929a8f;border-radius:4px;padding:5px 11px}
+button:hover,button[aria-pressed=true]{background:#dae4d6}
+button:focus-visible,[tabindex]:focus-visible{outline:3px solid #cd581e;outline-offset:2px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,1.3vw,22px);align-items:start}
+.cards.solo{grid-template-columns:minmax(0,840px);justify-content:center}
+article{border:1px solid #adb2a4;background:#faf8f1;border-radius:4px;overflow:hidden}
+.caption{justify-content:space-between;padding:10px 12px;border-bottom:1px solid #adb2a4;gap:4px}
+.num{color:#496458;font-size:10px}.caption button{font-size:13px}
+.map,.strip{display:block;width:100%;height:auto}.map{touch-action:manipulation}
+.legend{color:#4e5b51;margin:10px 12px 0;font-size:10px}
+.strip{max-height:112px}.note{border-top:1px solid #d7d9cb;padding:8px 12px;font-size:13px;color:#47564c;min-height:52px}
+.inspect{margin:16px 0 0;border-left:4px solid #bd5c37;padding:4px 14px}.inspect b{display:block}.inspect span{color:#46564d}
+nav{position:fixed;z-index:2;left:50%;bottom:12px;transform:translateX(-50%);background:#223d34;color:#fff9e1;border-radius:40px;box-shadow:0 3px 15px #12241a40;padding:6px 9px;gap:6px;flex-wrap:nowrap}
+nav button{border:0;color:inherit;border-radius:25px;white-space:nowrap}nav button:hover,nav button[aria-pressed=true]{background:#4d675b}
+svg g[role=button]{cursor:pointer}svg .hit{fill:transparent;stroke:none}
+svg .cut{cursor:pointer}svg .cut:hover,svg .cut:focus-visible,svg .cut.open{opacity:.22}
+.sel{fill:none;stroke-width:2;stroke-dasharray:4 2;pointer-events:none}
+@media(max-width:900px){.cards{grid-template-columns:repeat(auto-fit,minmax(min(290px,100%),1fr))}}
+@media(prefers-reduced-motion:no-preference){.cut{transition:opacity .16s}}
+</style>
+<main>
+<header><b class="folio">Последний трамвай &nbsp; / &nbsp; Альбом спрайтов</b><span class="stamp">Этюд 01 · сравнение</span></header>
+<h1>До рынка пешком</h1>
+<p class="lead">Кто пройдёт мимо остановки «Дворы»? Запустите сцену или выберите жителя прямо на улице.</p>
+<div class="tools"><button id="play">▶ Пустить в ход</button><button id="reset">В начало</button><button id="pick">Показать одного жителя</button><button id="arr">Осмотреть рынок</button></div>
+<div id="cards" class="cards"></div>
+<div class="inspect" role="status"><b id="subject">Наблюдение за улицей</b><span id="detail">Кадр остановлен. Вагон, очередь и прохожие во всех трёх рисунках находятся в одном и том же месте.</span></div>
+<nav aria-label="Сравнение стилей"><button id="prev" aria-label="Предыдущий стиль">←</button><button id="all">Все рядом</button><span id="key" class="folio"></span><button id="next" aria-label="Следующий стиль">→</button></nav>
+</main>
+<script>
+const styles={
+ A:['Бумажная схема','Билетики вместо фигур: по насечке и знаку видно, кто идёт к вагону.','схема'],
+ B:['Синий час','Человек в несколько пикселей, тёплые окна и светлая кромка тротуара.','пиксели'],
+ C:['Город-макет','Гранёные кроны и крыши. Наведите на ближний дом или нажмите его, чтобы увидеть путь за ним.','объём']
+};
+const keys=Object.keys(styles),$=id=>document.getElementById(id);
+const rect=(x,y,w,h,fill,attrs='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" ${attrs}/>`;
+const path=(d,fill,stroke='none',width=1,attrs='')=>`<path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${width}" ${attrs}/>`;
+const txt=(x,y,s,fill,size=10,attrs='')=>`<text x="${x}" y="${y}" fill="${fill}" font-family="system-ui,sans-serif" font-size="${size}" font-weight="650" ${attrs}>${s}</text>`;
+const at=(x,y,body,scale=1,attrs='')=>`<g transform="translate(${x} ${y}) scale(${scale})" ${attrs}>${body}</g>`;
+const rep=(n,f)=>Array.from({length:n},(_,i)=>f(i)).join('');
+const ink='#323e37',paper='#f8efce',red='#b94d36',blue='#206765';
+const rw=(x,y,w,h,c)=>rect(x,y,w,h,c,`stroke="${ink}" stroke-width="1.4"`);
+function house(k){
+ if(k==='A')return rw(-26,-37,52,37,'#dad7b3')+path('M-26 -36h52l-6 -8h-41Z',paper,ink,1.4)+rep(3,i=>path(`M${-21+i*15} -28h9m-9 9h9`, 'none',ink,2))+rw(9,-13,8,13,paper);
+ if(k==='B')return rect(-28,-48,56,48,'#273453')+rect(-30,-51,60,4,'#716587')+rect(-27,-47,3,47,'#586180')+rect(22,-46,6,46,'#202f49')+rep(12,i=>rect(-20+(i%4)*11,-39+Math.floor(i/4)*12,5,7,['#dba667','#4f607c','#f6ca86','#6e7590'][i*7%5%4]))+rect(-3,-10,7,10,'#161e36')+rect(11,-59,8,8,'#343a58');
+ return path('M-33 -43l20 -16 49 9 -20 16Z','#e4c2a1')+path('M-33 -43l49 9v38l-49 -9Z','#c88f70')+path('M16 -34l20 -16v39L16 4Z','#876a62')+rep(6,i=>path(`M${-27+(i%3)*13} ${-33+(i%3)*2.3+Math.floor(i/3)*13}l6 1v7l-6 -1Z`,'#755e56'))+path('M21 -30l9 -7v7l-9 7Z','#beb8a3');
+}
+function tree(k){
+ if(k==='A')return path('M0 1v-16','none',ink,2)+path('M0 -30l-11 15h5l-8 9h28l-8 -9h5Z','#b7c4a0',ink,1.3);
+ if(k==='B')return rect(-2,-12,4,13,'#27283e')+path('M-4 -32h8v4h5v5h4v10H9v5H-9v-4h-5v-10h4v-6h6Z','#30495a')+path('M-5 -29h8v3h-6v4h-5v6h-3v-8h6Z','#506574');
+ return path('M-6 0l22 5 8 -4 -18 -5Z','#8b9c8b')+path('M-2 0v-16h4V0Z','#725d52')+path('M-14 -14l5 -15 9 -9 14 21 -5 9 -13 1Z','#75977e')+path('M0 -38l2 27 -6 4 -10 -7Z','#97b28b')+path('M0 -38l14 21 -5 9 -7 -3Z','#577c69');
+}
+function market(k){
+ if(k==='A')return rw(-32,-31,64,31,paper)+path('M-37 -31l8 -12h56l10 12Z','#d4bb85',ink,1.4)+rep(7,i=>rect(-33+i*10,-30,6,6,i%2?paper:red))+rw(-20,-16,19,16,'#a7ae96')+rw(7,-15,14,15,'#a7ae96')+txt(-21,-33,'РЫНОК',ink,8);
+ if(k==='B')return rect(-34,-38,68,39,'#61465b')+path('M-39 -31v-5h5v-6h62v5h8v6Z','#a26c75')+rect(-29,-28,55,25,'#f1b973')+rect(-3,-26,4,24,'#584558')+rep(9,i=>rect(-36+i*8,-31,8,8,i%2?'#97566b':'#f1ce93'))+rect(-31,-7,60,7,'#78515a')+rect(10,-16,12,9,'#543a4e');
+ return path('M-35 -32l15 -19 62 9 -13 19Z','#d6a377')+path('M-35 -32l64 9v28l-64 -9Z','#cb9063')+path('M29 -23l13 -19v28L29 5Z','#92735e')+path('M-29 -20l49 7v13l-49 -7Z','#654f48')+rep(8,i=>path(`M${-35+i*8} ${-32+i*1.1}l8 1 -4 9 -8 -1Z`,i%2?'#b65446':'#ffe0a2'));
+}
+function tram(k){
+ if(k==='A')return path('M-12 -20l7 -6 8 5 -4 4','none',ink,1.6)+rw(-32,-19,62,18,red)+rep(5,i=>rw(-28+i*11,-16,8,7,paper))+path('M-24 1h7m30 0h7','none',ink,4);
+ if(k==='B')return path('M-12 -22h3v-3h6v-3h6v3H-2v3h-7v3Z','#a292a6')+rect(-34,-20,66,19,'#763f55')+rect(-31,-22,59,3,'#b97365')+rect(-34,-6,66,4,'#d37e60')+rep(6,i=>rect(-30+i*10,-17,7,8,i===4?'#e39766':'#ffda85'))+rect(-34,-9,3,3,'#fff0a5')+rect(-26,-1,9,3,'#181e30')+rect(15,-1,9,3,'#181e30');
+ return path('M-34 -18l10 -9 57 6 -8 9Z','#e8c595')+path('M-34 -18l59 6V3l-59 -5Z','#ae5544')+path('M25 -12l8 -9v17L25 3Z','#87483c')+rep(6,i=>path(`M${-30+i*9} ${-15+i*.88}l6 .6v6l-6 -.6Z`,'#ffdaa1'))+path('M-16 -25l7 -8 10 3 -7 6Z','none','#675d50',1.7)+path('M-27 0l8 1m26 2 8 1','none','#534e43',3);
+}
+function person(k,mode,step=0){
+ const q=mode==='ride',c=q?'#5cb7bc':'#ef9156',s=step?1:-1;
+ if(k==='A')return path('M-5 -12h10v3q-3 1 0 3v4H-5v-4q3 -1 0 -3Z',q?blue:red,ink,1)+ (q?path('M-2 -8h4m-4 2h4','none',paper,1):path('M-2 -8l3 2 -3 2','none',paper,1.3));
+ if(k==='B')return rect(-2,-15,5,5,'#f8cf9a')+rect(-2,-16,5,2,'#41364b')+rect(-3,-10,6,7,c)+rect(q?-5:3,-9,2,4,q?'#92d2c5':'#ffe0a5')+rect(-3-s,-3,3,4,'#c1bfd0')+rect(s,-3,3,3,'#8992ad')+(q?rect(-4,-16,8,2,'#83cfc9'):'');
+ return path('M-3 0l8 2 2 -1 -6 -2Z','#798d80')+path(`M-2 -6l${-s} 6m4 -6 ${s} 6`,'none','#3e504c',2.1)+path('M-3 -12l5 -1 2 8 -8 1Z',q?'#317e85':'#bc5a3a')+path('M-2 -16l4 -1 2 3 -2 3 -4 -1Z','#f2c595')+(q?path('M-4 -15l1 -3 5 -1 2 3Z','#2f6065'):path('M1 -10l4 1v5H1Z','#ffcf67'));
+}
+function stop(k){
+ const c=k==='A'?ink:k==='B'?'#bdafb8':'#525e53',sign=k==='A'?blue:k==='B'?'#6eacaf':'#3e796e';
+ return path('M-11 0v-20m23 20v-20','none',c,2)+path('M-15 -20l4 -5h24l3 5Z',sign,c)+path('M-8 -6H8','none',c,3)+rect(20,-28,2,29,c)+rect(17,-31,9,8,sign)+txt(18,-25,'Т','#fff4d0',6);
+}
+const sprites={home:house,tree,market,tram,stop,walk:k=>person(k,'walk'),ride:k=>person(k,'ride')};
+function defs(k){return `<defs>`+Object.entries(sprites).map(([name,fn])=>`<g id="${k}-${name}">${fn(k)}</g>`).join('')+`</defs>`}
+const use=(k,n,x,y,s=1)=>`<use href="#${k}-${n}" transform="translate(${x} ${y}) scale(${s})"/>`;
+function terrain(k){
+ const a=k==='A',b=k==='B',base=a?'#f4edcf':b?'#343e5d':'#c0cbb1',grass=a?'#e3e4bd':b?'#3b5061':'#aec1a5',road=a?'#ddd6b6':b?'#474960':'#aaa99a',walk=a?'#faf3d7':b?'#6a687a':'#dbceb3',rail=a?ink:b?'#ae9aa0':'#6c6e62';
+ return rect(0,0,480,238,base)
+ + (a?rep(20,i=>path(`M${i*26} 0v238`,'none','#c1c09f',.35))+rep(11,i=>path(`M0 ${i*24}h480`,'none','#c1c09f',.35)):b?rect(0,0,480,57,'#2e3857')+rep(32,i=>rect(i*16,8+((i*47)%32),13+(i%4)*3,40,'#37435d')):'')
+ +path('M0 60L110 51 163 60 289 55 382 65 480 54V101H0Z',grass)
+ +path('M0 195L91 187 186 201 245 191 382 199 480 184V238H0Z',grass)
+ +rect(0,104,480,64,road)+rect(0,96,480,15,walk)+rect(0,162,480,19,walk)
+ +path('M0 111h480M0 161h480','none',rail,.8)
+ +rep(49,i=>path(`M${i*10} 131v9`,'none',a?'#aaa78e':b?'#646175':'#928b7f',2))
+ +path('M0 132h480M0 138h480','none',rail,2)
+ +use(k,'tree',12,87,.9)+use(k,'tree',117,76,.8)+use(k,'tree',130,81,.7)
+ +use(k,'home',58,94,.94)+use(k,'home',103,90,.74)+use(k,'home',171,86,.59)
+ +use(k,'tree',296,93,.75)+use(k,'tree',310,92,.66)+use(k,'tree',464,94,.9)
+ +use(k,'stop',230,110,.9)
+ +rep(7,i=>rect(353+i%2*11,115+Math.floor(i/2)*13,7,3,a?'#ede9ca':b?'#888294':'#ddd0b6'))
+ +use(k,'tree',45,214,1.05)+use(k,'tree',70,211,.77)+use(k,'tree',459,212,.8)
+ +path('M21 112v-51m296 51V61M0 63q14 6 21 -2 145 26 296 0 95 19 166 1','none',a?'#858b77':b?'#827991':'#8a9181',1);
+}
+const pop=[
+ ['Ася','walk',.44],['Лев','walk',.23],['Рита','walk',.73],['Олег','ride',.52],['Мира','ride',.94]
+];
+const walkPath=[[79,99],[83,118],[359,118],[373,104],[398,100]],ridePath=[[79,99],[83,118],[213,118],[223,108]];
+function point(points,t){
+ const lengths=points.slice(1).map(([x,y],i)=>Math.hypot(x-points[i][0],y-points[i][1]));
+ let d=t*lengths.reduce((a,b)=>a+b,0);
+ for(let i=0;i<lengths.length;i++){if(d<=lengths[i]){let f=d/lengths[i];return points[i].map((v,j)=>v+(points[i+1][j]-v)*f)}d-=lengths[i]}return points.at(-1);
+}
+function strip(k){
+ const fg=k==='B'?'#f8e3c6':ink,bg=k==='B'?'#323b54':k==='C'?'#e3e2ce':'#eee6c6';
+ const items=[['walk','Пешком',1.7],['ride','К вагону',1.7],['tram','Вагон',.94],['market','Рынок',.76]];
+ return `<svg viewBox="0 0 480 83" class="strip" role="img" aria-label="Спрайты крупно: пеший житель, пассажир, вагон и рынок">`+rect(0,0,480,83,bg)+items.map(([n,label,s],i)=>use(k,n,60+120*i,50,s)+txt(60+120*i,72,label,fg,12,'text-anchor="middle"')).join('')+'</svg>';
+}
+let variant=new URLSearchParams(location.search).get('variant')||'all',t=0,running=false,selected=null,cut=false,last=0;
+if(!keys.includes(variant))variant='all';
+function render(){
+ $('cards').className='cards'+(variant==='all'?'':' solo');
+ $('cards').innerHTML=(variant==='all'?keys:[variant]).map(k=>{
+  const [name,note,kind]=styles[k],a=k==='A',b=k==='B',label=b?'#ffe1aa':ink;
+  const shade=b?'#272f47':a?'#e2dfc1':'#a4b69b';
+  return `<article><div class="caption"><div><div class="num">${k} / ${kind}</div><h2>${name}</h2></div><button data-view="${k}" aria-label="${variant==='all'?'Увеличить '+name:'Показать все варианты'}">${variant==='all'?'Крупнее':'Все рядом'}</button></div><svg class="map" viewBox="0 0 480 238" role="group" aria-label="Улица: ${name}" ${b?'shape-rendering="crispEdges"':''}>`
+   +defs(k)+terrain(k)
+   +`<g role="button" tabindex="0" data-id="market" aria-label="Крытый рынок">`+rect(357,43,86,60,'transparent')+use(k,'market',399,98)+`</g>`
+   +txt(15,18,'СОСНОВЫЕ ДВОРЫ',label,9,'letter-spacing="1.6"')+txt(465,18,'КРЫТЫЙ РЫНОК',label,9,'letter-spacing="1.6" text-anchor="end"')
+   +`<g class="traces" pointer-events="none"></g><g class="wagon"></g><g class="people">`
+   +pop.map(([name,mode],i)=>`<g role="button" tabindex="0" data-id="${i}" aria-label="Житель: ${name}"><rect x="-10" y="-20" width="20" height="24" class="hit"/><g class="figure">${person(k,mode)}</g></g>`).join('')+'</g>'
+   +(k==='C'?at(302,171,house(k),1.2,`class="cut${cut?' open':''}" data-cut role="button" tabindex="0" aria-label="Сделать ближний дом прозрачным" aria-pressed="${cut}"`):use(k,'home',302,193,.82))
+   +use(k,'tree',335,202,.74)
+   +rect(0,218,480,20,shade)+txt(12,232,'Т1   /   ДВОРЫ',label,9,'letter-spacing="1.5"')+txt(468,232,'ФРАГМЕНТ УЛИЦЫ   •   01',label,9,'letter-spacing="1.3" text-anchor="end"')
+   +`</svg><div class="legend">Фигуры крупным планом</div>${strip(k)}<p class="note">${note}</p></article>`;
+ }).join('');
+ $('key').textContent=variant==='all'?'A · B · C':variant+' / 3';$('all').setAttribute('aria-pressed',variant==='all');paint();
+}
+function paint(){
+ for(const svg of document.querySelectorAll('.map')){
+  const k=svg.querySelector('defs g').id[0], c=k==='B'?'#ffe39c':'#9c422a';
+  svg.querySelector('.wagon').innerHTML=use(k,'tram',36+((158+t*27)%520)-36,136);
+  svg.querySelectorAll('.people [data-id]').forEach((g,i)=>{
+   const [,mode,offset]=pop[i],points=mode==='walk'?walkPath:ridePath;
+   const p=(offset+t*(mode==='walk'?.036:.065))%1, [x,y]=point(points,mode==='walk'?p:Math.min(1,p*1.38));
+   g.setAttribute('transform',`translate(${x+(i===4?6:0)} ${y+(i%2?2:-1)})`);
+   const frame=(Math.floor(t*3.3+i)%2)&&!(mode==='ride'&&p*1.38>=1)?1:0;
+   const state=frame+':'+(selected===i);
+   if(g.dataset.state!==state){g.querySelector('.figure').innerHTML=(selected===i?`<ellipse cx="0" cy="-7" rx="10" ry="14" class="sel" stroke="${c}"/>`:'')+person(k,mode,frame);g.dataset.state=state}
+  });
+  let lines='';
+  if(typeof selected==='number'||selected==='market'){
+   let points=(selected==='market'||pop[selected][1]==='walk')?walkPath:ridePath;
+   lines=`<polyline points="${points.join(' ')}" fill="none" stroke="${c}" stroke-width="2.7" stroke-dasharray="4 4"/>`;
+   if(selected==='market')lines+=path('M230 136H361l10 -17 27 -19','none',k==='B'?'#84dcdb':blue,2.5,'stroke-dasharray="8 3"');
+  }
+  svg.querySelector('.traces').innerHTML=lines;
+ }
+}
+function choose(id){
+ selected=id;
+ const info=id==='market'?['Крытый рынок · пример прибытий за утро','Из Сосновых дворов: 8 пешком, 3 на трамвае. Числа заданы для этого эскиза.']:id===null?['Наблюдение за улицей','Сравните силуэты жителя, вагона и рынка в одном масштабе.']:
+ pop[id][1]==='walk'?[`${pop[id][0]} · идёт мимо остановки`,'Сосновые дворы → Крытый рынок. «Пока дождусь вагона, уже дойду».']:[`${pop[id][0]} · к трамваю`,'Сосновые дворы → «Дворы» → Крытый рынок. «С вагоном успею быстрее».'];
+ $('subject').textContent=info[0];$('detail').textContent=info[1];paint();
+}
+function view(k){
+ variant=k;const u=new URL(location.href);u.searchParams.set('variant',k);
+ try{history.replaceState(null,'',u)}catch{}render();
+}
+function cycle(dir){let order=['all',...keys];view(order[(order.indexOf(variant)+dir+4)%4])}
+function act(e){
+ const v=e.target.closest('[data-view]'),id=e.target.closest('[data-id]');
+ if(v)view(variant==='all'?v.dataset.view:'all');
+ else if(id)choose(id.dataset.id==='market'?'market':Number(id.dataset.id));
+ else if(e.target.closest('[data-cut]')){cut=!cut;const g=e.target.closest('[data-cut]');g.classList.toggle('open',cut);g.setAttribute('aria-pressed',cut)}
+}
+$('cards').onclick=act;$('cards').onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('g[role=button]')){e.preventDefault();act(e)}};
+$('prev').onclick=()=>cycle(-1);$('next').onclick=()=>cycle(1);$('all').onclick=()=>view('all');
+document.addEventListener('keydown',e=>{if(e.target.matches('input,textarea,[contenteditable]')||e.altKey||e.ctrlKey||e.metaKey)return;if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();cycle(e.key==='ArrowRight'?1:-1)}});
+function play(on){running=on;$('play').textContent=on?'Ⅱ Пауза':'▶ Пустить в ход';if(on){last=performance.now();raf=requestAnimationFrame(tick)}else cancelAnimationFrame(raf)}
+let raf;
+function tick(now){if(!running)return;t+=Math.min(.12,(now-last)/1000);last=now;paint();raf=requestAnimationFrame(tick)}
+$('play').onclick=()=>play(!running);$('reset').onclick=()=>{play(false);cut=false;t=0;render();choose(null)};
+$('pick').onclick=()=>choose(typeof selected==='number'?(selected+1)%pop.length:0);$('arr').onclick=()=>choose('market');
+render();
+</script>
+</html>
