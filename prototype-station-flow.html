@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Квартал → Вокзал · Последний трамвай</title>
+<style>
+  :root { color-scheme:light; --ink:#202e2a; --muted:#53655e; --green:#176451; --pale:#e4f0e8; --edge:#ccd5ca; --paper:#fffef8; }
+  * { box-sizing:border-box }
+  body { margin:0; background:#f4f4eb; color:var(--ink); font:16px/1.45 system-ui,sans-serif; }
+  main { max-width:1160px; padding:24px clamp(14px,3vw,38px) 48px; margin:auto }
+  header { border-top:4px solid var(--green); padding:16px 0 20px }
+  .mast,.row,.heading,.tabs,.stepper,.steps { display:flex; align-items:center; flex-wrap:wrap; gap:8px }
+  .mast,.heading { justify-content:space-between }
+  .kicker,.stamp { font:700 .73rem/1.4 ui-monospace,monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--green) }
+  .stamp { border:1px solid var(--edge); border-radius:3px; padding:3px 7px }
+  h1,h2,h3,p,dl,dd { margin:0 }
+  h1 { font-size:clamp(2rem,5vw,3.4rem); line-height:1.06; letter-spacing:-.055em; margin:13px 0 8px }
+  h2 { font-size:1.2rem; letter-spacing:-.025em } h3 { font-size:1rem }
+  .intro,.muted,small { color:var(--muted) } small { font-size:.84rem }
+  .layout { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(270px,1fr); gap:14px; align-items:start }
+  .panel { border:1px solid var(--edge); background:var(--paper); border-radius:9px; overflow:hidden }
+  .pad { padding:18px } .panelhead { padding:12px 18px; border-bottom:1px solid var(--edge) }
+  .schema { background-color:#f6f7ee; background-image:radial-gradient(#d7dece 1px,transparent 1px); background-size:14px 14px; padding:18px 22px }
+  .places { display:flex; justify-content:space-between; align-items:end; font-weight:750; font-size:.95rem }
+  .place { display:grid; gap:3px; justify-items:start }
+  .place:last-child { justify-items:end }
+  .building { width:58px; height:35px; color:var(--green) }
+  .paths { margin:7px 7px 4px; padding:4px 0 12px; border-inline:2px solid #aab8a9; }
+  .lane { position:relative; padding:5px 12px 7px }
+  .lane-label { color:var(--muted); font-size:.78rem; font-weight:700; padding-left:4px }
+  .track { display:flex; position:relative; align-items:center; justify-content:center; flex-wrap:wrap; gap:5px; min-height:36px }
+  .track::before { content:""; position:absolute; top:50%; left:-13px; right:-13px; border-top:2px dashed #829182 }
+  .rail .track::before { border-top:5px double var(--green) }
+  button { font:inherit; color:inherit; background:var(--paper); border:1px solid #9aaba0; border-radius:5px; cursor:pointer; padding:6px 10px }
+  button:hover:enabled { background:var(--pale) }
+  button:focus-visible,summary:focus-visible { outline:3px solid var(--green); outline-offset:2px }
+  button:disabled { opacity:.47; cursor:default }
+  .person { position:relative; display:inline-flex; align-items:center; gap:4px; border-radius:16px; padding:4px 8px; min-height:32px; font-weight:650; font-size:.85rem; }
+  .person[aria-pressed=true],button.active,button.primary { background:var(--green); color:white; border-color:var(--green) }
+  button.active:hover:enabled,button.primary:hover:enabled,.person[aria-pressed=true]:hover { background:#104c3f }
+  .icon { width:16px; height:16px; flex:none } .empty { position:relative; padding:0 6px; font-size:.84rem; color:var(--muted); background:#f6f7ee }
+  .map-note { font-size:.83rem; margin-top:6px; color:var(--muted) }
+  .controls { border-top:1px solid var(--edge); padding:12px 18px 16px; display:flex; gap:14px 30px; flex-wrap:wrap }
+  .control-title,dt { color:var(--muted); font-size:.82rem }
+  .stepper { gap:6px; margin-top:4px }
+  .stepper button { min-width:34px; min-height:34px; line-height:1; font-weight:700 }
+  output { min-width:42px; text-align:center; font-weight:750; font-variant-numeric:tabular-nums }
+  .stepper small { margin-left:3px }
+  .ticket { border-top:4px solid var(--green) }
+  .ticket h2 { font-size:1.65rem; margin:3px 0 0 }
+  .badge { background:var(--pale); color:var(--green); border-radius:4px; font-size:.8rem; font-weight:700; padding:3px 8px }
+  .times,.numbers { display:grid; gap:10px; margin:14px 0 }
+  .times { grid-template-columns:1fr 1fr; border-top:1px dashed var(--edge); padding-top:12px }
+  .times dd { font-weight:750; font-size:1.3rem }
+  .why { border-left:3px solid var(--green); margin-top:13px; padding:1px 0 1px 12px }
+  .why p { margin-top:4px; font-size:.94rem }
+  .results,.guide { margin-top:14px }
+  .numbers { grid-template-columns:repeat(3,1fr); margin:14px 0 10px; }
+  .numbers>div+div { border-left:1px solid var(--edge); padding-left:14px }
+  .numbers dd { font-size:clamp(1.2rem,3vw,1.85rem); font-weight:750; font-variant-numeric:tabular-nums }
+  .change { background:var(--pale); padding:12px 14px; border-radius:5px; margin:12px 0 0 }
+  .change p+p { margin-top:4px }
+  details { margin-top:12px } summary { cursor:pointer; color:var(--green); font-weight:650 }
+  .scroll { overflow-x:auto } table { border-collapse:collapse; width:100%; margin-top:8px; font-size:.9rem }
+  td,th { text-align:left; border-bottom:1px solid var(--edge); padding:5px 8px 5px 0 }
+  .tabs { gap:4px; margin:12px 0 8px }
+  .steps { margin-top:10px } .steps button,.tabs button { font-size:.9rem }
+  .guide p { color:var(--muted) } .reset { font-size:.83rem }
+  footer { margin-top:15px; color:var(--muted); font-size:.8rem }
+  @media(max-width:820px) { .layout { grid-template-columns:1fr } .schema { padding:15px 12px } .numbers { gap:5px } }
+  @media(max-width:470px) { .pad { padding:13px } .numbers>div+div { padding-left:7px } dt { font-size:.78rem } .lane { padding-inline:6px } .track::before { left:-7px;right:-7px } }
+</style>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute">
+  <defs>
+    <symbol id="walk" viewBox="0 0 20 20"><circle cx="12" cy="3.4" r="2" fill="currentColor"/><path d="m6 10 3-4 3 1 1.3 4 3 1M10 8l-1 5-4 5m4-6 3 2 1 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="tram" viewBox="0 0 20 20"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="4" y="4.5" width="12" height="11" rx="2"/><path d="M4 10h12m-6-5v5m-4 8 2-3m6 3-2-3M8 2h5l-3 2.5"/></g><circle cx="7" cy="13" r="1" fill="currentColor"/><circle cx="13" cy="13" r="1" fill="currentColor"/></symbol>
+    <symbol id="homes" viewBox="0 0 60 36"><g fill="#e4f0e8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M1 34h58M5 34V13l10-8 10 8v21m-1-14h10v14m-2 0V6h20v28"/><path d="M10 16h4m4 0h3m-11 6h4m4 0h3m16-11h3m4 0h3m-10 6h3m4 0h3m-10 6h3m4 0h3M13 34v-6h6v6"/></g></symbol>
+    <symbol id="station" viewBox="0 0 60 36"><g fill="#e4f0e8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M1 34h58M4 34V19h12v-5L30 3l14 11v5h12v15M16 19v15m28-15v15M24 34v-9h12v9M8 23v5m4-5v5m37-5v5m4-5v5"/><circle cx="30" cy="15" r="5"/><path d="M30 11v4l3 1"/></g></symbol>
+  </defs>
+</svg>
+<main>
+  <header>
+    <div class="mast"><span class="kicker">Последний трамвай / опыт № 01</span><span class="stamp">Прототип</span></div>
+    <h1>Квартал → Вокзал</h1>
+    <p class="intro">Почему одни жители идут пешком, а другие садятся в трамвай? Выберите человека, затем измените цену билета или добавьте вагон. Каждый раз сравнивается одно и то же утро.</p>
+  </header>
+  <div class="layout">
+    <section class="panel" aria-labelledby="map-title">
+      <div class="panelhead heading"><h2 id="map-title">Схема района</h2><span class="kicker">Линия 01 · утро</span></div>
+      <div class="schema">
+        <div class="places"><div class="place"><svg class="building" aria-hidden="true"><use href="#homes"/></svg>Жилой квартал</div><div class="place"><svg class="building" aria-hidden="true"><use href="#station"/></svg>Вокзал</div></div>
+        <div class="paths">
+          <div class="lane"><div class="lane-label" id="walk-label"></div><div class="track" id="walkers"></div></div>
+          <div class="lane rail"><div class="lane-label" id="rail-label"></div><div class="track" id="riders"></div></div>
+        </div>
+        <p class="map-note">Нажмите на имя на схеме, чтобы разобрать дорогу жителя.</p>
+      </div>
+      <div class="controls">
+        <div><div class="control-title">Тариф за поездку</div><div class="stepper">
+          <button id="cheaper" aria-label="Снизить тариф на 10 рублей">−</button><output id="fare"></output><button id="dearer" aria-label="Повысить тариф на 10 рублей">+</button>
+        </div></div>
+        <div><div class="control-title">Вагоны на линии</div><div class="stepper">
+          <button id="fewer" aria-label="Убрать вагон">−</button><output id="cars"></output><button id="more" aria-label="Добавить вагон">+</button><small id="wait"></small>
+        </div></div>
+      </div>
+    </section>
+    <aside class="panel pad ticket" id="ticket" aria-label="Карточка выбранного жителя" aria-live="polite"></aside>
+  </div>
+  <section class="panel pad results" aria-labelledby="result-title">
+    <div class="heading"><div><span class="kicker">Прибытия за утро</span><h2 id="result-title">На вокзале</h2></div><button class="reset" id="reset">Вернуть исходное утро</button></div>
+    <dl class="numbers">
+      <div><dt>Приехали трамваем</dt><dd id="arrived"></dd></div>
+      <div><dt>Сэкономлено против ходьбы</dt><dd id="saved"></dd></div>
+      <div><dt>Выручка за билеты</dt><dd id="money"></dd></div>
+    </dl>
+    <div class="change" id="change" aria-live="polite"></div>
+    <details><summary>Дорога каждого: до и после изменения</summary><div class="scroll"><table>
+      <thead><tr><th>Житель</th><th>До</th><th>Сейчас</th><th>Выигрыш за шаг</th></tr></thead><tbody id="report"></tbody>
+    </table></div></details>
+  </section>
+  <section class="panel pad guide" aria-labelledby="guide-title">
+    <div class="heading"><h2 id="guide-title">Попробуйте по шагам</h2><small>Каждый сценарий начинается с исходного утра.</small></div>
+    <div class="tabs" role="tablist" aria-label="Сценарии">
+      <button role="tab" id="tab-price" aria-controls="guide-body">Цена билета</button>
+      <button role="tab" id="tab-service" aria-controls="guide-body">Частота движения</button>
+      <button role="tab" id="tab-shortcut" aria-controls="guide-body">Пешком быстрее</button>
+    </div>
+    <div id="guide-body" role="tabpanel"><p id="guide-note"></p><div class="steps" id="steps"></div><small id="progress" aria-live="polite"></small></div>
+  </section>
+  <footer>Пробная модель: у каждого жителя своя оценка минуты. Интервал равен 12 минутам, делённым на число вагонов; ожидание — половина интервала. Мест хватает всем. Выручка считается до расходов.</footer>
+</main>
+<script>
+// Модель одного утра. Время — в минутах, цена билета — в рублях.
+const morning = (() => {
+  const initial = {fare:30, cars:1};
+  // Имя, весь путь пешком, подход к остановке, цена сэкономленной минуты.
+  const residents = [
+    ["Нина",19,3,10], ["Олег",18,3,8], ["Илья",21,2,4], ["Ася",14,3,6],
+    ["Мира",12,5,6], ["Ян",17,4,5], ["Лев",26,2,5], ["Вера",24,2,5]
+  ];
+  function run({fare,cars}) {
+    const wait = 6/cars, ride = 6, last = 2;
+    const people = residents.map(([name,walk,first,value]) => {
+      const tram = first+wait+ride+last, gain = walk-tram, worth = gain*value;
+      const rides = gain>0 && worth>=fare;
+      return {name,walk,first,value,tram,gain,worth,rides,time:rides?tram:walk};
+    });
+    const count = people.filter(p=>p.rides).length;
+    return {fare,cars,wait,ride,last,people,count,money:count*fare,
+      saved:people.reduce((sum,p)=>sum+p.walk-p.time,0)};
+  }
+  function compare(before,after) {
+    return after.people.map((p,i)=>({p,was:before.people[i],minutes:before.people[i].time-p.time}));
+  }
+  return {initial,run,compare};
+})();
+</script>
+<script>
+const $ = id => document.getElementById(id);
+const put = (id,text) => { $(id).textContent=text };
+const signed = n => n>0 ? `+${n}` : n<0 ? `−${-n}` : "0";
+const mode = p => p.rides?"трамвай":"пешком";
+let now, before, selected, lastAction, guide, step;
+const guides = {
+  price:{note:"Нина могла бы приехать быстрее, но идёт пешком. Проверьте, сколько стоит для неё выигрыш и что останется от выручки при бесплатном проезде.",
+    steps:[["Выбрать Нину","Нина"],["Билет за 20 ₽",{fare:20}],["Бесплатный проезд",{fare:0}]]},
+  service:{note:"Олегу невыгодна поездка при долгом ожидании. Оставьте цену прежней и проверьте, поможет ли второй вагон тем, кто шёл пешком, и тем, кто уже ездил.",
+    steps:[["Выбрать Олега","Олег"],["Добавить вагон",{cars:2}],["Посмотреть путь Льва","Лев"]]},
+  shortcut:{note:"От дома Миры до вокзала есть короткий пеший путь. Можно ли убедить её сесть в трамвай ценой или частотой движения?",
+    steps:[["Выбрать Миру","Мира"],["Бесплатный проезд",{fare:0}],["Добавить вагон",{cars:2}]]}
+};
+function reset(key="price") {
+  now=morning.run(morning.initial); before=now; selected="Нина"; lastAction="";
+  guide=key; step=0; draw();
+}
+function apply(settings) {
+  before=now;
+  now=morning.run({...now,...settings});
+  lastAction=now.fare!==before.fare?`Тариф: ${before.fare} → ${now.fare} ₽`:
+    `Вагоны: ${before.cars} → ${now.cars} · ожидание: ${before.wait} → ${now.wait} мин`;
+}
+function mapPeople(id,group) {
+  $(id).innerHTML=group.map(p=>`<button class="person" data-name="${p.name}" aria-pressed="${p.name===selected}" aria-label="${p.name}, ${mode(p)}"><svg class="icon" aria-hidden="true"><use href="#${p.rides?"tram":"walk"}"/></svg>${p.name}</button>`).join("") || '<span class="empty">Никого</span>';
+}
+function drawTicket() {
+  const p=now.people.find(p=>p.name===selected);
+  let title,why;
+  if(p.gain<0) {
+    title="Пешком быстрее"; why=`С трамваем дорога дольше на ${-p.gain} мин. Даже бесплатный билет не вернёт это время.`;
+  } else if(p.gain===0) {
+    title="Пешком столько же"; why="Трамвай не экономит ни минуты. При равном времени житель выбирает ходьбу, даже если билет бесплатный.";
+  } else {
+    title=p.rides?"Выигрыш стоит билета":"Билет дороже выигрыша";
+    why=`Выигрыш — ${p.gain} мин. При оценке ${p.value} ₽ за минуту за такую экономию можно отдать до <b>${p.worth} ₽</b>. Билет стоит <b>${now.fare} ₽</b>${p.rides ? (p.worth===now.fare?" — ровно на пределе.":"."):" — это слишком дорого."}`;
+  }
+  $("ticket").innerHTML=`<span class="kicker">Карточка жителя</span><div class="heading"><h2>${p.name}</h2><span class="badge">${p.rides?"Едет трамваем":"Идёт пешком"}</span></div>
+    <small>Жилой квартал → Вокзал</small>
+    <dl class="times"><div><dt>Целиком пешком</dt><dd>${p.walk} мин</dd></div><div><dt>С трамваем</dt><dd>${p.tram} мин</dd></div></dl>
+    <small>До остановки ${p.first} + ожидание ${now.wait} + в вагоне ${now.ride} + до вокзала ${now.last} = ${p.tram} мин.</small>
+    <div class="why"><h3>${title}</h3><p>${why}</p></div>`;
+}
+function drawResult() {
+  put("arrived",`${now.count} из ${now.people.length}`); put("saved",`${now.saved} мин`); put("money",`${now.money} ₽`);
+  const diff=morning.compare(before,now);
+  const moved=diff.filter(d=>d.p.rides!==d.was.rides);
+  $("change").innerHTML=lastAction?`<p><b>${lastAction}.</b> К предыдущему шагу: время жителей — ${signed(now.saved-before.saved)} мин выигрыша; выручка — ${before.money} → ${now.money} ₽ (${signed(now.money-before.money)} ₽).</p>
+    <p>${moved.length?moved.map(d=>`${d.p.name} → ${mode(d.p)} (${signed(d.minutes)} мин)`).join(" · "):"Никто не сменил способ добраться до вокзала."}</p>`:
+    `<p><b>Исходное утро.</b> Из квартала прибыли все ${now.people.length}: трамваем — ${now.count}, пешком — ${now.people.length-now.count}. Выручка: ${now.count} × ${now.fare} ₽ = ${now.money} ₽.</p>`;
+  $("report").innerHTML=diff.map(({p,was,minutes})=>`<tr><th scope="row">${p.name}</th><td>${mode(was)}, ${was.time} мин</td><td>${mode(p)}, ${p.time} мин</td><td>${signed(minutes)} мин</td></tr>`).join("");
+}
+function draw() {
+  const focus=document.activeElement, restore=focus?.dataset.name;
+  mapPeople("walkers",now.people.filter(p=>!p.rides)); mapPeople("riders",now.people.filter(p=>p.rides));
+  put("walk-label",`Пешком · ${now.people.length-now.count}`); put("rail-label",`Трамваем · ${now.count}`);
+  put("fare",`${now.fare} ₽`); put("cars",now.cars); put("wait",`ждать ${now.wait} мин`);
+  $("cheaper").disabled=now.fare===0; $("dearer").disabled=now.fare===60;
+  $("fewer").disabled=now.cars===1; $("more").disabled=now.cars===3;
+  drawTicket(); drawResult();
+  for(const key of Object.keys(guides)) {
+    const tab=$("tab-"+key); tab.classList.toggle("active",key===guide); tab.setAttribute("aria-selected",String(key===guide));
+  }
+  const g=guides[guide];
+  $("guide-body").setAttribute("aria-labelledby","tab-"+guide); put("guide-note",g.note);
+  $("steps").innerHTML=g.steps.map(([label],i)=>`<button data-step="${i}" ${i===step?'class="primary"':'disabled'}>${i+1}. ${label}</button>`).join("");
+  put("progress",step<0?"Свободный режим. Нажмите на название сценария, чтобы начать заново.":step===g.steps.length?"Сценарий пройден. Можно продолжить опыт с текущими настройками.":"");
+  if(restore) document.querySelector(`[data-name="${restore}"]`).focus();
+}
+document.querySelector(".schema").onclick=e=>{
+  const button=e.target.closest("[data-name]"); if(button){selected=button.dataset.name;draw()}
+};
+for(const [id,key,delta] of [["cheaper","fare",-10],["dearer","fare",10],["fewer","cars",-1],["more","cars",1]]) {
+  $(id).onclick=()=>{apply({[key]:now[key]+delta});step=-1;draw()};
+}
+$("reset").onclick=()=>reset(guide);
+for(const key of Object.keys(guides)) $("tab-"+key).onclick=()=>reset(key);
+$("steps").onclick=e=>{
+  if(!e.target.matches("button[data-step]") || +e.target.dataset.step!==step) return;
+  const action=guides[guide].steps[step][1]; if(typeof action==="string") selected=action; else apply(action);
+  step++; draw(); ($("steps").querySelector(".primary")||$("tab-"+guide)).focus();
+};
+reset();
+</script>
+</html>
