@@ -36,6 +36,7 @@ dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);bor
 .camera{display:inline-flex;gap:3px}.camera button{padding:1px 8px;font-weight:700}.viewport{touch-action:pan-y}
 @media(max-width:1100px){.layout{grid-template-columns:1fr}aside{display:grid;grid-template-columns:1.25fr 1fr}.tabs{grid-column:1/-1}.controls{border-left:1px solid var(--line);padding-top:8px}#city{min-width:540px}}
 @media(max-width:460px){aside{display:block}.controls{border-left:none}.hud{grid-template-columns:repeat(2,1fr)}.hud div{border:1px solid var(--line)}.time{font-size:18px}.bar{gap:5px}.brand{gap:5px}}
+#city{min-width:0;max-height:72vh;background:#a9bb9d}
 </style>
 <main>
 <header><div class="brand"><span class="mark" aria-hidden="true">Т</span><div><div class="eyebrow">Служба движения · игровой прототип</div><h1>Последний трамвай</h1></div></div>
@@ -63,6 +64,7 @@ dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);bor
 <details class="drawer" id="journal"><summary>Журнал диспетчера · кто пересел и сколько выиграл</summary><section><p class="sub" id="compareLabel"></p><div id="comparison" class="note"></div><div id="log" class="log"></div></section></details>
 </main>
 <dialog id="settings"><h2>Новая партия</h2><p>Один сид повторяет застройку и поток жителей. Новая партия сбросит кассу и сеть.</p><p style="margin:10px 0"><label>Сид города <input id="seedField" size="13" maxlength="18"></label></p><div class="row"><button id="start" class="hot">Начать с этим сидом</button><button id="random">Случайный сид</button><button id="close">Назад</button></div></dialog>
+<script src="game/map.js"></script>
 <script>
 "use strict";
 // География и расписание: одна единица времени = 1/10 игровой минуты.
@@ -259,18 +261,18 @@ function drawGround(){
   a+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="${(ix+iy)%3===0?"#99b391":"#b6bea1"}" stroke="#9cab90"/>`;
   if(ix===3&&iy===2){a+=`<rect x="${x+1}" y="${y+1}" width="${w-2}" height="${h-2}" rx="8" fill="#98b48c"/><path d="M${x} ${y+6}l${w} ${h-12}m-${w} 0l${w} -${h-12}" stroke="#e0d3af" stroke-width="4"/><ellipse cx="${x+w/2}" cy="${y+h/2}" rx="14" ry="8" fill="#d9d9bb" stroke="#839680"/><ellipse cx="${x+w/2}" cy="${y+h/2}" rx="11" ry="5.5" fill="#81b2ae"/><path d="M${x+w/2} ${y+h/2}v-6q-3-6-5 0m5 1q3-7 5-1" fill="none" stroke="#d0e5d9"/>`;
   }else if((ix+iy)%4===0){a+=`<path d="M${x+3} ${y+h-3}l${w*.55} ${-h*.52}h${w*.42}" stroke="#ded4b4" stroke-width="4" fill="none"/>`;
-  }else{const hw=23+12*roll();b+=house({x:x+w*.45,y:y+29,w:hw,style:roll()})}
+   }else{b+=CityMap.block({x:x+w*.45,y:y+h*.45,j:iy,style:roll()})}
   for(let z=0;z<3;z++){
-   const tx=x+3+roll()*(w-15),ty=y+1+roll()*(h*.4);b+=`<use href="#${roll()>.2?"tree":"pine"}" x="${tx}" y="${ty}" width="14" height="19"/>`;
-  }b+=`<use href="#bench" x="${x+w-19}" y="${y+h*.46}" width="11" height="5"/>`;
+    const [tx,ty]=CityMap.project([x+3+roll()*(w-15),y+1+roll()*(h*.4)]);b+=`<use href="#${roll()>.2?"tree":"pine"}" x="${tx}" y="${ty-14}" width="12" height="16"/>`;
+   }
  }
- for(const h of city.doors){const i=city.dest.indexOf(h);b+=i<0?house(h):landmark(h,i)}
- for(const [x,y,text] of [[193,248,"СОСНОВЫЕ ДВОРЫ"],[480,378,"СКВЕР МАЯКОВ"],[31,109,"ЛЕСНАЯ СЛОБОДА"]])b+=`<text x="${x}" y="${y}" fill="#496350" font-size="7.5" font-weight="800" letter-spacing="1" pointer-events="none">${text}</text>`;
+  for(const h of city.doors){const i=city.dest.indexOf(h),[x,y]=CityMap.project([h.x,h.y]);b+=i<0?CityMap.block(h):landmark({...h,x,y},i)}
+  for(const id of ["ground","railLayer","shade","trace","buildLayer"])$(id).setAttribute("transform",CityMap.transform);
  svg("ground",a);svg("architecture",b);
 }
 function access(i){return i<9||g.net.ring}
 function camera(){
- const box=g.net.ring?[10,4,920,565]:[91,108,755,368],w=box[2]/zoom,h=box[3]/zoom;
+ const box=CityMap.bounds(g.net.ring),w=box[2]/zoom,h=box[3]/zoom;
  const xy=center||[box[0]+box[2]/2,box[1]+box[3]/2];
  const x=Math.max(box[0],Math.min(box[0]+box[2]-w,xy[0]-w/2)),y=Math.max(box[1],Math.min(box[1]+box[3]-h,xy[1]-h/2));
  center=[x+w/2,y+h/2];$("city").setAttribute("viewBox",[x,y,w,h].join(" "));$("zoomOut").disabled=zoom===1;$("zoomIn").disabled=zoom===2.5;
@@ -287,7 +289,7 @@ function drawNetwork(){
  if(tab==="network")g.lines.forEach((line,l)=>{if(!line)return;
   for(const seg of line.segments.filter(s=>s.a<s.b))rails+=`<polyline points="${routePoints([seg.a,seg.b])}" fill="none" stroke="${COLORS[l]}" opacity=".8" stroke-width="2" transform="translate(0 ${l?3:-3})"/>`});
  svg("railLayer",rails);
- let s="";for(let i=0;i<ST.length;i++){if(!access(i))continue;const [x,y]=stopPoint(i),service=g.net.lines.map((l,j)=>l.includes(i)?j:-1).filter(j=>j>=0),editing=tool==="line";
+  let s="";for(let i=0;i<ST.length;i++){if(!access(i))continue;const [x,y]=CityMap.project(stopPoint(i)),service=g.net.lines.map((l,j)=>l.includes(i)?j:-1).filter(j=>j>=0),editing=tool==="line";
  s+=`<g transform="translate(${x} ${y})" data-stop="${i}" role="button" tabindex="0" aria-label="Остановка ${ST[i][0]}"><title>${ST[i][0]}</title>
   <circle r="${editing?12:6}" fill="${editing&&draft.includes(i)?"#ffce68":service.length?"#f6eed7":"#c2c4ac"}" stroke="${COLORS[service[0]]||"#717d6a"}" stroke-width="2"/><circle r="2" fill="#43594e"/>
   <rect x="-10" y="6" width="20" height="3" fill="#7b8575"/><text class="tag" text-anchor="middle" y="20">${ST[i][0]}</text>${tab==="network"&&!editing&&service.length?`<text class="tag" x="8" y="-7">${service.map(labelLine).join("/")}</text>`:""}<circle r="13" fill="transparent"/></g>`}
@@ -309,11 +311,12 @@ function actor(key,layer,markup,label){if(actors.has(key))return actors.get(key)
 function drawActors(){
  const chosen=pick.type+":"+pick.id;
  for(const c of g.cars){const key="car:"+c.id,q=carPos(g,c,carry),el=actor(key,"traffic",`<title>Вагон №${c.id+1}</title><circle class="halo" r="15" fill="none" stroke="#ffc649" stroke-width="2.8"/><g class="body"><rect x="-15" y="-5" width="31" height="12" rx="4" fill="#42564b" opacity=".35"/><rect x="-16" y="-6" width="32" height="12" rx="4" fill="${COLORS[c.l]}" stroke="#493f34"/><rect x="-12" y="-4.3" width="24" height="8.6" rx="2" fill="#f4daa5"/><path d="M-9-3v6m4-6v6m10-6v6m4-6v6" stroke="#749899" stroke-width="2"/><path d="m-3 0 4-3 4 3-4 2z" fill="none" stroke="#585c54"/><circle cx="14" cy="-3" r="1.3" fill="#ffed9c"/></g><rect x="-16" y="-9" width="32" height="18" fill="transparent"/>`,`Вагон ${c.id+1}, линия ${c.l+1}`);
-  el.setAttribute("transform",`translate(${q.x} ${q.y})`);el.querySelector(".body").setAttribute("transform",`rotate(${q.angle})`);el.querySelector(".body rect:nth-child(2)").setAttribute("fill",COLORS[c.l]);el.setAttribute("aria-label",`Вагон ${c.id+1}, линия ${c.l+1}`);el.querySelector(".halo").style.display=chosen===key?"":"none"}
+  const [x,y]=CityMap.project([q.x,q.y]),dir=q.angle*Math.PI/180,[dx,dy]=CityMap.project([Math.cos(dir),Math.sin(dir)]);
+  el.setAttribute("transform",`translate(${x} ${y})`);el.querySelector(".body").setAttribute("transform",`rotate(${Math.atan2(dy,dx)*180/Math.PI})`);el.querySelector(".body rect:nth-child(2)").setAttribute("fill",COLORS[c.l]);el.setAttribute("aria-label",`Поезд ${c.id+1}, линия ${c.l+1}`);el.querySelector(".halo").style.display=chosen===key?"":"none"}
  for(const p of g.people){const key="person:"+p.id,hidden=["home","ride","done"].includes(p.phase);
   if(hidden&&!actors.has(key))continue;
   const el=actor(key,"pedestrians",`<title>${p.name}</title><circle class="halo" r="8.4" fill="#fff4bd" fill-opacity=".45" stroke="#293b31" stroke-width="1.1"/><ellipse cx="1.4" cy="1" rx="3.8" ry="1.7" fill="#516552" opacity=".5"/><path class="legs" fill="none" stroke="#363f3a" stroke-width="1.7" stroke-linecap="round"/><path class="coat" d="M-2.9-1.4q-1-5 2.8-5.4 4 .1 3.3 5.4z" stroke="#4e574b" stroke-width=".7"/><circle cy="-7.6" r="2.2" fill="#eac8a4" stroke="#665946" stroke-width=".8"/><circle cy="-3" r="8" fill="transparent"/>`,p.name);
-  el.style.display=hidden?"none":"";if(hidden)continue;const [x,y]=ppos(p),j=p.phase==="wait"?p.id%4:0;
+  el.style.display=hidden?"none":"";if(hidden)continue;const [x,y]=CityMap.project(ppos(p)),j=p.phase==="wait"?p.id%4:0;
   el.setAttribute("transform",`translate(${x+j*3} ${y+(p.id%3-1)*1.7}) scale(1.28)`);el.querySelector(".coat").setAttribute("fill",p.phase==="walk"?"#ffb950":"#61bfcc");el.querySelector(".halo").style.display=chosen===key?"":"none";
   const stride=p.phase==="wait"?0:Math.sin((g.t+carry)*.9+p.id)*1.5;el.querySelector(".legs").setAttribute("d",`M-1 -1l${-1+stride} 2.8M1 -1l${1-stride} 2.8`);
  }
@@ -451,7 +454,9 @@ $("journal").ontoggle=()=>{if($("journal").open)drawJournal()};
 $("setup").onclick=()=>{$("seedField").value=city.seed;$("settings").showModal()};$("close").onclick=()=>$("settings").close();
 $("random").onclick=()=>{$("seedField").value="ТРАМ-"+crypto.getRandomValues(new Uint32Array(1))[0].toString(36).slice(0,6).toUpperCase()};
 $("start").onclick=()=>{const seed=$("seedField").value.trim()||"ТРАМ-17";$("settings").close();newGame(seed)};
-$("zoomIn").onclick=()=>{zoom=Math.min(2.5,zoom+.5);if(pick.type==="person"){const p=g.people.find(p=>p.id===pick.id);if(p)center=ppos(p)}camera()};
+$("zoomIn").onclick=()=>{zoom=Math.min(2.5,zoom+.5);if(pick.type==="person"){const p=g.people.find(p=>p.id===pick.id);if(p)center=CityMap.project(ppos(p))}camera()};
+$("city").addEventListener("wheel",e=>{e.preventDefault();const svg=$("city"),p=new DOMPoint(e.clientX,e.clientY).matrixTransform(svg.getScreenCTM().inverse()),old=zoom;
+ zoom=Math.max(1,Math.min(2.5,zoom+(e.deltaY<0?.5:-.5)));center=[p.x+(center[0]-p.x)*old/zoom,p.y+(center[1]-p.y)*old/zoom];camera()},{passive:false});
 $("zoomOut").onclick=()=>{zoom=Math.max(1,zoom-.5);camera()};$("fit").onclick=()=>{zoom=1;center=null;camera()};
 $("city").addEventListener("pointerdown",e=>{ignoreClick=false;if(zoom>1)drag={x:e.clientX,y:e.clientY,c:[...center]}});
 $("city").addEventListener("pointermove",e=>{if(!drag||!e.buttons)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(!ignoreClick&&Math.hypot(dx,dy)<5)return;ignoreClick=true;
