@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#203e36">
+  <title>Последний трамвай · Атлас движения</title>
+  <link rel="stylesheet" href="game/style.css">
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M10 9h20v19H10zM17 5h6m-3 0v4M9 34l5-6m17 6-5-6M13 31h14"/><path d="M13 13h14v8H13z"/><circle cx="15" cy="25" r="1"/><circle cx="25" cy="25" r="1"/></svg>
+      <div>Последний трамвай<small>ГОРОДСКОЙ ТРАНСПОРТНЫЙ АТЛАС</small></div></div>
+    <form id="seed-form"><label for="seed">Сид города</label><input id="seed" maxlength="60" placeholder="Случайный" autocomplete="off">
+      <button type="submit">Новая партия <span aria-hidden="true">↗</span></button></form>
+  </header>
+  <main>
+    <section class="heading">
+      <div><div class="kicker"><i></i> ДИСПЕТЧЕРСКАЯ <span>/</span> ЛИСТ 01</div><h1>Первое утро<span>.</span></h1>
+        <p>Найдите жителя и проследите его путь до двери.</p></div>
+      <div class="timebox"><div><small>ГОРОДСКОЕ ВРЕМЯ</small><strong id="clock">07:30</strong></div>
+        <button id="pause" title="Пауза" aria-label="Пауза">Ⅱ</button><button id="speed" aria-label="Скорость" title="Скорость">1×</button></div>
+    </section>
+    <div class="layout">
+      <section class="map-card">
+        <div class="card-head"><b><span class="dot"></span> Зона обслуживания</b><span class="stamp" id="zone-label">ЦЕНТР / 01</span></div>
+        <div class="board">
+          <div class="coordinates">ПЛАН ГОРОДА <span>/</span> ИЗОМЕТРИЯ</div>
+          <svg id="map" xmlns="http://www.w3.org/2000/svg" aria-label="Карта города" role="group">
+            <g id="scene"></g><g id="moving"></g>
+            <g id="marker" pointer-events="none" style="display:none"><ellipse rx="7.5" ry="3.4" fill="none" stroke="#b14f35" stroke-width="1.5"/></g>
+          </svg>
+          <div class="map-controls"><button id="less" aria-label="Отдалить">−</button><button id="more" aria-label="Приблизить">+</button>
+            <button id="fit"><span aria-hidden="true">⌗</span> Вся зона</button></div>
+        </div>
+        <div class="map-foot"><span class="legend"><i class="rail"></i> Путь <i class="platform"></i> Остановка</span>
+          <span>Сид: <b id="city-seed"></b></span></div>
+      </section>
+      <aside>
+        <section class="panel"><div class="kicker">01 <span>/</span> ОБСЛУЖИВАНИЕ</div>
+          <h2>Утренняя линия</h2><div id="line-stops"></div>
+          <div class="service-foot"><span><i class="dot"></i> На линии</span><b id="fleet"></b></div>
+        </section>
+        <section class="panel" id="inspector" aria-label="Наблюдение"></section>
+      </aside>
+    </div>
+    <footer><span>ПОСЛЕДНИЙ ТРАМВАЙ <i>/</i> ПОЛЕВОЙ АТЛАС</span><span>Колесо — масштаб · Перетаскивание — обзор</span></footer>
+  </main>
+  <script src="game/city.js"></script><script src="game/movement.js"></script><script src="game/starter-line.js"></script>
+  <script src="game/simulation.js"></script><script src="game/art.js"></script><script src="game/map.js"></script><script src="game/app.js"></script>
+</body>
+</html>
