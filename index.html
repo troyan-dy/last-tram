@@ -38,15 +38,41 @@
       </section>
       <aside>
         <section class="panel"><div class="kicker">01 <span>/</span> ОБСЛУЖИВАНИЕ</div>
-          <h2>Утренняя линия</h2><div id="line-stops"></div>
-          <div class="service-foot"><span><i class="dot"></i> На линии</span><b id="fleet"></b></div>
+          <h2 id="line-title">Линия 01</h2><div id="line-stops"></div>
+          <div class="service-foot"><span><i class="dot"></i> В парке</span><b id="fleet"></b></div>
+          <p id="network-money"></p>
+          <details id="network-console"><summary>Пульт сети</summary>
+            <fieldset><legend>Рельсы</legend>
+              <label>Новый участок<select id="track-choice"></select></label><button id="build-track"></button>
+            </fieldset>
+            <fieldset><legend>Обслуживание</legend>
+              <label>Рабочий маршрут<select id="route-choice"></select></label>
+              <button id="new-route">Новый маршрут</button>
+              <p class="hint">Добавляйте остановки по порядку. Между ними поезд следует по построенным рельсам.</p>
+              <ol id="draft-stops"></ol>
+              <label>Добавить остановку<select id="stop-choice"></select></label>
+              <button id="append-stop">Добавить</button><button id="save-stops">Сохранить остановки</button>
+            </fieldset>
+            <fieldset><legend>Выпуск</legend>
+              <label>Выбранный поезд<select id="train-choice"></select></label>
+              <button id="show-train">Показать поезд</button><button id="assign-train">Назначить на маршрут</button>
+              <button id="buy-train"></button>
+            </fieldset>
+            <fieldset><legend>Тариф сети</legend>
+              <label>Цена билета<input id="fare-choice" type="number" min="0" step="1"></label>
+              <button id="set-fare">Установить тариф</button>
+            </fieldset>
+            <output id="network-message" role="status"></output>
+          </details>
         </section>
         <section class="panel" id="inspector" aria-label="Наблюдение"></section>
+        <section class="panel directory"><label>Наблюдать за жителем<select id="resident-choice"></select></label></section>
       </aside>
     </div>
     <footer><span>ПОСЛЕДНИЙ ТРАМВАЙ <i>/</i> ПОЛЕВОЙ АТЛАС</span><span>Колесо — масштаб · Перетаскивание — обзор</span></footer>
   </main>
-  <script src="game/city.js"></script><script src="game/movement.js"></script><script src="game/starter-line.js"></script>
-  <script src="game/simulation.js"></script><script src="game/art.js"></script><script src="game/map.js"></script><script src="game/app.js"></script>
+  <script src="game/city.js"></script><script src="game/movement.js"></script><script src="game/journey.js"></script>
+  <script src="game/service.js"></script><script src="game/simulation.js"></script><script src="game/art.js"></script><script src="game/map.js"></script>
+  <script src="game/network-panel.js"></script><script src="game/app.js"></script>
 </body>
 </html>

@@ -4,6 +4,7 @@
   const safe = value => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
   let game, focus, paused, speed, previous, carry;
   const map = LT.createMap($('map'), select);
+  const updateNetwork=LT.createNetworkPanel(()=>game,render,select);
   const speeds = [1,4,12];
   const stamp = minute => `${String(Math.floor(minute/60)%24).padStart(2,'0')}:${String(minute%60).padStart(2,'0')}`;
   const dt = rows => `<dl>${rows.map(([a,b])=>`<div><dt>${safe(a)}</dt><dd>${safe(b)}</dd></div>`).join('')}</dl>`;
@@ -30,6 +31,8 @@
         ['Весь путь',!trip?'Ещё не вышел':trip.mode==='tram'?'С трамваем':'Пешком'],
         ...(r.lastJourney && !j ? [['Прибытие',stamp(LT.BALANCE.startMinute+Math.floor(r.lastJourney.arrivedAt/LT.BALANCE.ticksPerMinute))]]:[])
       ]);
+      const preview=!trip && LT.planJourney(game,r,game.lookup.buildings.get(r.homeId),game.lookup.buildings.get(r.workId));
+      detail+=LT.choiceCard((trip||preview).decision,(trip||preview).mode,!trip,dt);
     } else if (focus?.type==='building') {
       const b=game.lookup.buildings.get(focus.id);
       heading=b.name; detail=dt([['Назначение',b.kind==='home'?'Жилой дом':'Место работы'],
@@ -39,7 +42,8 @@
       heading=s.name; detail=dt([['Остановка',game.routes.filter(r=>r.stopIds.includes(s.id)).map(r=>r.name).join(', ') || 'Нет маршрута']]);
     } else if (focus?.type==='train') {
       const train=game.trains.find(t=>t.id===focus.id), route=game.routes.find(r=>r.id===train.routeId);
-      heading='Поезд 01'; detail=dt([['Маршрут',route?.name??'Не назначен'],['Вагонов',train.cars],
+      heading=train.name; detail=dt([['Сейчас',route?.name??'Перегон без пассажиров'],
+        ['Назначение',game.routes.find(r=>r.id===train.assignedRouteId)?.name??'Не назначен'],['Вагонов',train.cars],
         ['В салоне',game.residents.filter(r=>r.onTrainId===train.id).length]]);
     }
     const html=`<div class="kicker">02 <span>/</span> ФОКУС КАРТЫ</div><h2>${safe(heading)}</h2>${detail}
@@ -54,9 +58,8 @@
     $('clock').textContent=stamp(LT.clockMinute(game));
     $('fleet').textContent=`Поездов: ${game.trains.length}`;
     $('zone-label').textContent=game.openRing ? `КОЛЬЦО / ${game.openRing}` : 'ЦЕНТР / 01';
-    const route=game.routes[0];
-    const stops=(route?.stopIds??[]).map(id=>`<div class="stop-row">${safe(game.lookup.stops.get(id).name)}</div>`).join('');
-    if ($('line-stops')._content!==stops) { $('line-stops').innerHTML=stops; $('line-stops')._content=stops; }
+    updateNetwork(game);
+    $('resident-choice').value=focus?.type==='resident'?focus.id:'';
     const action=paused?'Продолжить':'Пауза';
     $('pause').setAttribute('aria-label',action); $('pause').title=action; $('pause').textContent=paused?'▶':'Ⅱ';
     $('speed').textContent=`${speed}×`;

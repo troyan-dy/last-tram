@@ -1,8 +1,9 @@
 (() => {
   'use strict';
   const { BALANCE, distance } = typeof module !== 'undefined' ? require('./movement.js') : globalThis.LastTram;
-  const { openLine, moveTrains, planMorning, stepTransit } =
-    typeof module !== 'undefined' ? require('./starter-line.js') : globalThis.LastTram;
+  const { planJourney, stepTransit } =
+    typeof module !== 'undefined' ? require('./journey.js') : globalThis.LastTram;
+  const { openLine, moveTrains } = typeof module !== 'undefined' ? require('./service.js') : globalThis.LastTram;
   const byId = list => new Map(list.map(item => [item.id, item]));
 
   function makeResidents(game) {
@@ -28,8 +29,8 @@
   function startGame(city, systems = {}) {
     const lookup = { buildings: byId(city.buildings), stops: byId(city.stops), edges: byId(city.edges) };
     const game = { city, lookup, tick: 0, openRing: 0, residents: [], trains: [], routes: [],
-      trackIds: new Set(), cash: BALANCE.startingCash, fare: BALANCE.fare,
-      systems: { demand: morningDemand, service: moveTrains, planJourney: planMorning, stepTransit, openLine, ...systems } };
+      trackIds: new Set(), cash: BALANCE.startingCash, fare: BALANCE.fare, fareIncome: 0,
+      systems: { demand: morningDemand, service: moveTrains, planJourney, stepTransit, openLine, ...systems } };
     game.residents = makeResidents(game);
     game.systems.openLine(game);
     return game;
@@ -70,13 +71,13 @@
 
   function stepResident(game, r) {
     const j = r.journey;
-    if (!j) return;
+    if (!j || j.startedAt===game.tick) return;
     const leg = j.legs[j.leg];
     const done = leg.type === 'walk' ? stepWalk(r, leg) : game.systems.stepTransit(game, r, j, leg);
     if (!done || ++j.leg < j.legs.length) return;
     r.currentBuildingId = j.destinationId;
     r.lastJourney = { originId: j.originId, destinationId: j.destinationId,
-      mode: j.mode, startedAt: j.startedAt, arrivedAt: game.tick };
+      mode: j.mode, startedAt: j.startedAt, arrivedAt: game.tick, decision: j.decision };
     r.journey = null;
     game.systems.onArrival?.(game, r, r.lastJourney);
   }
