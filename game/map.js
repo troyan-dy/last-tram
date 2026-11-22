@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const { art, doorPath } = globalThis.LastTram;
+  const { art, doorPath, cityTime } = globalThis.LastTram;
   const { project, polygon, line, land, place } = art;
   const ns = 'http://www.w3.org/2000/svg';
   const el = name => document.createElementNS(ns, name);
@@ -42,7 +42,9 @@
   function stopSign(s, served) {
     const color = served ? '#bc563c' : '#798b78';
     return object('stop',s.id,s.name,place(s.sidewalk.x,s.sidewalk.y,
-      `<path d="M0 0v-12" stroke="#526b63" stroke-width="1.2"/>
+      `<g class="platform-light" pointer-events="none"><ellipse rx="10" ry="3" fill="#ffda85" opacity=".35"/>
+       <circle cx="0" cy="-11" r="6" fill="#ffe6a8" opacity=".38"/></g>
+       <path d="M0 0v-12" stroke="#526b63" stroke-width="1.2"/>
        <rect x="-3.4" y="-13" width="6.8" height="5" rx="1" fill="${color}" stroke="#fff0ce" stroke-width=".85"/>
        <path d="M-1.6 -10.6H1.6" stroke="#fff5de" stroke-width=".9"/>
        <rect x="-4.5" y="-14" width="9" height="15" fill="transparent"/>`));
@@ -106,7 +108,6 @@
         for (const [dx,dy,i] of [[7,21,0],[14,20,1],[33,28,2],[-45,-12,1]]) {
           items.push({depth:project(s.x+dx,s.y+dy)[1], drawing:art.tree(s.x+dx,s.y+dy,i)});
         }
-        items.push({depth:project(s.x,s.sidewalk.y)[1],drawing:stopSign(s,served.has(s.id))});
       }
       for (const b of buildings) {
         items.push({depth:project(b.x+b.width*.5,b.y+b.depth)[1],
@@ -115,7 +116,8 @@
       const labels=stops.filter(s=>served.has(s.id)).map(s=>place(s.x+3,s.y+8,
         `<g class="stop-label"><rect x="-1" y="-1" width="${s.name.length*3.5+10}" height="9" rx="2"/>
         <circle cx="3" cy="3.5" r="1.55"/><text x="7" y="5.7">${s.name}</text></g>`)).join('');
-      scene.innerHTML=terrain(game,stops,buildings,box)+items.sort((a,b)=>a.depth-b.depth).map(o=>o.drawing).join('')+labels;
+      const scenery=terrain(game,stops,buildings,box)+items.sort((a,b)=>a.depth-b.depth).map(o=>o.drawing).join('');
+      scene.innerHTML=`<g class="scenery">${scenery}</g>`+stops.map(s=>stopSign(s,served.has(s.id))).join('')+labels;
       moving.replaceChildren(); nodes.clear(); fit();
     }
     function sprite(type,id,name,inner,pos,drawn) {
@@ -130,6 +132,8 @@
       g.setAttribute('transform',`translate(${project(pos.x,pos.y)})`);
     }
     function render(game,focus) {
+      const light=cityTime(game).period.id;
+      if (svg.dataset.light!==light) svg.dataset.light=light;
       const key=`${game.openRing}|${[...game.trackIds].join(',')}|${game.routes.flatMap(r=>r.stopIds).join(',')}`;
       if (game!==lastGame || signature!==key) { build(game); lastGame=game; signature=key; }
       const drawn=new Set();

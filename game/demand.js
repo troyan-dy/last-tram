@@ -3,13 +3,21 @@
   const { BALANCE } = typeof module !== 'undefined' ? require('./movement.js') : globalThis.LastTram;
   const minuteTicks = BALANCE.ticksPerMinute, dayMinutes = 24 * 60;
   const periods = [
-    { id: 'morning', minute: BALANCE.startMinute },
-    { id: 'day', minute: 12 * 60 },
-    { id: 'evening', minute: 17 * 60 + 30 },
-    { id: 'night', minute: 21 * 60 + 30 }
+    { id: 'morning', name: 'Утро', minute: BALANCE.startMinute },
+    { id: 'day', name: 'День', minute: 12 * 60 },
+    { id: 'evening', name: 'Вечер', minute: 17 * 60 + 30 },
+    { id: 'night', name: 'Ночь', minute: 21 * 60 + 30 }
   ];
   const localTicks = game => (BALANCE.startMinute * minuteTicks + game.tick) % (dayMinutes * minuteTicks);
   const periodAt = ticks => periods.findLast(p => p.minute * minuteTicks <= ticks) ?? periods.at(-1);
+
+  function cityTime(game) {
+    const now = localTicks(game), period = periodAt(now);
+    const next = periods.find(p => p.minute * minuteTicks > now) ?? periods[0];
+    const remaining = (next.minute * minuteTicks - now + dayMinutes * minuteTicks) % (dayMinutes * minuteTicks);
+    return { period, next, nextTick: game.tick + remaining,
+      day: 1 + Math.floor((game.tick + BALANCE.startMinute * minuteTicks) / (dayMinutes * minuteTicks)) };
+  }
 
   function dailyRoutine(index, work, accessibleWorks) {
     const next = accessibleWorks[(accessibleWorks.indexOf(work) + 1) % accessibleWorks.length];
@@ -37,7 +45,7 @@
     }
   }
 
-  const api = { dailyRoutine, dailyDemand };
+  const api = { dailyRoutine, dailyDemand, cityTime };
   Object.assign(globalThis.LastTram ??= {}, api);
   if (typeof module !== 'undefined') module.exports = api;
 })();
