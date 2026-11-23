@@ -36,7 +36,7 @@
       </section><section data-goal="link" hidden><h3>Из кольца в центр</h3>
         <p>Довезите пассажира от двери в новом районе до двери в центре. Первая посадка — в кольце.</p>
         <p data-goal="count"></p><p data-goal="proof"></p>
-        <button type="button" data-goal="watch" hidden>Показать пассажира →</button>
+        <button type="button" data-goal="watch" hidden>Показать пассажира сейчас →</button>
         <details><summary>Пример связи</summary><p data-goal="example"></p></details>
       </section>`;
     const el = key => panel.querySelector(`[data-goal="${key}"]`);
@@ -81,8 +81,10 @@
           const who = game.residents.find(r => r.id === link.residentId).name;
           const door = id => game.lookup.buildings.get(id).name;
           const minutes = (link.savedTicks / LT.BALANCE.ticksPerMinute).toLocaleString('ru', { maximumFractionDigits: 1 });
-          text('proof', `${who}: ${door(link.originId)} → ${door(link.destinationId)}. ` +
-            `Посадка: ${game.lookup.stops.get(link.boardStopId).name}. На ${minutes} мин быстрее, чем пешком.`);
+          const arrival = LT.clockMinute({tick:link.arrivedAt});
+          text('proof', `Первая поездка — ${who}: ${door(link.originId)} → ${door(link.destinationId)}. ` +
+            `Посадка: ${game.lookup.stops.get(link.boardStopId).name}. Прибытие: день ${1+Math.floor(arrival/1440)}, ${LT.stamp(arrival)}. ` +
+            `На ${minutes} мин быстрее, чем пешком.`);
         } else text('proof', '');
       }
     };

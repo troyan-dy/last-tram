@@ -8,7 +8,7 @@
   const observation=LT.createObservationPanel(render,select);
   const updateGoals=LT.createGoalsPanel($('goals-panel'),()=>game,render,select);
   const speeds = [1,4,12];
-  const stamp = minute => `${String(Math.floor(minute/60)%24).padStart(2,'0')}:${String(minute%60).padStart(2,'0')}`;
+  const { stamp } = LT;
   const dt = rows => `<dl>${rows.map(([a,b])=>`<div><dt>${safe(a)}</dt><dd>${safe(b)}</dd></div>`).join('')}</dl>`;
   function select(type,id) { focus={type,id}; render(); }
   function watch() {
@@ -28,7 +28,7 @@
         ['Откуда',game.lookup.buildings.get(trip?.originId??r.homeId).name],
         ['Цель',game.lookup.buildings.get(trip?.destinationId??r.workId).name],
         ['Весь путь',!trip?'Ещё не вышел':trip.mode==='tram'?'С трамваем':'Пешком'],
-        ...(r.lastJourney && !j ? [['Прибытие',stamp(LT.BALANCE.startMinute+Math.floor(r.lastJourney.arrivedAt/LT.BALANCE.ticksPerMinute))]]:[])
+        ...(r.lastJourney && !j ? [['Прибытие',stamp(LT.clockMinute({tick:r.lastJourney.arrivedAt}))]]:[])
       ]);
       const preview=!trip && LT.planJourney(game,r,game.lookup.buildings.get(r.homeId),game.lookup.buildings.get(r.workId));
       detail+=LT.choiceCard((trip||preview).decision,(trip||preview).mode,!trip,dt);

@@ -58,6 +58,15 @@ test('open a ring on the paused map and carry a named resident from its new stop
   expect(proof.slice(0,4)).toEqual(['b:1:2:1','b:4:2:2','tram',2525]);
   expect(proof[4]).toEqual(proof[5]);
 
+  await next.click();
+  await expect(page.locator('#clock')).toHaveText('21:30');
+  await page.getByLabel('Выбрать здание').selectOption({ label: 'Ателье' });
+  await goals.getByRole('button', { name: /Показать пассажира сейчас/ }).click();
+  await expect(card.getByRole('heading', { name: 'Марк' })).toBeVisible();
+  await expect(card).toContainText('У двери: Вокзал, дом 3');
+  await expect(goals).toContainText('Первая поездка — Марк: Вокзал, дом 3 → Ателье.');
+  await expect(goals).toContainText('Прибытие: день 1, 14:30.');
+
   await page.getByRole('button', { name: 'Новая партия' }).click();
   await expect(goals).toContainText('0 из 3');
   await expect(purchase).toBeDisabled();

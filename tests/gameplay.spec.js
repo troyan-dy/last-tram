@@ -145,8 +145,8 @@ test('from a walking decision to a new commuter service in the unpacked offline 
   await button('Пауза').click();
   await step('12:00');
   await expect(goals).toContainText('Всего таких поездок: 5');
-  await expect(goals).toContainText('Ася: Вокзал, дом 3 → Крытый рынок. Посадка: Вокзал. На 9,7 мин быстрее, чем пешком.');
-  await goals.getByRole('button', { name: /Показать пассажира/ }).click();
+  await expect(goals).toContainText('Первая поездка — Ася: Вокзал, дом 3 → Крытый рынок. Посадка: Вокзал. Прибытие: день 2, 08:21. На 9,7 мин быстрее, чем пешком.');
+  await goals.getByRole('button', { name: /Показать пассажира сейчас/ }).click();
   await expect(card.getByRole('heading', { name: 'Ася' })).toBeVisible();
   await expect(card.getByText('У двери: Крытый рынок')).toBeVisible();
   await detail('Прибытие', '08:21');
