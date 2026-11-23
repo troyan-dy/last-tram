@@ -5,6 +5,7 @@
   let game, focus, paused, speed, previous, carry, advanceTo;
   const map = LT.createMap($('map'), select);
   const updateNetwork=LT.createNetworkPanel(()=>game,render,select);
+  const observation=LT.createObservationPanel(render,select);
   const updateGoals=LT.createGoalsPanel($('goals-panel'),()=>game,render,select);
   const speeds = [1,4,12];
   const stamp = minute => `${String(Math.floor(minute/60)%24).padStart(2,'0')}:${String(minute%60).padStart(2,'0')}`;
@@ -21,10 +22,7 @@
     if (focus?.type==='resident') {
       const r=game.residents.find(p=>p.id===focus.id);
       const j=r.journey, trip=j??r.lastJourney;
-      const leg=j?.legs[j.leg];
-      const action=!j ? (trip?'У двери места назначения':'Дома, готовится выйти') :
-        leg.type==='ride'?'В вагоне':leg.type==='wait'?'Ждёт поезд на остановке':
-        j.mode==='tram' && !j.leg?'Идёт к остановке':'Идёт к двери';
+      const action=j ? LT.journeyAction(j) : trip?`У двери: ${game.lookup.buildings.get(trip.destinationId).name}`:'Дома, готовится выйти';
       heading=r.name;
       detail=`<p class="status" data-action="${j?'moving':trip?'arrived':'home'}">${action}</p>`+dt([
         ['Откуда',game.lookup.buildings.get(trip?.originId??r.homeId).name],
@@ -55,7 +53,7 @@
   }
 
   function render() {
-    map.render(game,focus); inspector();
+    map.render(game,focus,observation(game,focus)); inspector();
     $('clock').textContent=stamp(LT.clockMinute(game));
     const time=LT.cityTime(game);
     $('clock-period').textContent=`День ${time.day} · ${time.period.name}`;

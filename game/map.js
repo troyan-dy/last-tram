@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const { art, doorPath, cityTime } = globalThis.LastTram;
+  const { art, doorPath, cityTime, journeyAction, matchesFlow, thoughtLayout } = globalThis.LastTram;
   const { project, polygon, line, land, place } = art;
   const ns = 'http://www.w3.org/2000/svg';
   const el = name => document.createElementNS(ns, name);
@@ -53,6 +53,7 @@
   function createMap(svg, onSelect) {
     const scene = svg.querySelector('#scene'), moving = svg.querySelector('#moving');
     const marker = svg.querySelector('#marker'), nodes = new Map();
+    const thoughts=svg.querySelector('#thoughts'), leaders=svg.querySelector('#leaders'), labels=new Map();
     let lastGame, signature, base, view, zoom = 1, drag, moved = false;
     function setView(v) {
       view = v;
@@ -113,14 +114,14 @@
         items.push({depth:project(b.x+b.width*.5,b.y+b.depth)[1],
           drawing:object('building',b.id,b.name,art.building(b))});
       }
-      const labels=stops.filter(s=>served.has(s.id)).map(s=>place(s.x+3,s.y+8,
+      const stopLabels=stops.filter(s=>served.has(s.id)).map(s=>place(s.x+3,s.y+8,
         `<g class="stop-label"><rect x="-1" y="-1" width="${s.name.length*3.5+10}" height="9" rx="2"/>
         <circle cx="3" cy="3.5" r="1.55"/><text x="7" y="5.7">${s.name}</text></g>`)).join('');
       const scenery=terrain(game,stops,buildings,box)+items.sort((a,b)=>a.depth-b.depth).map(o=>o.drawing).join('');
-      scene.innerHTML=`<g class="scenery">${scenery}</g>`+stops.map(s=>stopSign(s,served.has(s.id))).join('')+labels;
-      moving.replaceChildren(); nodes.clear(); fit();
+      scene.innerHTML=`<g class="scenery">${scenery}</g>`+stops.map(s=>stopSign(s,served.has(s.id))).join('')+stopLabels;
+      moving.replaceChildren(); nodes.clear(); thoughts.replaceChildren(); leaders.replaceChildren(); labels.clear(); fit();
     }
-    function sprite(type,id,name,inner,pos,drawn,variant='') {
+    function sprite(type,id,name,draw,pos,drawn,variant='') {
       drawn.add(id);
       let g=nodes.get(id);
       if (!g) {
@@ -129,23 +130,65 @@
         nodes.set(id,g); moving.append(g);
       }
       if (g.dataset.variant!==variant) {
-        g.innerHTML=`<title>${name}</title>${inner}`;
+        g.innerHTML=`<title>${name}</title>${draw()}`;
         g.dataset.variant=variant;
       }
-      g.setAttribute('transform',`translate(${project(pos.x,pos.y)})`);
+      g.setAttribute('transform',`translate(${pos})`);
     }
-    function render(game,focus) {
+    function thought(r,dest,xy,layout) {
+      const action=journeyAction(r.journey), mode=r.journey.mode, signature=[dest.id,action,mode].join('|');
+      let item=labels.get(r.id);
+      if (!item) {
+        const g=el('g'), line=el('path');
+        g.dataset.type='resident'; g.dataset.id=r.id; g.dataset.thought=r.id;
+        g.setAttribute('role','button'); g.setAttribute('tabindex','0');
+        thoughts.append(g); leaders.append(line);
+        item={g,line}; labels.set(r.id,item);
+      }
+      const {g,line}=item;
+      if (item.signature!==signature) {
+        item.signature=signature;
+        const icon=dest.kind==='home'?'house':dest.name==='Крытый рынок'?'market':'work';
+        const caption=`${r.name}: ${dest.name} · ${action} · ${mode==='tram'?'С трамваем':'Целиком пешком'}`;
+        item.width=Math.max(dest.name.length*3.8,action.length*3.5)+19;
+        g.setAttribute('aria-label',caption); g.dataset.mode=mode;
+        g.innerHTML=`<title>${caption}</title><rect width="${item.width}" height="19" rx="7"/>
+          <use href="#intent-${icon}" transform="translate(2 1) scale(.77)"/>
+          <use href="#intent-${mode}" transform="translate(3 10) scale(.64)"/>
+          <text x="13" y="8">${dest.name}</text><text class="activity" x="13" y="16">${action}</text>`;
+      }
+      const [x,y]=xy, b=layout.place(x,y,item.width,19);
+      const tipX=Math.max(b.x+5,Math.min(b.x+b.w-5,x)), tipY=y-9>b.y+b.h?b.y+b.h:b.y;
+      g.setAttribute('transform',`translate(${b.x} ${b.y})`);
+      line.setAttribute('d',`M${x},${y-9} L${tipX},${tipY}`);
+    }
+    function render(game,focus,flow={enabled:false}) {
       const light=cityTime(game).period.id;
       if (svg.dataset.light!==light) svg.dataset.light=light;
       const key=`${game.openRing}|${[...game.trackIds].join(',')}|${game.routes.flatMap(r=>r.stopIds).join(',')}`;
       if (game!==lastGame || signature!==key) { build(game); lastGame=game; signature=key; }
-      const drawn=new Set();
+      const drawn=new Set(), showing=new Set(), active=[], seats=new Map();
+      const layout=flow.enabled?thoughtLayout(view):null;
       for (const train of game.trains)
-        sprite('train',train.id,train.name,art.train(train.axis==='y'),train.position,drawn,train.axis);
+        sprite('train',train.id,train.name,()=>art.train(train.axis==='y'),project(train.position.x,train.position.y),drawn,train.axis);
       for (const r of game.residents) {
-        if (r.onTrainId || (!r.journey && !(focus?.id===r.id || (game.tick===0 && r===game.residents[0])))) continue;
-        sprite('resident',r.id,r.name,art.person(r)+'<circle class="hit" cy="-4.2" r="5.3" fill="transparent"/>',r.position,drawn);
+        if ((r.onTrainId && !layout) || (!r.journey && !(focus?.id===r.id || (game.tick===0 && r===game.residents[0])))) continue;
+        const xy=project(r.position.x,r.position.y);
+        if (r.onTrainId) {
+          // Individual cabin seats, relative to the real moving train (never move the model).
+          const n=seats.get(r.onTrainId)??0; seats.set(r.onTrainId,n+1);
+          xy[0]+=(n%5-2)*6; xy[1]-=4+Math.floor(n/5)*8;
+        }
+        sprite('resident',r.id,r.name,()=>art.person(r)+'<circle class="hit" cy="-4.2" r="5.3" fill="transparent"/>',xy,drawn);
+        if (layout) {
+          layout.person(...xy);
+          if (matchesFlow(r.journey,flow.buildingId,flow.filters)) active.push([r,xy]);
+        }
       }
+      for (const [r,xy] of active) {
+        thought(r,game.lookup.buildings.get(r.journey.destinationId),xy,layout); showing.add(r.id);
+      }
+      for (const [id,item] of labels) if (!showing.has(id)) { item.g.remove(); item.line.remove(); labels.delete(id); }
       for (const [id,g] of nodes) if (!drawn.has(id)) { g.remove(); nodes.delete(id); }
       let p;
       if (focus?.type==='resident') p=game.residents.find(r=>r.id===focus.id)?.position;

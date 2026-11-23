@@ -5,6 +5,7 @@
   const { planJourney, stepTransit } =
     typeof module !== 'undefined' ? require('./journey.js') : globalThis.LastTram;
   const { openLine, moveTrains } = typeof module !== 'undefined' ? require('./service.js') : globalThis.LastTram;
+  const { createHistory } = typeof module !== 'undefined' ? require('./history.js') : globalThis.LastTram;
   const { trackExpansion } = typeof module !== 'undefined' ? require('./expansion.js') : globalThis.LastTram;
   const byId = list => new Map(list.map(item => [item.id, item]));
 
@@ -31,10 +32,10 @@
   function startGame(city, systems = {}) {
     const lookup = { buildings: byId(city.buildings), stops: byId(city.stops), edges: byId(city.edges) };
     const game = { city, lookup, tick: 0, openRing: 0, residents: [], trains: [], routes: [],
-      trackIds: new Set(), cash: BALANCE.startingCash, fare: BALANCE.fare, fareIncome: 0,
+      trackIds: new Set(), cash: BALANCE.startingCash, fare: BALANCE.fare, fareIncome: 0, history: createHistory(),
       systems: { demand: g => dailyDemand(g, depart), service: moveTrains, planJourney, stepTransit, openLine, ...systems } };
     game.residents = makeResidents(game);
-    game.arrivalListeners = new Set();
+    game.arrivalListeners = new Set([game.history.recordArrival]);
     trackExpansion(game);
     game.systems.openLine(game);
     return game;
