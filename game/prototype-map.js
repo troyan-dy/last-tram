@@ -14,6 +14,7 @@
   let mode='', place=game.city.starterStops.at(-1), first='', edge='', route=game.routes[0].id, draft=[], loop=false;
   let note='', person=null, renderingGame, previous=new Map(), sprites=[], paused=false, carry=0, last=null;
   const map=LT.createMap(svg,selectObject);
+  let decoratedSigns;
   const point=p=>LT.art.project(p.x,p.y);
   const choices=(items,value)=>items.map(([k,v])=>`<option value="${k}" ${k===value?'selected':''}>${v}</option>`).join('');
   const availableEdges=()=>game.city.edges.filter(e=>!game.trackIds.has(e.id)&&stops.includes(stop(e.a))&&stops.includes(stop(e.b)));
@@ -28,6 +29,12 @@
   }
   function sample() {
     map.render(renderingGame,null,{enabled:false},mode==='stops'?{type:'stop',id:place}:null);
+    const signs=svg.querySelector('.signs');
+    if(signs.firstElementChild!==decoratedSigns){
+      decoratedSigns=signs.firstElementChild;
+      for(const g of signs.querySelectorAll('[data-type="stop"]'))
+        g.insertAdjacentHTML('afterbegin',LT.prototypeShelter(stop(g.dataset.id)));
+    }
     const now=positions();
     sprites=[...$('moving').children].map(node=>{
       const id=node.dataset.id, to=now.get(id), from=previous.get(id)||to;
@@ -44,7 +51,7 @@
     LT.prototypeProject=(x,y,z)=>[
       1.85*(-x*Math.cos(a)+y*Math.sin(a)), x*Math.sin(a)+y*Math.cos(a)-1.28*z
     ];
-    renderingGame=Object.create(game); sample(); draw($('smooth').checked?carry:1); overlay();
+    renderingGame=Object.create(game); sample(); draw(carry); overlay();
   }
   const xy=id=>point(stop(id)).join(',');
   function overlay() {
@@ -61,7 +68,7 @@
         if(path) for(let i=1;i<path.length;i++){
           const a=point(stop(path[i-1])),b=point(stop(path[i]));
           const angle=Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI;
-          out+=segment(path[i-1],path[i],'#14756b')+`<path d="M-3 -3L2 0 -3 3" transform="translate(${(a[0]+b[0])/2} ${(a[1]+b[1])/2}) rotate(${angle})" fill="none" stroke="#fff7d4" stroke-width="1.6"/>`;
+          out+=segment(path[i-1],path[i],'#815734')+`<path d="M-4 -2H0V-3.8L5 0 0 3.8V2H-4Z" transform="translate(${(a[0]+b[0])/2} ${(a[1]+b[1])/2}) rotate(${angle})" fill="#fff4d8" stroke="#624c3a" stroke-width=".45"/>`;
         }
       }
     }
@@ -79,10 +86,13 @@
       $('targets').innerHTML=stops.map(s=>{
         const n=draft.indexOf(s.id), selected=mode==='routes'?n>=0:s.id===first;
         const text=mode==='routes'&&selected?`${n+1} · ${s.name}`:s.name;
+        const start=mode==='routes'&&n===0, edge=start?'#ffbc54':'#f6e4c6';
         return `<g data-type="stop" data-id="${s.id}" role="button" tabindex="0" aria-label="${s.name}" transform="translate(${xy(s.id)})">
-          <rect x="-9" y="-11" width="${text.length*3.6+20}" height="22" rx="7" fill="transparent"/>
-          <rect x="-4" y="-5" width="${text.length*3.6+11}" height="10" rx="4" fill="${selected?'#276456':'#fff5da'}" stroke="#527665"/>
-          <text x="0" y="2" fill="${selected?'white':'#28493b'}" font-family="system-ui" font-size="6" font-weight="650">${text}</text></g>`;
+          <rect x="-7" y="-22" width="${text.length*3.6+18}" height="24" rx="5" fill="transparent"/>
+          ${start?'<ellipse rx="6" ry="2.2" fill="none" stroke="#ffbc54" stroke-width="1.25"/>':''}
+          <path d="M-2 -9L0 -1 3 -9" fill="#423a31" stroke="${edge}" stroke-width=".85"/>
+          <rect x="-5" y="-20" width="${text.length*3.6+10}" height="12" rx="3" fill="${selected?'#37322c':'#f2ddbb'}" stroke="${edge}" stroke-width="${start?1.65:1}"/>
+          <text x="-.5" y="-11.5" fill="${selected?'#fff1d7':'#493e30'}" font-family="system-ui" font-size="6" font-weight="700">${text}</text></g>`;
       }).join('');
     } else $('targets').replaceChildren();
   }
@@ -99,7 +109,7 @@
     if(mode==='build'){edge='';first='';}
     svg.dataset.mode=mode;
     for(const b of $('modes').children) b.setAttribute('aria-pressed',String(b.dataset.mode===mode));
-    panel();sample();draw($('smooth').checked?carry:1);overlay();
+    panel();sample();draw(carry);overlay();
   }
   function panel() {
     $('panel').hidden=!mode; if(!mode)return;
@@ -170,12 +180,12 @@
       if(mode!=='flows')setMode('flows');
       person=r?.id||null;
     } else if(type==='train'){setMode('routes');pickRoute(game.trains.find(t=>t.id===id).assignedRouteId);}
-    panel();sample();draw($('smooth').checked?carry:1);overlay();
+    panel();sample();draw(carry);overlay();
   }
   $('content').onchange=e=>{
     const {id,value}=e.target;note='';person=null;
     if(id==='district')place=value;
-    panel();sample();draw($('smooth').checked?carry:1);overlay();
+    panel();sample();draw(carry);overlay();
   };
   $('content').onclick=e=>{
     const id=e.target.id;let result;
@@ -188,7 +198,7 @@
     else if(id==='buy-train')result=LT.buyTrain(game,route);
     else return;
     note=result?(result.ok?({save:'Маршрут сохранён.','buy-track':'Путь построен.','buy-train':'Трамвай добавлен в парк.'}[id]):result.message):'';
-    moneyTime();panel();sample();draw($('smooth').checked?carry:1);overlay();
+    moneyTime();panel();sample();draw(carry);overlay();
   };
   $('modes').onclick=e=>{const m=e.target.dataset.mode;if(m)setMode(m===mode?'':m);};
   $('close').onclick=()=>setMode('');
@@ -204,7 +214,7 @@
         while(carry>=1){previous=positions();meter.step();carry--;}
         sample();moneyTime();if(mode==='flows'){flowInfo();overlay();}
       }
-      draw($('smooth').checked?carry:1);
+      draw(carry);
     }
     last=ms;requestAnimationFrame(frame);
   }

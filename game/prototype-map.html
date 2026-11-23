@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Клён · пути и маршруты — Последний трамвай</title><link rel="stylesheet" href="prototype-map.css"></head>
+<title>Клён · квартал Б — Последний трамвай</title><link rel="stylesheet" href="prototype-map.css"></head>
 <body>
-<!-- Черновик 2: прокладка пути и маршрута щелчками в выбранном ракурсе C. -->
+<!-- Черновик Б: low-poly, живая сеть и редактирование поверх карты. -->
 <svg id="map" data-prototype="" xmlns="http://www.w3.org/2000/svg" aria-label="Интерактивная карта города Клён" role="group">
   <g id="scene"></g><g id="layer" pointer-events="none"></g><g id="leaders"></g><g id="thoughts"></g><g id="moving"></g>
   <g id="marker" pointer-events="none"><ellipse rx="8" ry="4" fill="none" stroke="#994626"/></g>
@@ -10,15 +10,13 @@
   <g id="targets"></g>
 </svg>
 <header class="hud">
-  <div class="city"><small>ЦЕНТР · ДЕПО 01</small><strong>Клён</strong></div>
   <div><small>Касса</small><strong id="cash"></strong></div>
   <div><small>Трамваи в парке</small><strong id="fleet"></strong></div>
   <div class="shares" title="Расстояние всех жителей за сегодня. Подход и выход считаются пешком, ожидание — 0 м."><small>Расстояние жителей сегодня</small><b id="shares"></b></div>
   <div class="time"><small>Городское время</small><b id="clock"></b></div>
   <button id="pause" aria-label="Пауза" title="Пауза">Ⅱ</button>
 </header>
-<section class="study" aria-label="Черновик управления"><small>МАКЕТ 02 · РАКУРС 39°</small>
-  <label><input id="smooth" type="checkbox" checked> Плавно между шагами</label>
+<section class="study" aria-label="Черновик управления"><small>КЛЁН · МАКЕТ Б · 39°</small>
 </section>
 <div class="camera" aria-label="Масштаб карты"><button id="minus" aria-label="Отдалить">−</button><button id="plus" aria-label="Приблизить">+</button><button id="fit">Вся зона</button></div>
 <aside id="panel" aria-label="Инструмент карты" hidden><button id="close" aria-label="Закрыть меню">×</button><small>РЕЖИМ КАРТЫ</small><h2 id="title"></h2><div id="content"></div></aside>
@@ -28,5 +26,5 @@
     <button data-mode="routes">Маршруты</button><button data-mode="flows">Потоки</button>
   </nav>
 </footer>
-<script src="city.js"></script><script src="movement.js"></script><script src="service.js"></script><script src="journey.js"></script><script src="expansion.js"></script><script src="demand.js"></script><script src="history.js"></script><script src="simulation.js"></script><script src="art.js"></script><script src="flows.js"></script><script src="map.js"></script><script src="prototype-distance.js"></script><script src="prototype-map.js"></script>
+<script src="city.js"></script><script src="movement.js"></script><script src="service.js"></script><script src="journey.js"></script><script src="expansion.js"></script><script src="demand.js"></script><script src="history.js"></script><script src="simulation.js"></script><script src="art.js"></script><script src="prototype-low-poly.js"></script><script src="flows.js"></script><script src="map.js"></script><script src="prototype-distance.js"></script><script src="prototype-map.js"></script>
 </body></html>
