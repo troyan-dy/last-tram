@@ -181,7 +181,11 @@
       const light=cityTime(game).period.id;
       if (svg.dataset.light!==light) svg.dataset.light=light;
       const key=`${game.openRing}|${[...game.trackIds].join(',')}`;
-      if (game!==lastGame || signature!==key) { build(game); lastGame=game; signature=key; }
+      if (game!==lastGame || signature!==key) {
+        const camera=game===lastGame && svg.hasAttribute('data-prototype') && {view,zoom};
+        build(game); lastGame=game; signature=key;
+        if(camera){zoom=camera.zoom;setView(camera.view);}
+      }
       signs(game,served);
       const drawn=new Set(), showing=new Set(), active=[], seats=new Map();
       const layout=flow.enabled?thoughtLayout(view):null;

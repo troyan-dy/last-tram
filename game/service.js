@@ -15,7 +15,7 @@
   }
 
   // Shortest physical path over purchased edges, independently of the stops a line calls at.
-  function railPath(g, a, b) {
+  function railPath(g, a, b, excluded) {
     const pending = new Set([a]), costs = new Map([[a, 0]]), prev = new Map();
     while (pending.size) {
       const here = [...pending].reduce((x,y) => costs.get(x) <= costs.get(y) ? x : y);
@@ -26,6 +26,7 @@
         return path;
       }
       for (const id of g.trackIds) {
+        if (excluded?.has(id)) continue;
         const e = g.lookup.edges.get(id), next = e.a === here ? e.b : e.b === here ? e.a : null;
         if (!next) continue;
         const cost = costs.get(here) + distance(g.lookup.stops.get(here), g.lookup.stops.get(next));
@@ -47,7 +48,22 @@
     }
   }
 
-  function timetable(g, stops) {
+  // A closed service needs a real return track rather than the shuttle's reversed path.
+  function loopPaths(g, stops) {
+    if (stops.length<3 || new Set(stops).size!==stops.length) return null;
+    const paths=[], used=new Set();
+    for (let i=0;i<stops.length;i++) {
+      const path=railPath(g,stops[i],stops[(i+1)%stops.length],used);
+      if (!path) return null;
+      for (let j=1;j<path.length;j++) {
+        const a=path[j-1], b=path[j];
+        used.add(g.city.edges.find(e=>(e.a===a && e.b===b)||(e.a===b && e.b===a)).id);
+      }
+      paths.push(path);
+    }
+    return paths;
+  }
+  function timetable(g, stops, loop=false) {
     if (!Array.isArray(stops) || stops.length < 2 || new Set(stops).size !== stops.length
       || !stops.every(s => open(g,s))) return null;
     const paths = [];
@@ -57,9 +73,10 @@
       paths.push(path);
     }
     const frames = [], calls = [];
-    const trips = [...paths, ...paths.slice().reverse().map(p => [...p].reverse())];
+    const trips = loop ? loopPaths(g,stops) : [...paths, ...paths.slice().reverse().map(p => [...p].reverse())];
+    if (!trips) return null;
     for (const [i,path] of trips.entries()) {
-      const id = path[0], direction = i < paths.length ? 1 : -1;
+      const id = path[0], direction = loop || i < paths.length ? 1 : -1;
       const incoming = trips[(i+trips.length-1)%trips.length];
       const axis = trackAxis(g.lookup.stops.get(incoming.at(-2)), g.lookup.stops.get(id));
       calls.push({ stopId: id, phase: frames.length, direction });
@@ -75,20 +92,20 @@
   const mod = (v,n) => ((v%n)+n)%n;
   const routeOf = (g,id) => g.routes.find(r => r.id === id);
   const name = (label, n) => `${label} ${String(n).padStart(2,'0')}`;
-  function createRoute(g, stopIds) {
-    const schedule = timetable(g, stopIds);
+  function createRoute(g, stopIds, loop=false) {
+    const schedule = timetable(g, stopIds, loop);
     if (!schedule) return fail('Нужны разные остановки, соединённые построенными путями.');
     const n = g.routes.length+1, id = `line-${n}`;
-    g.routes.push({ id, name:name('Линия',n), stopIds:[...stopIds], schedule, anchor:-g.tick });
+    g.routes.push({ id, name:name('Линия',n), stopIds:[...stopIds], ...(loop?{loop:true}:{}), schedule, anchor:-g.tick });
     return { ok:true, routeId:id };
   }
-  function setStops(g, id, stopIds) {
-    const r = routeOf(g,id), schedule = timetable(g,stopIds);
+  function setStops(g, id, stopIds, loop=false) {
+    const r = routeOf(g,id), schedule = timetable(g,stopIds,loop);
     if (!r || !schedule) return fail('Остановки должны быть соединены путями и не повторяться.');
-    if (r.stopIds.join() === stopIds.join()) return { ok:true };
+    if (r.stopIds.join() === stopIds.join() && !!r.loop===loop) return { ok:true };
     if (fleet(g,r).some(t=>!attachment(g,stateAt(t,releaseTick(g,t)),{schedule})))
       return fail('Нет пути для перегона поезда.');
-    r.stopIds = [...stopIds]; r.schedule = schedule; r.anchor=-g.tick;
+    r.stopIds = [...stopIds]; r.loop=loop; r.schedule = schedule; r.anchor=-g.tick;
     distribute(g,r);
     return { ok:true };
   }
@@ -211,7 +228,7 @@
     g.fare=value;
     return {ok:true};
   }
-  const api = { buildTrack, railPath, createRoute, setStops, buyTrain, assignTrain, setFare, openLine, moveTrains, finalRun, operatingStops };
+  const api = { buildTrack, railPath, loopPaths, createRoute, setStops, buyTrain, assignTrain, setFare, openLine, moveTrains, finalRun, operatingStops };
   Object.assign(globalThis.LastTram ??= {}, api);
   if (typeof module !== 'undefined') module.exports = api;
 })();
