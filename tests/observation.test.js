@@ -67,3 +67,18 @@ test('evening arrivals are attributed to the last visited district, not the home
   const doors=game.history.arrivalsAt(r.homeId,home.tick,home.tick+1);
   assert.equal(doors.byDistrict[actual][home.mode],1);
 });
+
+test('on a final door an added listener and the original consumer both see one recorded arrival', () => {
+  const seen=[];
+  const game=startGame(createCity('ТРАМ-17'),{
+    demand() {},
+    onArrival(g,r,j) { seen.push(['consumer',r.id,g.history.arrivalsAt(j.destinationId,0,g.tick+1).total]); }
+  });
+  game.arrivalListeners.add((g,r,j)=>{
+    seen.push(['listener',r.id,g.history.arrivalsAt(j.destinationId,0,g.tick+1).total]);
+  });
+  const r=game.residents[0];
+  assert.ok(depart(game,r,r.workId));
+  advance(game,540);
+  assert.deepEqual(seen,[['listener',r.id,1],['consumer',r.id,1]]);
+});

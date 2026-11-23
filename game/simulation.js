@@ -34,6 +34,7 @@
       trackIds: new Set(), cash: BALANCE.startingCash, fare: BALANCE.fare, fareIncome: 0, history: createHistory(),
       systems: { demand: g => dailyDemand(g, depart), service: moveTrains, planJourney, stepTransit, openLine, ...systems } };
     game.residents = makeResidents(game);
+    game.arrivalListeners = new Set([game.history.recordArrival]);
     game.systems.openLine(game);
     return game;
   }
@@ -75,7 +76,7 @@
     r.lastJourney = { originId: j.originId, destinationId: j.destinationId,
       mode: j.mode, startedAt: j.startedAt, arrivedAt: game.tick, decision: j.decision };
     r.journey = null;
-    game.history.recordArrival(game,r,r.lastJourney);
+    for (const listener of game.arrivalListeners) listener(game, r, r.lastJourney);
     game.systems.onArrival?.(game, r, r.lastJourney);
   }
 
