@@ -88,8 +88,9 @@
     const cost=LT.BALANCE.trackCost,action=buy?(on?'Путь построен':`Построить за ${cost} ₽`):'Поставить остановку';
     const price=buy&&!on?`<g transform="translate(${point(halfWay(points))})"><rect x="-8" y="-3.9" width="16" height="7.8" rx="2.4"/>
       <text class="price" text-anchor="middle" y="1.7">${cost} ₽</text></g>`:'';
+    const pavement=lanes?`<polygon points="${LT.streetStudy.bandPolygon(points,e.width+4).map(p=>point(p).join(',')).join(' ')}" fill="transparent"/>`:'';
     return `<g data-type="section" data-id="${e.id}" tabindex="0" role="button" data-built="${on}" aria-label="${action}: ${stop(e.a).name} — ${stop(e.b).name}">
-      <title>${action}</title><polyline class="road-ink" points="${line}"/><polyline class="street-hit" points="${line}"/>${price}</g>`;
+      <title>${action}</title>${pavement}<polyline class="road-ink" points="${line}"/><polyline class="street-hit" points="${line}"/>${price}</g>`;
   }
   function snapClick(e,at){
     const line=roadPoints(e);
@@ -108,7 +109,8 @@
     const road=e.target.closest('[data-type=section]');
     if(e.buttons||e.pointerType==='touch'||mode!=='stops'||!road)return hideGhost();
     const at=new DOMPoint(e.clientX,e.clientY).matrixTransform(svg.getScreenCTM().inverse());
-    ghost.setAttribute('transform',`translate(${point(snapClick(section(road.dataset.id),at))})`);
+    const s=section(road.dataset.id);
+    ghost.setAttribute('transform',`translate(${point(LT.streetStudy.stopSite(s,snapClick(s,at)).q)})`);
     ghost.setAttribute('visibility','visible');
   });
   svg.addEventListener('pointerleave',hideGhost);
@@ -116,6 +118,14 @@
     let out='';
     const segment=(a,b,color,dash='')=>`<polyline points="${xy(a)} ${xy(b)}" fill="none" stroke="${color}" stroke-width="3" stroke-opacity=".82" stroke-dasharray="${dash}"/>`;
     const dot=(id,txt)=>`<g transform="translate(${xy(id)})"><circle r="5" fill="#ffedbd" stroke="#29584c" stroke-width="1.5"/><text class="flow-mark" x="7" y="-5">${txt}</text></g>`;
+    if(lanes&&mode==='build'){
+      const seen=new Set(),joined=new Set();
+      for(const s of visibleSections().filter(built))for(const p of s.line){
+        if(!p.junctionRadius)continue;
+        if(seen.has(p))joined.add(p);else seen.add(p);
+      }
+      for(const p of joined)out+=`<circle class="rail-junction" cx="${point(p)[0]}" cy="${point(p)[1]}" r="2.4" fill="#fff2ce" stroke="#426653" stroke-width="1.3"/>`;
+    }
     if(mode==='routes') {
       const paths=loop?LT.loopPaths(game,draft):draft.slice(1).map((s,i)=>LT.railPath(game,draft[i],s));
       for(const path of paths||[]){
@@ -137,16 +147,22 @@
     $('layer').innerHTML=out;
     const roads=mode==='build'||(mode==='stops'&&lanes)?visibleSections().map(roadTarget).join(''):'';
     if(mode==='stops'||mode==='routes'){
-      $('targets').innerHTML=roads+stations().map(s=>{
+      const list=stations(),view=svg.viewBox.baseVal;
+      const layout=LT.thoughtLayout({x:view.x,y:view.y,w:view.width,h:view.height});
+      for(const s of list)layout.person(...point(s));
+      $('targets').innerHTML=roads+list.map(s=>{
         const n=draft.indexOf(s.id), chosen=mode==='routes'?n>=0:s.id===selected;
         const text=mode==='routes'&&chosen?`${n+1} · ${stopName(s.id)}`:stopName(s.id);
         const start=mode==='routes'&&n===0, edge=start?'#ffbc54':'#f6e4c6';
-        return `<g data-type="stop" data-id="${s.id}" role="button" tabindex="0" aria-label="${stopName(s.id)}" transform="translate(${xy(s.id)})">
-          <rect x="-7" y="-22" width="${text.length*3.6+18}" height="24" rx="5" fill="transparent"/>
+        const [x,y]=point(s),box=layout.place(x,y,text.length*3.6+10,13);
+        const left=box.x-x,top=box.y-y,tipX=Math.max(left+2,Math.min(0,left+box.w-2));
+        return `<g transform="translate(${xy(s.id)})">
           ${start?'<ellipse rx="6" ry="2.2" fill="none" stroke="#ffbc54" stroke-width="1.25"/>':''}
-          <path d="M-2 -9L0 -1 3 -9" fill="#423a31" stroke="${edge}" stroke-width=".85"/>
-          <rect x="-5" y="-20" width="${text.length*3.6+10}" height="12" rx="3" fill="${chosen?'#37322c':'#f2ddbb'}" stroke="${edge}" stroke-width="${start?1.65:1}"/>
-          <text x="-.5" y="-11.5" fill="${chosen?'#fff1d7':'#493e30'}" font-family="system-ui" font-size="6" font-weight="700">${text}</text></g>`;
+          <path d="M0 0 L${tipX} ${top<0?top+box.h:top}" fill="none" stroke="#695844" stroke-width=".9" pointer-events="none"/>
+          <circle data-stop-anchor="${s.id}" r="2.8" fill="#524535" stroke="${edge}" stroke-width=".8"/>
+          <g data-type="stop" data-id="${s.id}" role="button" tabindex="0" aria-label="${stopName(s.id)}">
+          <rect class="station-tag" x="${left}" y="${top}" width="${box.w}" height="${box.h}" rx="3" fill="${chosen?'#37322c':'#f2ddbb'}" stroke="${edge}" stroke-width="${start?1.65:1}"/>
+          <text x="${left+4}" y="${top+8.6}" fill="${chosen?'#fff1d7':'#493e30'}" font-family="system-ui" font-size="6" font-weight="700" pointer-events="none">${text}</text></g></g>`;
       }).join('');
     } else $('targets').innerHTML=roads;
   }
@@ -170,7 +186,8 @@
     const pickPlace=label=>`<label>${label}<select id="district">${choices(districts.map(s=>[s.id,s.name]),place)}</select></label>`;
     let h='';
     if(mode==='build'){
-      h=visibleSections().some(e=>!built(e))?'<p>Цена подписана на дороге. Нажмите на участок или на его цену — рельсы будут куплены сразу.</p>':'<p>На всех доступных улицах уже есть рельсы.</p>';
+      h=(visibleSections().some(e=>!built(e))?'<p>Нажмите на дорогу или ценник, чтобы купить путь.</p>':'<p>На всех доступных улицах уже есть рельсы.</p>')+
+        (lanes?'<p class="muted">Светлая точка на перекрёстке — соединение построенных путей. Для поворота остановка не нужна.</p>':'');
     } else if(mode==='stops'){
       const lines=game.routes.filter(r=>r.stopIds.includes(selected));
       h=lanes?'<p>Нажмите на улицу в том месте, где нужен павильон. Остановка появится здесь; рельсы покупаются отдельно.</p>':'<p>Нажмите на остановку на карте.</p>';
@@ -220,7 +237,12 @@
           loop=!!LT.loopPaths(game,draft);
           if(!loop)note='Нет отдельного пути обратно. Для кольца достройте рельсы; пока маршрут работает туда и обратно.';
         } else if(draft.includes(id))note='Остановка уже выбрана. Для кольца нужны хотя бы три разные остановки.';
-        else if(draft.length && !LT.railPath(game,draft.at(-1),id))note='Сюда пока нет рельсов от последней остановки. Сначала постройте путь.';
+        else if(draft.length && !LT.railPath(game,draft.at(-1),id)){
+          const from=draft.at(-1);
+          const bare=[from,id].find(p=>!game.city.edges.some(e=>game.trackIds.has(e.id)&&(e.a===p||e.b===p)));
+          note=bare?`У остановки «${stopName(bare)}» пока нет рельсов.`:
+            `Между остановками «${stopName(from)}» и «${stopName(id)}» нет непрерывного пути.`;
+        }
         else draft.push(id);
       }
       else if(mode==='flows'){place=districts.find(s=>s.districtId===stop(id).districtId)?.id??place;person=null;}
