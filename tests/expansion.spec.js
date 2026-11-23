@@ -25,8 +25,8 @@ test('open a ring on the paused map and carry a named resident from its new stop
   const next = page.locator('#next-period');
   await next.click();
   await expect(page.locator('#clock')).toHaveText('12:00');
-  await expect(goals).toContainText('24 из 16 ₽');
-  await expect(goals).toContainText('104 ₽');
+  await expect(goals).toContainText('22 из 16 ₽');
+  await expect(goals).toContainText('102 ₽');
   await expect(purchase).toBeEnabled();
   await purchase.click();
   await expect(page.locator('#zone-label')).toContainText('КОЛЬЦО');
@@ -45,7 +45,7 @@ test('open a ring on the paused map and carry a named resident from its new stop
   await expect(goals).toContainText('1 из 1');
   await expect(goals).toContainText('Марк');
   await expect(goals).toContainText('Вокзал, дом 3 → Ателье');
-  await expect(goals).toContainText('28,2 мин');
+  await expect(goals).toContainText('18,3 мин');
   await goals.getByRole('button', { name: /Показать пассажира/ }).click();
   const card = page.getByRole('region', { name: 'Наблюдение' });
   await expect(card.getByRole('heading', { name: 'Марк' })).toBeVisible();
@@ -95,9 +95,9 @@ test('after the evening return open the ring at night and serve a commuter next 
   await extendToStation(page);
   await next('07:30');
   await next('12:00');
-  await expect(goals).toContainText('Ася: Вокзал, дом 3 → Крытый рынок');
-  await expect(goals).toContainText('9,7 мин');
+  await expect(goals).toContainText('Марк: Сады, дом 3 → Мастерская');
+  await expect(goals).toContainText('10 мин');
   await goals.getByRole('button', { name: /Показать пассажира/ }).click();
-  await expect(page.locator('#inspector')).toContainText('08:21');
+  await expect(page.locator('#inspector')).toContainText('09:44');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });

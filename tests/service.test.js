@@ -7,6 +7,52 @@ const network = require('../game/service.js');
 const start = systems => startGame(createCity('Ива'), { demand() {}, ...systems });
 const edge = (g, a, b) => g.city.edges.find(e => [e.a, e.b].includes(a) && [e.a, e.b].includes(b)).id;
 
+test('both alternatives turn off the market street at the home lane; only sufficient savings sell a ticket', () => {
+  const g = startGame(createCity('Клён'), { demand() {} });
+  advance(g,3699);
+  const from = g.city.buildings.find(b=>b.name==='Крытый рынок');
+  const to = g.city.buildings.find(b=>b.name==='Липовая, дом 3');
+  const r = g.residents.find(p=>p.homeId===to.id);
+  const quote = g.systems.planJourney(g,r,from,to);
+  // 15 to the market sidewalk, 240 west, 50 north, then 29 to the entrance.
+  assert.equal(quote.decision.walkTicks,418);
+  // The same shortcut after alighting also improves the formerly 451-tick tram option.
+  assert.equal(quote.decision.tramTicks,336);
+  assert.equal(quote.mode,'tram');
+  network.setFare(g,41); // 82 ticks saved, precisely the price in time.
+  const reverse = g.systems.planJourney(g,r,to,from);
+  assert.equal(reverse.decision.walkTicks,418);
+  r.currentBuildingId=from.id; r.position={...from.entrance};
+  assert.ok(depart(g,r,to.id));
+  advance(g,417);
+  assert.equal(r.currentBuildingId,null);
+  advance(g);
+  assert.deepEqual(r.position,to.entrance);
+  assert.equal(r.lastJourney.mode,'walk');
+});
+
+test('between parallel lanes the shorter crossing can be on the neighboring street, beyond both doors', () => {
+  const g=startGame(createCity('Клён'),{demand() {}}); g.openRing=1;
+  const b=name=>g.city.buildings.find(b=>b.name===name);
+  const from=b('Депо, дом 3'),to=b('Сады, дом 3');
+  const {walkingPath}=require('../game/movement');
+  const path=walkingPath(g,from,to);
+  // At y=-107 use 50+47 vertical units; at -11 use 46+49. No sidewalk connects
+  // these two driveways directly. 28+24 units of driveways, 417 units east.
+  const length=path.slice(1).reduce((n,p,i)=>n+Math.hypot(p.x-path[i].x,p.y-path[i].y),0);
+  assert.equal(length,564);
+  assert.ok(path.some((p,i)=>i>0 && p.y===-11 && path[i-1].y===-11 && p.x!==path[i-1].x));
+});
+
+test('reversing the stored endpoints still opens a working starter shuttle', () => {
+  const city=createCity('Клён');
+  for (const e of city.edges) [e.a,e.b]=[e.b,e.a];
+  const g=startGame(city);
+  advance(g,400);
+  assert.equal(g.residents[0].lastJourney.mode,'tram');
+  assert.equal(g.residents[0].currentBuildingId,g.residents[0].workId);
+});
+
 test('buying a track opens no service; unavailable, duplicate and unaffordable purchases are atomic', () => {
   const g = start(), [a] = g.city.starterStops;
   const link = edge(g, a, 's:1:1'), closed = edge(g, a, 's:0:2');

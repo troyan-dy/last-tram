@@ -3,6 +3,52 @@ const {pathToFileURL}=require('node:url');
 const path=require('node:path');
 
 test.use({offline:true});
+test('the same walker can explain long approaches in the morning and a long wait at noon',async({page})=>{
+  await page.goto(pathToFileURL(path.resolve(__dirname,'../index.html')).href);
+  await page.getByLabel('Сид города').fill('Клён');
+  await page.getByRole('button',{name:'Новая партия'}).click();
+  await page.getByRole('button',{name:'Пауза'}).click();
+  await page.getByLabel('Наблюдать за жителем').selectOption({label:'Вера · Липовая, дом 1'});
+  async function at(tick) {
+    await page.evaluate(t=>{const {ui,advance}=LastTram;advance(ui.game,t-ui.game.tick);ui.render();},tick);
+  }
+  const card=page.locator('#inspector .choice');
+  await at(74);
+  await expect(card).toContainText('Далеко идти до остановки или от неё');
+  await at(1810);
+  await expect(card).toContainText('Долго ждать поезд');
+});
+
+test('stop signs and the network card distinguish a draft service, an empty transfer and actual calls',async({page})=>{
+  await page.goto(pathToFileURL(path.resolve(__dirname,'../index.html')).href);
+  await page.getByRole('button',{name:'Пауза'}).click();
+  await page.getByText('Пульт сети',{exact:true}).click();
+  for (const id of ['s:1:1/s:2:1','s:1:1/s:1:2']) {
+    await page.getByLabel('Новый участок').selectOption(id);
+    await page.getByRole('button',{name:/Построить путь/}).click();
+  }
+  await page.getByRole('button',{name:'Новый маршрут'}).click();
+  for (const id of ['s:1:1','s:2:1']) {
+    await page.getByLabel('Добавить остановку').selectOption(id);
+    await page.getByRole('button',{name:'Добавить',exact:true}).click();
+  }
+  await page.getByRole('button',{name:'Сохранить остановки'}).click();
+  const map=page.locator('#map'), labels=map.locator('.stop-label');
+  const info=page.getByRole('region',{name:'Объект сети'});
+  await map.getByRole('button',{name:'Липовая',exact:true}).press('Enter');
+  await expect(labels.filter({hasText:'Липовая'})).toHaveCount(0);
+  await expect(info).toContainText('По плануЛиния 02');
+  await expect(info).toContainText('ОбслуживаниеНет поездов');
+  await page.getByRole('button',{name:'Назначить на маршрут'}).click();
+  await page.evaluate(()=>{ LastTram.advance(LastTram.ui.game); LastTram.ui.render(); });
+  await expect(labels).toHaveCount(0);
+  await expect(info).toContainText('ОбслуживаниеНет поездов');
+  await page.evaluate(()=>{ LastTram.advance(LastTram.ui.game,500); LastTram.ui.render(); });
+  await expect(labels).toHaveCount(2);
+  await expect(labels.filter({hasText:'Липовая'})).toBeVisible();
+  await expect(info).toContainText('ОбслуживаниеЛиния 02');
+});
+
 test('edit shared track service, reassign a particular train and inspect a real fare decision offline', async ({page})=>{
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
@@ -22,10 +68,11 @@ test('edit shared track service, reassign a particular train and inspect a real 
   await expect(page.locator('#line-stops')).toHaveText('ДворыСквер');
   await page.getByRole('button',{name:/Купить поезд/}).click();
   await page.getByRole('button',{name:'Показать поезд'}).click();
-  await expect(page.locator('#inspector h2')).toHaveText('Поезд 02');
+  const trainInfo=page.getByRole('region',{name:'Объект сети'});
+  await expect(trainInfo.getByRole('heading')).toHaveText('Поезд 02');
   await page.getByLabel('Рабочий маршрут').selectOption('line-1');
   await page.getByRole('button',{name:'Назначить на маршрут'}).click();
-  await expect(page.locator('#inspector')).toContainText('Линия 01');
+  await expect(trainInfo).toContainText('Линия 01');
   await page.getByLabel('Цена билета').fill('99');
   await page.getByRole('button',{name:'Установить тариф'}).click();
   await expect(page.locator('#network-money')).toContainText('32 ₽');

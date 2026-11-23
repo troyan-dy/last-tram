@@ -49,7 +49,7 @@ test('two independent opening mornings measure the same destination with just on
     const stats=h.arrivalsAt(market.id,result.from,result.to);
     return [stats.total,stats.tram,h.revenue(result.from,result.to)];
   });
-  assert.deepEqual(measured,[[7,2,20],[7,3,30]]);
+  assert.deepEqual(measured,[[7,2,22],[7,3,24]]);
   assert.deepEqual([live.tick,live.cash,live.trains.length,live.history.fares(0,301)],before);
 });
 

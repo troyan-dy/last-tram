@@ -13,7 +13,7 @@ console.log(clockMinute(game), game.residents[0].currentBuildingId);
 ## География
 
 - `createCity(seed)` → `{seed, districts, buildings, stops, edges, starterStops}`. Сид — строка; пустое значение даёт новый сид, который можно ввести снова. Массивы уже содержат **весь** город. Это справочники; не изменяйте их при открытии территории.
-- Координаты `{x,y}` в единицах улицы; `x` растёт на восток, `y` — на юг. Здание: `{id, districtId, stopId, kind: 'home'|'work', name, ring, x, y, width, depth, floors, tint, entrance: {x,y}}`. `entrance` находится на фасаде. Район: `{id, ring, name}`. Остановка: `{id, districtId, name, ring, x, y, sidewalk}`; платформа `sidewalk` и ось пути `(x,y)` различны.
+- Координаты `{x,y}` в единицах улицы; `x` растёт на восток, `y` — на юг. Здание: `{id, districtId, stopId, kind: 'home'|'work', visualRole: 'house'|'work'|'market', name, ring, x, y, width, depth, floors, tint, entrance: {x,y}}`. `entrance` находится на фасаде. `visualRole` задаёт вид здания и значок места назначения независимо от языка подписи. Район: `{id, ring, name}`. Остановка: `{id, districtId, name, ring, x, y, sidewalk}`; платформа `sidewalk` и ось пути `(x,y)` различны.
 - `edges` — кандидаты `{id,a,b}` между соседними остановками `a,b`. Участки неориентированные, их идентификаторы лучше брать из справочника. `starterStops` — три последовательные остановки линии. Начальная зона — `ring === 0`, первое расширение — 1.
 
 ## Состояние и часы
@@ -31,7 +31,9 @@ console.log(clockMinute(game), game.residents[0].currentBuildingId);
 
 ## Карта и панели
 
-`createMap(svg, onSelect)` → `{render(game,focus), fit(), zoomBy(factor)}`. `focus` — `null` или `{type:'resident'|'building'|'stop'|'train', id}`. Узлы объектов имеют `data-type`, `data-id`; цель клика определяется самим SVG под текущей камерой. `art.project(x,y,z=0)` — единая проекция. Статика пересчитывается при замене партии, границы, путей или последовательности остановок. `LastTram.ui.game` и `.focus` — геттеры **текущих** объектов; `ui.select(type,id)` устанавливает фокус, `ui.render()` синхронизирует панели после команды (в том числе на паузе). Не сохраняйте `ui.game` между новыми партиями. Новые команды меняют модель, а не DOM.
+`createMap(svg, onSelect)` → `{render(game, focus, flow?, inspection?, operating?), fit(), zoomBy(factor)}`. `focus` — `null` или `{type:'resident'|'building', id}`. Осмотр объекта сети (`inspection`: `{type:'stop'|'train', id}` либо `null`) показывает отдельную карточку и пунктирную метку. Фокус карты, карточка жителя, журнал и фильтры здания сохраняются. Выбор жителя или здания завершает осмотр объекта сети.
+
+Узлы объектов имеют `data-type`, `data-id`; цель клика определяется самим SVG под текущей камерой. Если фигуры перекрываются, `onSelect(type,id,group?)` получает и список попавших под указатель жителей. Под картой можно выбрать любого из этой группы, в том числе без облачка. `art.project(x,y,z=0)` — единая проекция. Геометрия пересчитывается при смене партии, границы или путей; знаки и подписи обслуживаемых остановок обновляются при смене работающих рейсов. `LastTram.ui.game` и `.focus` — геттеры текущих объектов. `ui.select(type,id)` выбирает фокус или осматривает объект сети; `ui.render()` синхронизирует панели после команды (в том числе на паузе). Не сохраняйте `ui.game` между новыми партиями.
 
 ## Пульт сети и выбор: интерфейсы этапов 4–5
 
@@ -47,6 +49,10 @@ console.log(clockMinute(game), game.residents[0].currentBuildingId);
 | `setFare(game, integer)` | Меняет цену для следующих решений; диапазон `0…BALANCE.maxFare`. |
 
 `BALANCE.trackCost/trainCost` — цена пути/поезда. Расширение меняет `openRing` и списывает согласованную цену из `cash`; команды и пульт сразу видят новые доступные остановки и участки. Покупки не изменяют `fareIncome`.
+
+`finalRun(train)` в `service.js` — объявленный рейс для **новых** поездок; он может начаться позже текущего такта. `operatingStops(game)` возвращает `Map<stopId, Set<routeId>>` по **текущим** пассажирским рейсам. Пока поезд выполняет прежние обязательства, видны его фактические остановки; пустой перегон и маршрут без поездов не зажигают знаки.
+
+`walkingPath` и `platformPath` в `movement.js` соединяют вход с нарисованной дорожкой до первого тротуара. Для параллельных улиц выбирается кратчайший переход по открытой поперечной улице; для перпендикулярных — их перекрёсток. Заходить на местную платформу не требуется. Эти же пути проходят жители и оценивает планировщик: в сравнении у двери, выборе по тарифу и выигрыше времени у цели.
 
 `game/journey.js`: `planJourney(game,resident,fromBuilding,toBuilding)` — чистый расчёт на текущий такт. `journey.mode` задаёт способ всего пути; на текущий этап указывает `journey.legs[journey.leg].type` (`walk|wait|ride`). `journey.decision` — снимок у двери, сохраняется в `lastJourney.decision`. Поля `walkTicks`, `tramTicks` (или `null`, если связей нет), `accessTicks`, `waitTicks` (первое ожидание), `rideTicks` (в салоне), `transferTicks` (между высадками и следующими посадками), `exitTicks`, `transfers`, `fare`, `farePenalty` (цена в единицах времени), `rides: [{trainId,routeId,from,to,boardAt,alightAt}]`. Времена поездки указаны в тактах, `boardAt/alightAt` — абсолютные такты. У пешего жителя `decision.rides` относится к рассмотренной альтернативе, не к факту посадки.
 

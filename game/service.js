@@ -93,6 +93,17 @@
     return { ok:true };
   }
   const finalRun = t => t.runs.at(-1);
+  function operatingStops(g) {
+    const result=new Map();
+    for (const t of g.trains) {
+      const run=t.runs.findLast(s=>s.start<=g.tick);
+      for (const call of run.schedule?.calls??[]) {
+        if (!result.has(call.stopId)) result.set(call.stopId,new Set());
+        result.get(call.stopId).add(run.routeId);
+      }
+    }
+    return result;
+  }
   function stateAt(t,tick) {
     const run = t.runs.findLast(s => s.start<=tick);
     const f = run.schedule ? run.schedule.frames[mod(tick+run.offset,run.schedule.period)]
@@ -179,8 +190,10 @@
   }
   function openLine(g) {
     const stops = g.city.starterStops;
-    for (let i=1; i<stops.length; i++)
-      g.trackIds.add(g.city.edges.find(e => e.a===stops[i-1] && e.b===stops[i]).id);
+    for (let i=1; i<stops.length; i++) {
+      const a=stops[i-1], b=stops[i];
+      g.trackIds.add(g.city.edges.find(e => (e.a===a && e.b===b) || (e.b===a && e.a===b)).id);
+    }
     createRoute(g, stops);
     const r=g.routes[0];
     r.anchor=r.schedule.calls.find(c => c.stopId===stops.at(-1)).phase + BALANCE.dwellTicks;
@@ -198,7 +211,7 @@
     g.fare=value;
     return {ok:true};
   }
-  const api = { buildTrack, createRoute, setStops, buyTrain, assignTrain, setFare, openLine, moveTrains };
+  const api = { buildTrack, createRoute, setStops, buyTrain, assignTrain, setFare, openLine, moveTrains, finalRun, operatingStops };
   Object.assign(globalThis.LastTram ??= {}, api);
   if (typeof module !== 'undefined') module.exports = api;
 })();

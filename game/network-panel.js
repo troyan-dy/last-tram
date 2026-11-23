@@ -90,8 +90,19 @@
       ['В поезде',time(d.rideTicks)],['Пересадки',`${d.transfers} · ${time(d.transferTicks)}`],
       ['Последний участок',time(d.exitTicks)],['Билет',`${d.fare} ₽`],
       ['Цена в оценке времени',time(d.farePenalty)]);
-    const reason=d.tramTicks===null?'Нет подходящего поезда.':mode==='tram'?'Выигрыш во времени оправдывает билет.':
-      d.walkTicks<=d.tramTicks?'Пешком не дольше.':'Выигрыш во времени не оправдывает билет.';
+    let reason;
+    if (d.tramTicks===null) reason='Нет подходящего поезда.';
+    else if (mode==='tram') reason='Выигрыш во времени оправдывает билет.';
+    else if (d.tramTicks<d.walkTicks) reason='Выигрыш во времени не оправдывает билет.';
+    else {
+      // Would removing this component alone make the *paid* alternative worthwhile?
+      const deficit=d.tramTicks+d.farePenalty-d.walkTicks;
+      const waiting=d.waitTicks+d.transferTicks>deficit, approaches=d.accessTicks+d.exitTicks>deficit;
+      reason=waiting && !approaches ? 'Долго ждать поезд. Более короткое ожидание могло бы изменить выбор.'
+        : approaches && !waiting ? 'Далеко идти до остановки или от неё. Более близкая остановка могла бы изменить выбор.'
+        : waiting && approaches ? 'Пешком не дольше. Сокращение ожидания или пеших участков могло бы изменить выбор.'
+        : 'Пешком не дольше: учитываю весь путь, ожидание и цену билета.';
+    }
     return `<section class="choice"><h3>${preview?'Если выйти сейчас':'Выбор у двери'}</h3>${dt(rows)}<p>${reason}</p></section>`;
   }
   Object.assign(LT,{createNetworkPanel,choiceCard});

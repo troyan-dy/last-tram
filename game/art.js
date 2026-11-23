@@ -16,7 +16,7 @@
   const face = (x,y,z,w,h,c) => polygon([[x,y,z],[x+w,y,z],[x+w,y,z+h],[x,y,z+h]],c);
   function building(b) {
     const { x, y, width:w, depth:d, tint } = b;
-    const home = b.kind === 'home', market = b.name === 'Крытый рынок';
+    const home = b.kind === 'home', market = b.visualRole === 'market';
     const floors = home ? b.floors : market ? 1 : 2;
     const h = home ? floors * 4.2 + 1 : market ? 11 : 14;
     const wall = (home ? ['#ddd4b9','#dadbc9','#d4cab5','#e4d6ba'] : ['#dbbc91','#ccab8a','#ceb29d','#d5bc99'])[tint];
