@@ -40,6 +40,7 @@ jobs:
     needs: package
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pages: write
       id-token: write
     concurrency:
@@ -49,10 +50,23 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
+      - name: Skip revisions superseded on master
+        id: revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tip=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/master" --jq '.object.sha')
+          if [ "$tip" = "$GITHUB_SHA" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Пропущена устаревшая версия $GITHUB_SHA: master уже на $tip." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Publish master
+        if: steps.revision.outputs.current == 'true'
         uses: actions/deploy-pages@v4
         id: deploy
       - name: Verify the published revision and entry page
+        if: steps.revision.outputs.current == 'true'
         env:
           PAGE_URL: ${{ steps.deploy.outputs.page_url }}
         run: |
