@@ -113,6 +113,17 @@ for (const service of ['existing tracks only', 'extend the line east', 'build a 
     }
     const p = g.residents.find(r => r.id === (west ? 'p:b:0:3:2:0' : 'p:b:4:2:2:0'));
     const destination = west ? 'b:3:2:1' : 'b:1:2:1';
+    if (service === 'existing tracks only') {
+      until(g, () => p.currentBuildingId === destination, 3600);
+      assert.deepEqual([p.lastJourney.mode,p.lastJourney.arrivedAt],['walk',2635]);
+      // Vera did board in the old zone and arrive at a central door; that doesn't qualify.
+      const vera=g.residents.find(r=>r.id==='p:b:0:2:0:0');
+      assert.equal(vera.lastJourney.mode,'tram');
+      assert.equal(g.lookup.stops.get(vera.lastJourney.boardStopId).ring,0);
+      assert.equal(g.lookup.buildings.get(vera.currentBuildingId).ring,0);
+      assert.deepEqual([expansionStatus(g).ringTrips,expansionStatus(g).firstLink],[0,null]);
+      return;
+    }
     until(g, () => p.onTrainId, 3600);
     const stop = g.trains.find(t => t.id === p.onTrainId).atStopId;
     assert.equal(expansionStatus(g).ringTrips, 0, 'the ticket does not complete the goal');
@@ -123,28 +134,21 @@ for (const service of ['existing tracks only', 'extend the line east', 'build a 
     assert.equal(p.lastJourney.originId, p.homeId);
     assert.equal(p.lastJourney.mode, 'tram');
     const status = expansionStatus(g);
-    if (service === 'existing tracks only') {
-      assert.equal(g.lookup.stops.get(stop).ring, 0, 'Mark walked into the old zone to board');
-      assert.equal(p.lastJourney.arrivedAt, 2642);
-      assert.equal(status.ringTrips, 0);
-      assert.equal(status.firstLink, null);
-    } else {
-      assert.equal(g.lookup.stops.get(stop).ring, 1);
-      assert.equal(status.ringTrips, 1);
-      const j = p.lastJourney;
-      assert.deepEqual(status.firstLink, { residentId: p.id, originId: p.homeId, destinationId: destination,
-        boardStopId: stop, arrivedAt: g.tick, savedTicks: j.decision.walkTicks - (g.tick - j.startedAt) });
-      assert.ok(status.firstLink.savedTicks > 0);
-      if (west) assert.equal(j.decision.transfers, 1);
-      else {
-        assert.ok(j.arrivedAt < 2642, 'the new stop really improved Mark’s journey');
-        advance(g, 5040 - g.tick);
-        assert.equal(p.currentBuildingId, p.homeId);
-        assert.equal(p.lastJourney.mode, 'tram');
-        assert.equal(p.lastJourney.originId, destination, 'Mark actually returned from the atelier');
-        assert.equal(expansionStatus(g).ringTrips, 1, 'his home is in the ring but the return trip started in the center');
-        assert.deepEqual(expansionStatus(g).firstLink, status.firstLink);
-      }
+    assert.equal(g.lookup.stops.get(stop).ring, 1);
+    assert.equal(status.ringTrips, 1);
+    const j = p.lastJourney;
+    assert.deepEqual(status.firstLink, { residentId: p.id, originId: p.homeId, destinationId: destination,
+      boardStopId: stop, arrivedAt: g.tick, savedTicks: j.decision.walkTicks - (g.tick - j.startedAt) });
+    assert.ok(status.firstLink.savedTicks > 0);
+    if (west) assert.equal(j.decision.transfers, 1);
+    else {
+      assert.ok(j.arrivedAt < 2635, 'the new stop really improved Mark’s journey');
+      advance(g, 5040 - g.tick);
+      assert.equal(p.currentBuildingId, p.homeId);
+      assert.equal(p.lastJourney.mode, 'tram');
+      assert.equal(p.lastJourney.originId, destination, 'Mark actually returned from the atelier');
+      assert.equal(expansionStatus(g).ringTrips, 1, 'his home is in the ring but the return trip started in the center');
+      assert.deepEqual(expansionStatus(g).firstLink, status.firstLink);
     }
   });
 }

@@ -70,8 +70,8 @@ test('from a walking decision to a new commuter service in the unpacked offline 
   await detail('Цель', 'Ателье');
   await detail('Весь путь', 'Пешком');
   await detail('Целиком пешком', '36,2 мин');
-  await detail('С трамваем', '76 мин');
-  await expect(card.getByText('Пешком не дольше.')).toBeVisible();
+  await detail('С трамваем', '66,2 мин');
+  await expect(card.getByText(/Далеко идти до остановки или от неё/)).toBeVisible();
 
   await consoleToggle.click();
   await page.getByLabel('Цена билета').fill('3');
@@ -87,8 +87,8 @@ test('from a walking decision to a new commuter service in the unpacked offline 
   await ledger.getByLabel('Время прибытия').selectOption({ label: '07:30–09:00' });
   await expect(ledger).toContainText('Период завершён.');
   await expect(ledger).toContainText('Прибытий: 5');
-  await expect(ledger).toContainText('Средний путь: 42,2 мин');
-  for (const name of ['Липовая 2 0', 'Типография 0 1', 'Площадь 2 0']) {
+  await expect(ledger).toContainText('Средний путь: 29,2 мин');
+  for (const name of ['Липовая 2 0', 'Типография 1 0', 'Площадь 2 0']) {
     await expect(ledger.getByRole('row', { name, exact: true })).toBeVisible();
   }
   await expect(ledger).toContainText('Выручка сети: 21 ₽');
@@ -97,7 +97,7 @@ test('from a walking decision to a new commuter service in the unpacked offline 
   await step('17:30');
   await expect(card.getByText('У двери: Почта')).toBeVisible();
   await detail('Откуда', 'Ателье');
-  await detail('Прибытие', '13:10');
+  await detail('Прибытие', '13:00');
   await button('Скорость').click();
   await button('Продолжить').click();
   await detail('Цель', 'Липовая, дом 1');
@@ -109,15 +109,15 @@ test('from a walking decision to a new commuter service in the unpacked offline 
   await expect(card.getByText('У двери: Липовая, дом 1')).toBeVisible();
   await detail('Прибытие', '18:40');
 
-  await expect(goals).toContainText('27 из 3 поездок с трамваем');
-  await expect(goals).toContainText('75 из 16 ₽');
-  await expect(goals).toContainText('В кассе 155 ₽ · Цена кольца 80 ₽');
+  await expect(goals).toContainText('24 из 3 поездок с трамваем');
+  await expect(goals).toContainText('66 из 16 ₽');
+  await expect(goals).toContainText('В кассе 146 ₽ · Цена кольца 80 ₽');
   await expect(stops).toHaveText('ДворыПлощадьРынок');
   const originalTrain = await train.innerText();
   await button('Открыть кольцо · 80 ₽').click();
   await expect(button('Открыть кольцо · 80 ₽')).toBeHidden();
   await expect(goals).toContainText('0 из 1');
-  await expect(page.locator('#network-money')).toHaveText('Касса 75 ₽ · Билет 3 ₽');
+  await expect(page.locator('#network-money')).toHaveText('Касса 66 ₽ · Билет 3 ₽');
   await expect(page.locator('#fleet')).toHaveText('Поездов: 1');
   await expect(train).toHaveText(originalTrain);
   await expect(stops).toHaveText('ДворыПлощадьРынок');
@@ -134,22 +134,26 @@ test('from a walking decision to a new commuter service in the unpacked offline 
   await page.getByLabel('Потоки · Мысль').uncheck();
   await step('07:30');
   await expect(page.locator('#clock-period')).toHaveText('День 2 · Утро');
-  await directory.selectOption({ label: 'Ася · Вокзал, дом 3' });
+  await directory.selectOption({ label: 'Марк · Сады, дом 3' });
+  await button('Скорость').click(); // 12× for the longer walk to Vokzal.
   await button('Продолжить').click();
   await expect(card.getByText('В вагоне', { exact: true })).toBeVisible({ timeout: 15000 });
-  await detail('Откуда', 'Вокзал, дом 3');
-  await detail('Цель', 'Крытый рынок');
+  await detail('Откуда', 'Сады, дом 3');
+  await detail('Цель', 'Мастерская');
   await expect(card.getByText('Идёт к двери')).toBeVisible();
   await expect(goals).toContainText('0 из 1'); // Alighting is not an arrival.
-  await expect(card.getByText('У двери: Крытый рынок')).toBeVisible();
+  await expect(card.getByText('У двери: Мастерская')).toBeVisible();
   await button('Пауза').click();
   await step('12:00');
-  await expect(goals).toContainText('Всего таких поездок: 5');
-  await expect(goals).toContainText('Ася: Вокзал, дом 3 → Крытый рынок. Посадка: Вокзал. На 9,7 мин быстрее, чем пешком.');
-  await goals.getByRole('button', { name: /Показать пассажира/ }).click();
-  await expect(card.getByRole('heading', { name: 'Ася' })).toBeVisible();
-  await expect(card.getByText('У двери: Крытый рынок')).toBeVisible();
-  await detail('Прибытие', '08:21');
+  await expect(goals).toContainText('Всего таких поездок: 1');
+  await expect(goals).toContainText('Первая поездка — Марк: Сады, дом 3 → Мастерская. Посадка: Вокзал. Прибытие: день 2, 09:44. На 10 мин быстрее, чем пешком.');
+  await directory.selectOption({label:'Ася · Вокзал, дом 3'});
+  await detail('Весь путь','Пешком'); // Her 3-tick saving isn't worth a 3 ₽ ticket.
+  await expect(card.getByText('Выигрыш во времени не оправдывает билет.')).toBeVisible();
+  await goals.getByRole('button', { name: /Показать пассажира сейчас/ }).click();
+  await expect(card.getByRole('heading', { name: 'Марк' })).toBeVisible();
+  await expect(card.getByText('У двери: Мастерская')).toBeVisible();
+  await detail('Прибытие', '09:44');
   await detail('Весь путь', 'С трамваем');
 
   await button('Приблизить').click();
@@ -178,10 +182,10 @@ test('from a walking decision to a new commuter service in the unpacked offline 
   await directory.selectOption({ label: 'Вера · Липовая, дом 1' });
   await expect(card.getByText('У двери: Ателье')).toBeVisible();
   await detail('Прибытие', '08:17');
-  await detail('С трамваем', '76 мин');
+  await detail('С трамваем', '66,2 мин');
   await page.getByLabel('Выбрать здание').selectOption({ label: 'Ателье' });
   await expect(ledger).toContainText('Прибытий: 5');
-  await expect(ledger).toContainText('Средний путь: 42,2 мин');
+  await expect(ledger).toContainText('Средний путь: 29,2 мин');
   await expect(ledger).toContainText('Выручка сети: 18 ₽');
   expect(external).toEqual([]);
 });

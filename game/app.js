@@ -2,15 +2,28 @@
   'use strict';
   const LT = globalThis.LastTram, $ = id => document.getElementById(id);
   const safe = value => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-  let game, focus, paused, speed, previous, carry, advanceTo;
+  let game, focus, inspection, paused, speed, previous, carry, advanceTo;
   const map = LT.createMap($('map'), select);
   const updateNetwork=LT.createNetworkPanel(()=>game,render,select);
   const observation=LT.createObservationPanel(render,select);
   const updateGoals=LT.createGoalsPanel($('goals-panel'),()=>game,render,select);
   const speeds = [1,4,12];
-  const stamp = minute => `${String(Math.floor(minute/60)%24).padStart(2,'0')}:${String(minute%60).padStart(2,'0')}`;
+  const { stamp } = LT;
   const dt = rows => `<dl>${rows.map(([a,b])=>`<div><dt>${safe(a)}</dt><dd>${safe(b)}</dd></div>`).join('')}</dl>`;
-  function select(type,id) { focus={type,id}; render(); }
+  function select(type,id,group=[]) {
+    if (type==='stop' || type==='train') inspection={type,id};
+    else { focus={type,id}; inspection=null; }
+    const picker=$('people-here');
+    picker.hidden=group.length<2;
+    if (!picker.hidden) {
+      $('people-buttons').replaceChildren(...group.map(key=>{
+        const r=game.residents.find(p=>p.id===key), btn=document.createElement('button');
+        btn.textContent=`${r.name} · ${game.lookup.buildings.get(r.homeId).name}`;
+        btn.onclick=()=>select('resident',key); return btn;
+      }));
+    }
+    render();
+  }
   function watch() {
     const first = game.residents.find(r=>r.journey && !r.onTrainId) ??
       game.residents.find(r=>game.lookup.buildings.get(r.homeId).ring<=game.openRing && !r.lastJourney) ?? game.residents[0];
@@ -28,7 +41,7 @@
         ['Откуда',game.lookup.buildings.get(trip?.originId??r.homeId).name],
         ['Цель',game.lookup.buildings.get(trip?.destinationId??r.workId).name],
         ['Весь путь',!trip?'Ещё не вышел':trip.mode==='tram'?'С трамваем':'Пешком'],
-        ...(r.lastJourney && !j ? [['Прибытие',stamp(LT.BALANCE.startMinute+Math.floor(r.lastJourney.arrivedAt/LT.BALANCE.ticksPerMinute))]]:[])
+        ...(r.lastJourney && !j ? [['Прибытие',stamp(LT.clockMinute({tick:r.lastJourney.arrivedAt}))]]:[])
       ]);
       const preview=!trip && LT.planJourney(game,r,game.lookup.buildings.get(r.homeId),game.lookup.buildings.get(r.workId));
       detail+=LT.choiceCard((trip||preview).decision,(trip||preview).mode,!trip,dt);
@@ -36,14 +49,6 @@
       const b=game.lookup.buildings.get(focus.id);
       heading=b.name; detail=dt([['Назначение',b.kind==='home'?'Жилой дом':'Место работы'],
         ['Район',game.lookup.stops.get(b.stopId).name],['У двери',game.residents.filter(r=>r.currentBuildingId===b.id).length]]);
-    } else if (focus?.type==='stop') {
-      const s=game.lookup.stops.get(focus.id);
-      heading=s.name; detail=dt([['Остановка',game.routes.filter(r=>r.stopIds.includes(s.id)).map(r=>r.name).join(', ') || 'Нет маршрута']]);
-    } else if (focus?.type==='train') {
-      const train=game.trains.find(t=>t.id===focus.id), route=game.routes.find(r=>r.id===train.routeId);
-      heading=train.name; detail=dt([['Сейчас',route?.name??'Перегон без пассажиров'],
-        ['Назначение',game.routes.find(r=>r.id===train.assignedRouteId)?.name??'Не назначен'],['Вагонов',train.cars],
-        ['В салоне',game.residents.filter(r=>r.onTrainId===train.id).length]]);
     }
     const html=`<div class="kicker">02 <span>/</span> ФОКУС КАРТЫ</div><h2>${safe(heading)}</h2>${detail}
       <button type="button" data-watch>Найти жителя <span aria-hidden="true">→</span></button>`;
@@ -52,8 +57,29 @@
     panel.dataset.id=focus?.id??'';
   }
 
+  function networkInfo(operating) {
+    const panel=$('network-info');
+    panel.hidden=!inspection;
+    if (!inspection) return;
+    let heading, rows;
+    if (inspection.type==='stop') {
+      const s=game.lookup.stops.get(inspection.id);
+      heading=s.name; rows=[
+        ['По плану',game.routes.filter(r=>r.stopIds.includes(s.id)).map(r=>r.name).join(', ') || 'Нет маршрута'],
+        ['Обслуживание',game.routes.filter(r=>operating.get(s.id)?.has(r.id)).map(r=>r.name).join(', ') || 'Нет поездов']];
+    } else {
+      const train=game.trains.find(t=>t.id===inspection.id), route=game.routes.find(r=>r.id===train.routeId);
+      heading=train.name; rows=[['Сейчас',route?.name??'Перегон без пассажиров'],
+        ['Назначение',game.routes.find(r=>r.id===train.assignedRouteId)?.name??'Не назначен'],['Вагонов',train.cars],
+        ['В салоне',game.residents.filter(r=>r.onTrainId===train.id).length]];
+    }
+    const html=`<h3>${safe(heading)}</h3>${dt(rows)}`;
+    if (panel._content!==html) { panel.innerHTML=html; panel._content=html; }
+  }
+
   function render() {
-    map.render(game,focus,observation(game,focus)); inspector();
+    const operating=LT.operatingStops(game);
+    map.render(game,focus,observation(game,focus),inspection,operating); inspector(); networkInfo(operating);
     $('clock').textContent=stamp(LT.clockMinute(game));
     const time=LT.cityTime(game);
     $('clock-period').textContent=`День ${time.day} · ${time.period.name}`;
@@ -69,8 +95,9 @@
     $('speed').textContent=`${speed}×`;
   }
   function newGame(seed) {
-    game=LT.startGame(LT.createCity(seed)); focus=null; paused=false; speed=1; carry=0; previous=null; advanceTo=null;
+    game=LT.startGame(LT.createCity(seed)); focus=inspection=null; paused=false; speed=1; carry=0; previous=null; advanceTo=null;
     $('city-seed').textContent=game.city.seed;
+    $('people-here').hidden=true;
     render();
   }
   function frame(now) {

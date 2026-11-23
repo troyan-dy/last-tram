@@ -58,12 +58,15 @@
             </defs>
             <g id="scene"></g><g id="leaders" pointer-events="none"></g><g id="thoughts"></g><g id="moving"></g>
             <g id="marker" pointer-events="none" style="display:none"><ellipse rx="7.5" ry="3.4" fill="none" stroke="#b14f35" stroke-width="1.5"/></g>
+            <g id="network-marker" pointer-events="none" style="display:none"><ellipse rx="11" ry="5" fill="none" stroke="#325b66" stroke-dasharray="3 2" stroke-width="1.5"/></g>
           </svg>
           <div class="map-controls"><button id="less" aria-label="Отдалить">−</button><button id="more" aria-label="Приблизить">+</button>
             <button id="fit"><span aria-hidden="true">⌗</span> Вся зона</button></div>
         </div>
         <div class="map-foot"><span class="legend"><i class="rail"></i> Путь <i class="platform"></i> Остановка</span>
           <span>Сид: <b id="city-seed"></b></span></div>
+        <section id="network-info" aria-label="Объект сети" hidden></section>
+        <fieldset id="people-here" hidden><legend>Жители в этой точке</legend><div id="people-buttons"></div></fieldset>
         <div class="flow-tools"><label><input type="checkbox" id="flow-toggle"> Потоки · Мысль</label>
           <span class="flow-key">Цель и действие · <svg viewBox="0 0 11 12" aria-hidden="true"><use href="#intent-walk"/></svg> пешком
             <svg viewBox="0 0 11 12" aria-hidden="true"><use href="#intent-tram"/></svg> с трамваем</span>
@@ -127,9 +130,9 @@
     </div>
     <footer><span>ПОСЛЕДНИЙ ТРАМВАЙ <i>/</i> ПОЛЕВОЙ АТЛАС</span><span>Колесо — масштаб · Перетаскивание — обзор</span></footer>
   </main>
-  <script src="game/city.js"></script><script src="game/movement.js"></script><script src="game/journey.js"></script>
+  <script src="game/city.js"></script><script src="game/movement.js"></script><script src="game/service.js"></script><script src="game/journey.js"></script>
   <script src="game/expansion.js"></script>
-  <script src="game/service.js"></script><script src="game/demand.js"></script><script src="game/history.js"></script><script src="game/simulation.js"></script>
+  <script src="game/demand.js"></script><script src="game/history.js"></script><script src="game/simulation.js"></script>
   <script src="game/art.js"></script><script src="game/flows.js"></script><script src="game/map.js"></script>
   <script src="game/network-panel.js"></script><script src="game/experiment.js"></script>
   <script src="game/goals-panel.js"></script><script src="game/inspector.js"></script><script src="game/app.js"></script>

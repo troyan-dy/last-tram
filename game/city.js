@@ -45,7 +45,8 @@
           const entrance = point(bx + width * 0.5, by + depth);
           buildings.push({ id: `b:${col}:${row}:${lot}`, name: kind === 'home'
             ? `${name}, дом ${lot + 1}` : ring ? `${name} · цех` : workNames[center],
-            kind, districtId, stopId: id, ring, x: bx, y: by, width, depth,
+            kind, visualRole: kind==='home' ? 'house' : !ring && center===5 ? 'market' : 'work',
+            districtId, stopId: id, ring, x: bx, y: by, width, depth,
             floors: lot === 2 ? 3 : rand(4, 5), tint: rand(0, 3), entrance });
         }
       }

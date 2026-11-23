@@ -54,7 +54,7 @@
     const scene = svg.querySelector('#scene'), moving = svg.querySelector('#moving');
     const marker = svg.querySelector('#marker'), nodes = new Map();
     const thoughts=svg.querySelector('#thoughts'), leaders=svg.querySelector('#leaders'), labels=new Map();
-    let lastGame, signature, base, view, zoom = 1, drag, moved = false;
+    let lastGame, signature, signsKey, base, view, zoom = 1, drag, moved = false;
     function setView(v) {
       view = v;
       svg.setAttribute('viewBox', [v.x,v.y,v.w,v.h].join(' '));
@@ -90,7 +90,14 @@
     svg.addEventListener('pointerup',()=> { drag=null; });
     function select(e) {
       const g=e.target.closest('[data-type]');
-      if (g && !moved) onSelect(g.dataset.type,g.dataset.id);
+      if (!g || moved) return;
+      let group;
+      if (g.dataset.type==='resident' && g.parentNode===moving && e.type==='click') {
+        const hits=document.elementsFromPoint(e.clientX,e.clientY)
+          .map(el=>el.closest('#moving [data-type="resident"]')).filter(Boolean);
+        group=[...new Set(hits.map(el=>el.dataset.id))];
+      }
+      onSelect(g.dataset.type,g.dataset.id,group);
     }
     svg.addEventListener('click',select);
     svg.addEventListener('keydown',e=>{
@@ -104,7 +111,6 @@
       const xs=corners.map(p=>p[0]),ys=corners.map(p=>p[1]);
       base={x:Math.min(...xs)-12,y:Math.min(...ys)-12,w:Math.max(...xs)-Math.min(...xs)+24,h:Math.max(...ys)-Math.min(...ys)+28};
       const items=[];
-      const served=new Set(game.routes.flatMap(r=>r.stopIds));
       for (const s of stops) {
         for (const [dx,dy,i] of [[7,21,0],[14,20,1],[33,28,2],[-45,-12,1]]) {
           items.push({depth:project(s.x+dx,s.y+dy)[1], drawing:art.tree(s.x+dx,s.y+dy,i)});
@@ -114,12 +120,20 @@
         items.push({depth:project(b.x+b.width*.5,b.y+b.depth)[1],
           drawing:object('building',b.id,b.name,art.building(b))});
       }
+      const scenery=terrain(game,stops,buildings,box)+items.sort((a,b)=>a.depth-b.depth).map(o=>o.drawing).join('');
+      scene.innerHTML=`<g class="scenery">${scenery}</g><g class="signs"></g>`;
+      signsKey=null;
+      moving.replaceChildren(); nodes.clear(); thoughts.replaceChildren(); leaders.replaceChildren(); labels.clear(); fit();
+    }
+    function signs(game,served) {
+      const key=[...served.keys()].sort().join(',');
+      if (key===signsKey) return;
+      signsKey=key;
+      const stops=game.city.stops.filter(s=>s.ring<=game.openRing);
       const stopLabels=stops.filter(s=>served.has(s.id)).map(s=>place(s.x+3,s.y+8,
         `<g class="stop-label"><rect x="-1" y="-1" width="${s.name.length*3.5+10}" height="9" rx="2"/>
         <circle cx="3" cy="3.5" r="1.55"/><text x="7" y="5.7">${s.name}</text></g>`)).join('');
-      const scenery=terrain(game,stops,buildings,box)+items.sort((a,b)=>a.depth-b.depth).map(o=>o.drawing).join('');
-      scene.innerHTML=`<g class="scenery">${scenery}</g>`+stops.map(s=>stopSign(s,served.has(s.id))).join('')+stopLabels;
-      moving.replaceChildren(); nodes.clear(); thoughts.replaceChildren(); leaders.replaceChildren(); labels.clear(); fit();
+      scene.querySelector('.signs').innerHTML=stops.map(s=>stopSign(s,served.has(s.id))).join('')+stopLabels;
     }
     function sprite(type,id,name,draw,pos,drawn,variant='') {
       drawn.add(id);
@@ -148,7 +162,7 @@
       const {g,line}=item;
       if (item.signature!==signature) {
         item.signature=signature;
-        const icon=dest.kind==='home'?'house':dest.name==='Крытый рынок'?'market':'work';
+        const icon=dest.visualRole;
         const caption=`${r.name}: ${dest.name} · ${action} · ${mode==='tram'?'С трамваем':'Целиком пешком'}`;
         item.width=Math.max(dest.name.length*3.8,action.length*3.5)+19;
         g.setAttribute('aria-label',caption); g.dataset.mode=mode;
@@ -162,11 +176,12 @@
       g.setAttribute('transform',`translate(${b.x} ${b.y})`);
       line.setAttribute('d',`M${x},${y-9} L${tipX},${tipY}`);
     }
-    function render(game,focus,flow={enabled:false}) {
+    function render(game,focus,flow={enabled:false},inspection=null,served=globalThis.LastTram.operatingStops(game)) {
       const light=cityTime(game).period.id;
       if (svg.dataset.light!==light) svg.dataset.light=light;
-      const key=`${game.openRing}|${[...game.trackIds].join(',')}|${game.routes.flatMap(r=>r.stopIds).join(',')}`;
+      const key=`${game.openRing}|${[...game.trackIds].join(',')}`;
       if (game!==lastGame || signature!==key) { build(game); lastGame=game; signature=key; }
+      signs(game,served);
       const drawn=new Set(), showing=new Set(), active=[], seats=new Map();
       const layout=flow.enabled?thoughtLayout(view):null;
       for (const train of game.trains)
@@ -192,11 +207,14 @@
       for (const [id,g] of nodes) if (!drawn.has(id)) { g.remove(); nodes.delete(id); }
       let p;
       if (focus?.type==='resident') p=game.residents.find(r=>r.id===focus.id)?.position;
-      if (focus?.type==='train') p=game.trains.find(t=>t.id===focus.id)?.position;
-      if (focus?.type==='stop') p=game.lookup.stops.get(focus.id)?.sidewalk;
       if (focus?.type==='building') p=game.lookup.buildings.get(focus.id)?.entrance;
       marker.style.display=p?'':'none';
       if (p) marker.setAttribute('transform',`translate(${project(p.x,p.y)})`);
+      const n=inspection?.type==='train' ? game.trains.find(t=>t.id===inspection.id)?.position
+        : game.lookup.stops.get(inspection?.id)?.sidewalk;
+      const network=svg.querySelector('#network-marker');
+      network.style.display=n?'':'none';
+      if (n) network.setAttribute('transform',`translate(${project(n.x,n.y)})`);
     }
     return { render, fit, zoomBy: factor=>zoomAt(factor,{x:view.x+view.w/2,y:view.y+view.h/2}) };
   }

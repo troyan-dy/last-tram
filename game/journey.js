@@ -1,22 +1,18 @@
 (() => {
   'use strict';
-  const { BALANCE, distance, doorPath, walkLeg, planWalk } =
+  const { BALANCE, distance, platformPath, walkLeg, planWalk } =
     typeof module !== 'undefined' ? require('./movement.js') : globalThis.LastTram;
+  const { finalRun } = typeof module !== 'undefined' ? require('./service.js') : globalThis.LastTram;
   const ticks = points => Math.max(1,Math.ceil(points.reduce((n,p,i)=>
     n+(i ? distance(points[i-1],p) : 0),0)/BALANCE.walkSpeed));
-  function access(g,building,stop) {
-    const local=g.lookup.stops.get(building.stopId), path=doorPath(building,local);
-    if (local.id!==stop.id) path.push({x:stop.x,y:local.sidewalk.y},stop.sidewalk);
-    return path;
-  }
   function exit(g,stop,building) {
-    return [{x:stop.x,y:stop.y},...access(g,building,stop).reverse()];
+    return [{x:stop.x,y:stop.y},...platformPath(g,building,stop).reverse()];
   }
 
   // Search actual boarding windows (including dwell) on each train's next advertised run.
   // Never offer a retiring timetable, or a train still travelling empty to its new line.
   function rides(train,from,ready) {
-    const run=train.runs.at(-1), {schedule,offset}=run, {calls,period}=schedule;
+    const run=finalRun(train), {schedule,offset}=run, {calls,period}=schedule;
     const earliest=Math.max(ready,run.start), options=[];
     for (let i=0;i<calls.length;i++) {
       const c=calls[i];
@@ -37,9 +33,9 @@
     const decision={walkTicks,fare:g.fare,farePenalty:g.fare*BALANCE.fareWeight,tramTicks:null,
       accessTicks:0,waitTicks:0,rideTicks:0,transferTicks:0,exitTicks:0,transfers:0,rides:[]};
     const labels=new Map(), pending=new Set();
-    const stops=new Set(g.trains.flatMap(t=>t.runs.at(-1).schedule.calls.map(c=>c.stopId)));
+    const stops=new Set(g.trains.flatMap(t=>finalRun(t).schedule.calls.map(c=>c.stopId)));
     for (const id of stops) {
-      const approach=access(g,from,g.lookup.stops.get(id)), at=g.tick+ticks(approach);
+      const approach=platformPath(g,from,g.lookup.stops.get(id)), at=g.tick+ticks(approach);
       labels.set(id,{at,approach,rides:[]}); pending.add(id);
     }
     let best;

@@ -95,7 +95,8 @@
   }
 
   function clockMinute(game) { return BALANCE.startMinute + Math.floor(game.tick / BALANCE.ticksPerMinute); }
-  const api = { BALANCE, startGame, advance, depart, clockMinute };
+  const stamp = minute => `${String(Math.floor(minute/60)%24).padStart(2,'0')}:${String(minute%60).padStart(2,'0')}`;
+  const api = { BALANCE, startGame, advance, depart, clockMinute, stamp };
   Object.assign(globalThis.LastTram ??= {}, api);
   if (typeof module !== 'undefined') module.exports = api;
 })();
