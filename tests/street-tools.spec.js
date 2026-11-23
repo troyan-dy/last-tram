@@ -32,3 +32,30 @@ test('buy the priced road in one click and run a tram between two player-placed 
   await page.locator('#buy-train').click();await expect(page.locator('#fleet')).toHaveText('1');
   await expect(page.locator('#moving [data-type=train]')).toHaveCount(1);
 });
+
+test('a click on the pavement width can place a stop and a junction platform can serve either built arm',async({page})=>{
+  await page.setViewportSize({width:1360,height:850});
+  await page.goto(pathToFileURL(path.resolve('game/prototype-map.html')).href+'?seed=Клён&start=empty');
+  await page.locator('#pause').click();
+  await page.getByRole('button',{name:'Строительство',exact:true}).click();
+  await page.locator('#targets [data-id="1-6"] .price').click();
+  await page.getByRole('button',{name:'Остановки',exact:true}).click();
+  const points=await page.evaluate(()=>{
+    const c=LastTram.streetStudy.create('Клён'),find=id=>c.study.sections.find(s=>s.id===id).line;
+    const at=(a,b,t,offset)=>{
+      const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy);
+      const [x,y]=LastTram.art.project(a.x+dx*t-dy/len*offset,a.y+dy*t+dx/len*offset);
+      const pt=new DOMPoint(x,y).matrixTransform(document.querySelector('#map').getScreenCTM());
+      return {x:pt.x,y:pt.y};
+    };
+    const [a,b]=find('1-6'),[j,k]=find('1-12');
+    return [at(a,b,.5,-4.92),at(j,k,2/Math.hypot(k.x-j.x,k.y-j.y),0)];
+  });
+  for(const p of points)await page.mouse.click(p.x,p.y);
+  await expect(page.locator('#scene .signs [data-type=stop]')).toHaveCount(2,{timeout:1500});
+  await page.getByRole('button',{name:'Маршруты',exact:true}).click();
+  const stops=page.locator('#targets [data-type=stop]');
+  await stops.first().click();await stops.last().click();
+  await page.locator('#save').click();await page.locator('#buy-train').click();
+  await expect(page.locator('#fleet')).toHaveText('1');
+});

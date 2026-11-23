@@ -2,6 +2,7 @@
 (() => {
   'use strict';
   const L=LastTram, pt=(x,y)=>({x,y}), dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+  if(typeof module!=='undefined')require('./street-junctions.js');
   const mix=(a,b,t)=>pt(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t);
   const clamp=t=>Math.max(0,Math.min(t,1));
   const closest=(p,a,b)=>clamp(((p.x-a.x)*(b.x-a.x)+(p.y-a.y)*(b.y-a.y))/(dist(a,b)**2||1));
@@ -10,8 +11,13 @@
     const rand=L.streetRandom(`${seed}/${attempt}`),plan=L.makeStreetPlan(rand);if(!plan)return null;
     if(!L.extendStreetPlan(plan,L.streetRandom(`${seed}/${attempt}/fringe`)))return null;
     const {label:names,loc,boundary,outerBoundary}=plan;
-    const stops=loc.map((p,i)=>({...p,id:`stop-${i}`,name:names[i],districtId:`d-${i}`,ring:plan.rings[i],sidewalk:pt(p.x,p.y-5)}));
-    const platforms=[...stops], edges=[], sections=[], roads=[], walks=[], buildings=[], trees=[];
+    const topology=L.streetJunctions(plan.edges),byPoint=new Map();
+    const sites=loc.map((p,i)=>{
+      const q=topology.point(p);
+      if(!byPoint.has(q))byPoint.set(q,{...q,id:`stop-${i}`,name:names[i],districtId:`d-${i}`,ring:plan.rings[i],sidewalk:pt(q.x,q.y-5),junctionRadius:topology.radius(q)});
+      const site=byPoint.get(q);site.ring=Math.min(site.ring,plan.rings[i]);return site;
+    });
+    const platforms=[...byPoint.values()],stops=[...platforms],edges=[], sections=[], roads=[], walks=[], buildings=[], trees=[];
     const walkNodes=new Map(), graph=new Map();
     const key=p=>`${p.x.toFixed(4)}:${p.y.toFixed(4)}`;
     function node(p){
@@ -24,11 +30,16 @@
     function walkingLine(points,kind,ring=0,sectionId=null){
       for(let i=1;i<points.length;i++)walks.push({a:points[i-1],b:points[i],joins:[],kind,ring,sectionId});
     }
-    function street(i,j,bends,width){
-      const a=platforms[i], b=platforms[j], ring=Math.max(a.ring,b.ring),id=`${i}-${j}`, via=bends.map((p,n)=>({
-        ...p,id:`bend-${id}-${n}`,junction:true,ring,sidewalk:pt(p.x,p.y-5)}));
-      stops.push(...via);
-      const line=[a,...via,b], parts=[];
+    function street(i,j,points,width){
+      const a=sites[i],b=sites[j],ring=Math.max(a.ring,b.ring),id=`${i}-${j}`,parts=[];
+      const line=points.map((p,n)=>{
+        if(!byPoint.has(p)){
+          const v={...p,id:`bend-${id}-${n-1}`,junction:true,ring,sidewalk:pt(p.x,p.y-5),junctionRadius:topology.radius(p)};
+          byPoint.set(p,v);stops.push(v);
+        }
+        const v=byPoint.get(p);v.ring=Math.min(v.ring,ring);return v;
+      });
+      if(line.length<2)return;
       for(let n=1;n<line.length;n++){
         const e={id:`${id}/${n}`,a:line[n-1].id,b:line[n].id};edges.push(e);parts.push(e.id);
       }
@@ -39,11 +50,12 @@
         for(const t of [.12,.88]){
           const p=mix(u,v,t);sidewalk.push(pt(p.x+nx*off,p.y+ny*off));
         }
+        if(k<line.length-1&&v.junctionRadius)sidewalk.push(v.sidewalk);
       }
       sidewalk.push(b.sidewalk);walkingLine(sidewalk,'street',ring,id);
     }
-    for(const e of plan.edges)street(e.i,e.j,e.line.slice(1,-1),e.width);
-    const court=[platforms[plan.yardPath[0]].sidewalk,...plan.courtBends,platforms[plan.yardPath[1]].sidewalk];
+    plan.edges.forEach((e,i)=>street(e.i,e.j,topology.lines[i],e.width));
+    const court=[sites[plan.yardPath[0]].sidewalk,...plan.courtBends,sites[plan.yardPath[1]].sidewalk];
     walkingLine(court,'court');
     const grove=plan.garden,pocket=plan.pocket;
     const nearest=(p,ring)=>platforms.filter(s=>s.ring===ring).reduce((best,s)=>dist(p,s)<dist(p,best)?s:best);
@@ -100,7 +112,7 @@
       for(const off of [13+rand()*7,22+rand()*11,34+rand()*7])if(lot(w,t,side,off,width,d))break;
     }
     if(buildings.length<platforms.length*1.8 ||
-      !plan.starter.every(i=>buildings.some(b=>b.kind==='work'&&b.stopId===platforms[i].id)) ||
+      !plan.starter.every(i=>buildings.some(b=>b.kind==='work'&&b.stopId===sites[i].id)) ||
       !buildings.some(b=>b.ring===1&&b.kind==='home'))return null;
     for(const w of walks){
       const sorted=[[0,w.a],...w.joins,[1,w.b]].sort((a,b)=>a[0]-b[0]);
@@ -141,10 +153,10 @@
       w.joins.push([t,q]);return q;
     }
     const study={boundary,outerBoundary,platforms,roads,walks,grove,pocket,court,trees,spurs,sections,walking,attachToSidewalk,
-      square:platforms[plan.starter[1]],groveCenter:plan.center,pocketCenter:plan.pocketCenter,
-      ring:plan.ring.map(i=>platforms[i].id)};
+      square:sites[plan.starter[1]],groveCenter:plan.center,pocketCenter:plan.pocketCenter,
+      ring:plan.ring.map(i=>sites[i].id)};
     return {seed,stops,edges,buildings,districts:platforms.map(s=>({id:s.districtId,name:s.name,ring:s.ring})),
-      starterStops:plan.starter.map(i=>platforms[i].id),study};
+      starterStops:plan.starter.map(i=>sites[i].id),study};
   }
   function create(value){
     const seed=String(value||'Клён').trim()||'Клён';
@@ -164,17 +176,22 @@
   }
   // Subdivide only the selected rail segment. A built section remains built at no extra cost.
   // Existing train schedules keep their original endpoints; newly planned rides see the stop.
-  function placeStop(g,s,p){
-    if(!s||s.ring>g.openRing)return {ok:false,message:'Эта улица пока за границей зоны.'};
+  function stopSite(s,p){
     let best;
     for(let i=1;i<s.line.length;i++){
       const a=s.line[i-1],b=s.line[i],t=closest(p,a,b),q=mix(a,b,t),d=dist(q,p);
       if(!best||d<best.d)best={i,a,b,q,d};
     }
-    const {i,a,b,q}=best;
-    if(g.city.stops.some(k=>k.passengerStop&&dist(q,k)<6))return {ok:false,message:'Здесь уже есть остановка. Выберите другое место.'};
+    const joint=s.line.filter(v=>v.junctionRadius&&dist(best.q,v)<=v.junctionRadius)
+      .sort((a,b)=>dist(best.q,a)-dist(best.q,b))[0];
+    const endpoint=joint||[best.a,best.b].find(v=>dist(v,best.q)<.8);
+    return {...best,endpoint,q:endpoint||best.q};
+  }
+  function placeStop(g,s,p){
+    if(!s||s.ring>g.openRing)return {ok:false,message:'Эта улица пока за границей зоны.'};
+    const {i,a,b,q,endpoint}=stopSite(s,p);
+    if(s.line.some(k=>k.passengerStop&&dist(q,k)<6))return {ok:false,message:'Здесь уже есть остановка. Выберите другое место.'};
     const named=g.city.study.platforms.filter(v=>v.ring===s.ring).reduce((u,v)=>dist(q,u)<dist(q,v)?u:v);
-    const endpoint=[a,b].find(v=>dist(v,q)<.8);
     const station=endpoint||{...q,id:`platform-${g.city.stops.length+1}`,ring:s.ring};
     if(!endpoint){
       const prev=s.parts[i-1],wasBuilt=g.trackIds.delete(prev);
@@ -189,7 +206,7 @@
     let n=1,caption=named.name;
     while(g.city.stops.some(v=>v.passengerStop&&(v.stopName??v.name)===caption))caption=`${named.name} ${++n}`;
     station.stopName=caption;station.name??=caption;station.districtId??=named.districtId;
-    if(!endpoint||endpoint.junction)station.sidewalk=g.city.study.attachToSidewalk(s,station);
+    if(!endpoint||(endpoint.junction&&!endpoint.junctionRadius))station.sidewalk=g.city.study.attachToSidewalk(s,station);
     station.passengerStop=true;
     g.city.stopRevision=(g.city.stopRevision||0)+1;
     return {ok:true,id:station.id,name:caption};
@@ -237,16 +254,19 @@
     const ux=Math.cos(bearing),uy=Math.sin(bearing);
     return model((x,y)=>pt(x*ux-y*uy,x*uy+y*ux),16,5.6,6.3,'#d66c31','#a64f2c','#f3d6a0',1,false,true);
   }
+  // One footprint for painting and picking the whole width of an oblique road.
+  function bandPolygon(p,w){
+    const normals=p.slice(1).map((v,i)=>{const u=p[i],n=dist(u,v);return pt((u.y-v.y)/n,(v.x-u.x)/n);});
+    const rim=(side)=>p.map((v,i)=>{
+      const a=normals[Math.max(0,i-1)],b=normals[Math.min(i,normals.length-1)];
+      const t=side*w/(2*Math.max(.35,1+a.x*b.x+a.y*b.y));return pt(v.x+t*(a.x+b.x),v.y+t*(a.y+b.y));
+    });
+    return [...rim(1),...rim(-1).reverse()];
+  }
   function scene(g,object){
     const {study}=g.city, art=L.art;
     const polygon=(p,c)=>art.polygon(p.map(arr),c);
-    const band=(p,w,c)=>{
-      const normals=p.slice(1).map((v,i)=>{const u=p[i],n=dist(u,v);return pt((u.y-v.y)/n,(v.x-u.x)/n);});
-      const rim=(side)=>p.map((v,i)=>{
-        const a=normals[Math.max(0,i-1)],b=normals[Math.min(i,normals.length-1)];
-        const t=side*w/(2*Math.max(.35,1+a.x*b.x+a.y*b.y));return pt(v.x+t*(a.x+b.x),v.y+t*(a.y+b.y));
-      });return polygon([...rim(1),...rim(-1).reverse()],c);
-    };
+    const band=(p,w,c)=>polygon(bandPolygon(p,w),c);
     let base=polygon(study.outerBoundary,'#bdad82')+polygon(study.pocket,'#9ba16c')+polygon(study.grove,'#899968');
     for(const r of study.roads)base+=band(r.line,r.width+4,'#d8c6a5');
     for(const r of study.roads)base+=band(r.line,r.width,r.width>10?'#a18b77':'#b19b84');
@@ -269,5 +289,5 @@
     return base+items.sort((a,b)=>a[0]-b[0]).map(it=>it[1]).join('')+
       caption(study.pocketCenter.x,study.pocketCenter.y,'Сквер')+caption(study.groveCenter.x,study.groveCenter.y,'Проход через двор');
   }
-  L.streetStudy={create,openLine,placeStop,scene,train};
+  L.streetStudy={create,openLine,stopSite,placeStop,bandPolygon,scene,train};
 })();

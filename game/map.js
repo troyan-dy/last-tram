@@ -90,8 +90,11 @@
     svg.addEventListener('pointerup',()=> { drag=null; });
     svg.addEventListener('pointercancel',()=> { drag=null; });
     function select(e) {
+      if(moved)return;
+      const anchor=e.target.closest('[data-stop-anchor]');
+      if(anchor){onSelect('stop',anchor.dataset.stopAnchor);return;}
       const g=e.target.closest('[data-type]');
-      if (!g || moved) return;
+      if(!g)return;
       let group;
       if (g.dataset.type==='resident' && g.parentNode===moving && e.type==='click') {
         const hits=document.elementsFromPoint(e.clientX,e.clientY)

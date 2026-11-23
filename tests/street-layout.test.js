@@ -73,3 +73,41 @@ test('placing a stop inside a built rail keeps existing service intact and conne
   assert.deepEqual(city.study.walking(home.entrance,stop.sidewalk,g.openRing).at(-1),stop.sidewalk);
   assert(createRoute(g,[s.a,stop.id,s.b]).ok);
 });
+
+test('two purchased streets that meet at Дворы carry a tram through the junction without a passenger stop there',()=>{
+  const city=gen.create('Стык 7317'),g=startGame(city,{openLine:()=>{}});
+  const get=(id)=>city.study.sections.find(s=>s.id===id), incoming=get('19-21'), side=get('5-7');
+  const from=gen.placeStop(g,incoming,incoming.line.at(-1)),to=gen.placeStop(g,side,side.line.at(-1));
+  assert(from.ok&&to.ok);
+  incoming.parts.forEach(id=>g.trackIds.add(id));
+  assert.equal(createRoute(g,[from.id,to.id]).ok,false,'the other street still needs track');
+  side.parts.forEach(id=>g.trackIds.add(id));
+  const r=createRoute(g,[from.id,to.id]);assert(r.ok,'built streets touch but the route is broken');
+  const shared=incoming.line.find(p=>side.line.includes(p));assert(shared);
+  assert(!shared.passengerStop,'a junction does not require a platform');
+  const purchase=buyTrain(g,r.routeId);assert(purchase.ok);
+  const t=g.trains.find(t=>t.id===purchase.trainId), seen=[];
+  let crossed=false;
+  for(let i=0;i<=g.routes[0].schedule.period;i++){
+    if(Math.hypot(t.position.x-shared.x,t.position.y-shared.y)<1e-7)crossed=true;
+    if(t.atStopId&&t.atStopId!==seen.at(-1))seen.push(t.atStopId);
+    advance(g);
+  }
+  assert(crossed);assert.deepEqual(seen,[from.id,to.id,from.id]);
+});
+
+test('an intersection click just inside an unbuilt arm places the stop on the shared built junction',()=>{
+  const city=gen.create('Клён'),g=startGame(city,{openLine:()=>{}}),junction=city.study.square;
+  const [built,unbuilt]=city.study.sections.filter(s=>s.a===junction.id||s.b===junction.id);
+  built.parts.forEach(id=>g.trackIds.add(id));
+  function away(s,length){
+    const [a,b]=s.a===junction.id?s.line:s.line.slice().reverse(),t=length/Math.hypot(b.x-a.x,b.y-a.y);
+    return {x:a.x+t*(b.x-a.x),y:a.y+t*(b.y-a.y)};
+  }
+  const from=gen.placeStop(g,built,away(built,18)),near=gen.placeStop(g,unbuilt,away(unbuilt,2));
+  assert(from.ok&&near.ok);
+  assert(createRoute(g,[from.id,near.id]).ok,'a visible intersection must not attach to the unbuilt arm');
+  assert.equal(near.id,junction.id);
+  assert(!unbuilt.parts.some(id=>g.trackIds.has(id)));
+  assert.equal(gen.placeStop(g,built,away(built,.7)).ok,false);
+});
