@@ -78,6 +78,7 @@
       if (g.tick<leg.boardAt || train.atStopId!==leg.stopId || train.routeId!==leg.routeId) return false;
       p.onTrainId=train.id; p.position={...train.position};
       if (j.paid===undefined) {
+        j.boardStopId=train.atStopId;
         j.paid=j.decision.fare;
         g.cash+=j.paid; g.fareIncome+=j.paid;
         const ticket={tick:g.tick,amount:j.paid,residentId:p.id,trainId:train.id,

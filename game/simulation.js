@@ -6,6 +6,7 @@
     typeof module !== 'undefined' ? require('./journey.js') : globalThis.LastTram;
   const { openLine, moveTrains } = typeof module !== 'undefined' ? require('./service.js') : globalThis.LastTram;
   const { createHistory } = typeof module !== 'undefined' ? require('./history.js') : globalThis.LastTram;
+  const { trackExpansion } = typeof module !== 'undefined' ? require('./expansion.js') : globalThis.LastTram;
   const byId = list => new Map(list.map(item => [item.id, item]));
 
   function makeResidents(game) {
@@ -35,6 +36,7 @@
       systems: { demand: g => dailyDemand(g, depart), service: moveTrains, planJourney, stepTransit, openLine, ...systems } };
     game.residents = makeResidents(game);
     game.arrivalListeners = new Set([game.history.recordArrival]);
+    trackExpansion(game);
     game.systems.openLine(game);
     return game;
   }
@@ -74,7 +76,8 @@
     if (!done || ++j.leg < j.legs.length) return;
     r.currentBuildingId = j.destinationId;
     r.lastJourney = { originId: j.originId, destinationId: j.destinationId,
-      mode: j.mode, startedAt: j.startedAt, arrivedAt: game.tick, decision: j.decision };
+      mode: j.mode, startedAt: j.startedAt, arrivedAt: game.tick, decision: j.decision,
+      boardStopId: j.boardStopId ?? null };
     r.journey = null;
     for (const listener of game.arrivalListeners) listener(game, r, r.lastJourney);
     game.systems.onArrival?.(game, r, r.lastJourney);

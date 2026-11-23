@@ -6,6 +6,7 @@
   const map = LT.createMap($('map'), select);
   const updateNetwork=LT.createNetworkPanel(()=>game,render,select);
   const observation=LT.createObservationPanel(render,select);
+  const updateGoals=LT.createGoalsPanel($('goals-panel'),()=>game,render,select);
   const speeds = [1,4,12];
   const stamp = minute => `${String(Math.floor(minute/60)%24).padStart(2,'0')}:${String(minute%60).padStart(2,'0')}`;
   const dt = rows => `<dl>${rows.map(([a,b])=>`<div><dt>${safe(a)}</dt><dd>${safe(b)}</dd></div>`).join('')}</dl>`;
@@ -61,6 +62,7 @@
     $('fleet').textContent=`Поездов: ${game.trains.length}`;
     $('zone-label').textContent=game.openRing ? `КОЛЬЦО / ${game.openRing}` : 'ЦЕНТР / 01';
     updateNetwork(game);
+    updateGoals(game);
     $('resident-choice').value=focus?.type==='resident'?focus.id:'';
     const action=paused?'Продолжить':'Пауза';
     $('pause').setAttribute('aria-label',action); $('pause').title=action; $('pause').textContent=paused?'▶':'Ⅱ';
