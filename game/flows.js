@@ -30,10 +30,12 @@
     return {
       person(x,y) { reserve({x:x-5,y:y-10,w:10,h:12}); },
       place(x,y,w,h) {
-        const candidate=(col,row)=>({
-          x:Math.max(bounds.x,Math.min(bounds.x+bounds.w-w,x-w/2+col*(w+1))),
-          y:Math.max(bounds.y,Math.min(bounds.y+bounds.h-h,y-h-13+row*(h+2))),w,h
-        });
+        const onMap=x>=bounds.x && x<=bounds.x+bounds.w && y>=bounds.y && y<=bounds.y+bounds.h;
+        const candidate=(col,row)=>{
+          const left=x-w/2+col*(w+1), top=y-h-13+row*(h+2);
+          return {x:onMap?Math.max(bounds.x,Math.min(bounds.x+bounds.w-w,left)):left,
+            y:onMap?Math.max(bounds.y,Math.min(bounds.y+bounds.h-h,top)):top,w,h};
+        };
         // Bounded probes per person, even with the whole expanded city on one platform.
         for (const row of [0,-1,1,-2,2,-3,3]) for (const col of [0,-1,1,-2,2]) {
           const b=candidate(col,row);

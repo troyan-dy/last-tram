@@ -85,3 +85,60 @@ test('mobile building ledger shows a real time window, origins and network incom
   expect(await gameState()).toEqual(before);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
+
+test('a dense expanded morning keeps a focused thought and a touch-sized list of real travelers', async ({page})=>{
+  await page.setViewportSize({width:390,height:820});
+  await open(page);
+  await page.evaluate(()=>{ LastTram.ui.game.openRing=1; });
+  await toTick(page,429);
+  await page.getByLabel('Потоки · Мысль').check();
+  const {count,id}=await page.evaluate(()=>{
+    const active=LastTram.ui.game.residents.filter(r=>r.journey);
+    return {count:active.length,id:active.find(r=>r.journey.startedAt>=410).id};
+  });
+  expect(count).toBeGreaterThan(85);
+  await expect(page.locator('[data-thought]')).toHaveCount(count);
+  const target=page.locator(`[data-thought="${id}"]`);
+  await target.focus();
+  const elapsed=await page.evaluate(()=>{
+    const start=performance.now();
+    for (let i=0;i<24;i++) {
+      LastTram.advance(LastTram.ui.game); LastTram.ui.render();
+      document.querySelector('#thoughts').getBoundingClientRect(); // include SVG layout
+    }
+    return performance.now()-start;
+  });
+  expect(elapsed).toBeLessThan(1000);
+  await expect(target).toBeFocused();
+  const travelers=page.getByLabel('В пути сейчас');
+  await expect(travelers).toBeVisible({timeout:2000});
+  await travelers.selectOption(id);
+  await expect(page.locator('#inspector')).toHaveAttribute('data-id',id);
+  expect((await travelers.boundingBox()).height).toBeGreaterThanOrEqual(40);
+});
+
+test('outgoing-only shows departures from this door; either direction and either whole-trip mode can be empty', async ({page})=>{
+  await open(page); await toTick(page,100);
+  await page.getByLabel('Потоки · Мысль').check();
+  const all=await page.locator('[data-thought]').count();
+  await page.getByLabel('Выбрать здание').selectOption({label:'Дворы, дом 1'});
+  await page.getByLabel('К зданию',{exact:true}).uncheck();
+  const people=await page.evaluate(()=>{
+    const g=LastTram.ui.game;
+    return g.residents.filter(r=>r.journey?.originId===LastTram.ui.focus.id)
+      .map(r=>({mode:r.journey.mode,id:r.id}));
+  });
+  expect(people.length).toBeGreaterThan(1);
+  const list=page.getByLabel('В пути сейчас').locator('option:not([value=""])');
+  await expect(list).toHaveCount(people.length);
+  await page.getByLabel('С трамваем',{exact:true}).uncheck();
+  expect(await list.evaluateAll(opts=>opts.map(o=>o.value))).toEqual(people.filter(p=>p.mode==='walk').map(p=>p.id));
+  await page.getByLabel('Целиком пешком',{exact:true}).uncheck();
+  await expect(page.locator('[data-thought]')).toHaveCount(0);
+  await page.getByLabel('Из здания',{exact:true}).uncheck();
+  await page.getByLabel('С трамваем',{exact:true}).check();
+  await expect(page.locator('[data-thought]')).toHaveCount(0);
+  await page.locator(`#moving [data-id="${people[0].id}"]`).press('Enter');
+  await expect(page.locator('#inspector')).toHaveAttribute('data-id',people[0].id);
+  await expect(page.locator('[data-thought]')).toHaveCount(all);
+});

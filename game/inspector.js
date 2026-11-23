@@ -7,11 +7,13 @@
   function createObservationPanel(render,select) {
     const toggle=$('flow-toggle'), filters=$('flow-filters');
     const picker=$('building-choice'), day=$('ledger-day'), period=$('ledger-period'), live=$('live-stats');
+    const traveling=$('traveler-choice');
     const checks=[...filters.querySelectorAll('input')];
-    let instance, ring, lastBuilding, replay, liveKey;
+    let instance, ring, lastBuilding, replay, liveKey, travelersKey;
     toggle.onchange=render;
     filters.onchange=render;
     picker.onchange=()=>{ if (picker.value) select('building',picker.value); };
+    traveling.onchange=()=>{ if (traveling.value) select('resident',traveling.value); };
     day.onchange=period.onchange=render;
     function comparison(b) {
       if (!replay) { $('comparison').replaceChildren(); return; }
@@ -45,7 +47,7 @@
     function update(game,focus) {
       const buildingId=focus?.type==='building'?focus.id:null;
       if (instance!==game) {
-        instance=game; toggle.checked=false; lastBuilding=null; replay=null; ring=null; liveKey=null;
+        instance=game; toggle.checked=false; lastBuilding=null; replay=null; ring=null; liveKey=travelersKey=null;
         day.replaceChildren(); period.selectedIndex=0; $('building-ledger').hidden=true;
       }
       if (game.openRing!==ring) {
@@ -67,7 +69,20 @@
       }
       if (buildingId) updateLedger(game,game.lookup.buildings.get(buildingId));
       filters.hidden=!buildingId || !toggle.checked;
-      return {enabled:toggle.checked,buildingId,filters:Object.fromEntries(checks.map(b=>[b.value,b.checked]))};
+      const flow={enabled:toggle.checked,buildingId,filters:Object.fromEntries(checks.map(b=>[b.value,b.checked]))};
+      $('travelers').hidden=!flow.enabled;
+      if (flow.enabled) {
+        const people=game.residents.filter(r=>LT.matchesFlow(r.journey,buildingId,flow.filters));
+        const key=people.map(r=>`${r.id}/${r.journey.startedAt}/${r.journey.leg}`).join(',');
+        if (key!==travelersKey) {
+          travelersKey=key;
+          traveling.replaceChildren(new Option(`Облачков: ${people.length} · Выбрать…`,''),
+            ...people.map(r=>new Option(`${r.name} → ${game.lookup.buildings.get(r.journey.destinationId).name} · ${LT.journeyAction(r.journey)} · ${r.journey.mode==='tram'?'с трамваем':'пешком'}`,r.id)));
+        }
+        traveling.value=focus?.type==='resident'?focus.id:'';
+        if (traveling.selectedIndex<0) traveling.selectedIndex=0;
+      }
+      return flow;
     }
     return update;
   }

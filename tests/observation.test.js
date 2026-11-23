@@ -51,3 +51,18 @@ test('two independent opening mornings measure the same destination with just on
   assert.deepEqual(measured,[[7,2,20],[7,3,30]]);
   assert.deepEqual([live.tick,live.cash,live.trains.length,live.history.fares(0,301)],before);
 });
+
+test('evening arrivals are attributed to the last visited district, not the home or the morning job', () => {
+  const game=startGame(createCity('Ива')), r=game.residents[0];
+  advance(game,5400); // 22:30, after the visit and return
+  const visits=game.history.arrivals(0,5401).filter(e=>e.residentId===r.id);
+  assert.equal(visits.length,3);
+  const [work,visit,home]=visits;
+  assert.equal(home.destinationId,r.homeId);
+  assert.equal(home.originId,visit.destinationId);
+  const actual=game.lookup.buildings.get(visit.destinationId).districtId;
+  assert.notEqual(actual,game.lookup.buildings.get(work.destinationId).districtId);
+  assert.notEqual(actual,game.lookup.buildings.get(r.homeId).districtId);
+  const doors=game.history.arrivalsAt(r.homeId,home.tick,home.tick+1);
+  assert.equal(doors.byDistrict[actual][home.mode],1);
+});
