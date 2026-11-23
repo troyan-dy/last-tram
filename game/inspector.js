@@ -2,6 +2,7 @@
   'use strict';
   const $=id=>document.getElementById(id);
   const LT=globalThis.LastTram;
+  const meanTime=s=>s.meanTripTicks===null?'—':`${(s.meanTripTicks/LT.BALANCE.ticksPerMinute).toLocaleString('ru',{maximumFractionDigits:1})} мин`;
   const table=(label,headers,rows)=>`<table aria-label="${label}"><thead><tr>${headers.map(x=>`<th scope="col">${x}</th>`).join('')}</tr></thead>
     <tbody>${rows.map(([title,...values])=>`<tr><th scope="row">${title}</th>${values.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
   function createObservationPanel(render,select) {
@@ -21,6 +22,7 @@
       const a=control.arrivalsAt(b.id,from,to), c=changed.arrivalsAt(b.id,from,to);
       $('comparison').innerHTML=table(`Два утра: ${b.name}`,['Показатель','1 поезд','2 поезда'],[
         ['Прибытия',a.total,c.total],['Целиком пешком',a.walk,c.walk],['С трамваем',a.tram,c.tram],
+        ['Средний путь',meanTime(a),meanTime(c)],
         ['Выручка сети',`${control.revenue(from,to)} ₽`,`${changed.revenue(from,to)} ₽`]
       ]);
     }
@@ -40,7 +42,7 @@
       const h=game.history, s=h.arrivalsAt(b.id,from,end);
       const rows=game.city.districts.filter(d=>s.byDistrict[d.id]).map(d=>[d.name,s.byDistrict[d.id].walk,s.byDistrict[d.id].tram]);
       const progress=game.tick<from?'Период ещё не начался.':end<to?'Период ещё идёт.':'Период завершён.';
-      live.innerHTML=`<p class="interval-status">${progress} Конец интервала не включён.</p><strong>Прибытий: ${s.total}</strong>`
+      live.innerHTML=`<p class="interval-status">${progress} Конец интервала не включён.</p><strong>Прибытий: ${s.total}</strong><p>Средний путь: ${meanTime(s)}</p>`
         +(rows.length?table('Прибытия по району отправления',['Район','Пешком','С трамваем'],rows):'<p>Нет прибытий.</p>')
         +`<p class="network-total">Выручка сети: ${h.revenue(from,end)} ₽</p>`;
     }

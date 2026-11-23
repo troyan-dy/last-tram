@@ -24,11 +24,14 @@
       fares(from,to) { return window(tickets,from,to); },
       revenue(from,to) { return window(tickets,from,to).reduce((sum,e)=>sum+e.amount,0); },
       arrivalsAt(buildingId,from,to) {
-        const stats={total:0,walk:0,tram:0,byDistrict:{}};
+        const stats={total:0,walk:0,tram:0,byDistrict:{},meanTripTicks:null};
+        let duration=0;
         for (const e of window(doors,from,to)) if (e.destinationId===buildingId) {
           stats.total++; stats[e.mode]++;
+          duration+=e.tick-e.startedAt;
           (stats.byDistrict[e.districtId]??={walk:0,tram:0})[e.mode]++;
         }
+        if (stats.total) stats.meanTripTicks=duration/stats.total;
         return stats;
       }
     };

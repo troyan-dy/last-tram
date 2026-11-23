@@ -15,6 +15,7 @@ test('a connection sells one ticket at boarding and records one arrival in the i
     if (p.mode === 'tram' && p.decision.transfers === 1) break;
     advance(g);
   }
+  const start=g.tick;
   assert.ok(depart(g,r,to.id));
   const boardings = [];
   while (!r.currentBuildingId && g.tick < 1000) {
@@ -31,7 +32,7 @@ test('a connection sells one ticket at boarding and records one arrival in the i
   assert.equal(h.arrivalsAt(to.id,0,arrival).total,0);
   assert.equal(h.arrivalsAt(to.id,arrival,arrival).total,0);
   assert.deepEqual(h.arrivalsAt(to.id,arrival,arrival+1),{
-    total:1, walk:0, tram:1, byDistrict:{[from.districtId]:{walk:0,tram:1}}
+    total:1, walk:0, tram:1, meanTripTicks:arrival-start, byDistrict:{[from.districtId]:{walk:0,tram:1}}
   });
   assert.equal(h.arrivalsAt(from.id,0,arrival+1).total,0);
 });

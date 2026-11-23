@@ -65,6 +65,7 @@ test('mobile building ledger shows a real time window, origins and network incom
   await expect(district('Дворы 0 2')).toBeVisible();
   await expect(district('Типография 2 0')).toBeVisible();
   await expect(ledger).toContainText('Прибытий: 7');
+  await expect(ledger).toContainText('Средний путь: 44,4 мин');
   await expect(ledger).toContainText('Выручка сети: 20 ₽');
   await ledger.getByLabel('Время прибытия').selectOption({label:'09:00–12:00'});
   await expect(ledger).toContainText('Прибытий: 0');
@@ -81,6 +82,7 @@ test('mobile building ledger shows a real time window, origins and network incom
   const comparison=page.getByRole('table',{name:'Два утра: Крытый рынок'});
   await expect(comparison.getByRole('row',{name:'Прибытия 7 7'})).toBeVisible();
   await expect(comparison.getByRole('row',{name:'С трамваем 2 3'})).toBeVisible();
+  await expect(comparison.getByRole('row',{name:'Средний путь 44,4 мин 41,8 мин'})).toBeVisible();
   await expect(comparison.getByRole('row',{name:'Выручка сети 20 ₽ 30 ₽'})).toBeVisible();
   expect(await gameState()).toEqual(before);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
