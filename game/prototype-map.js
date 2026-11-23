@@ -1,15 +1,31 @@
 // Throwaway camera/HUD study. All actions affect only this tab's in-memory city.
 (() => {
   const LT=LastTram, $=id=>document.getElementById(id), svg=$('map');
-  const game=LT.startGame(LT.createCity('Клён'));
+  const query=new URLSearchParams(location.search),lanes=query.get('plan')!=='grid',seed=(query.get('seed')||'Клён').slice(0,60);
+  const game=lanes?LT.startGame(LT.streetStudy.create(seed),{openLine:LT.streetStudy.openLine}):LT.startGame(LT.createCity(seed));
+  function openSeed(value){
+    const url=new URL(location.href);url.searchParams.set('seed',value.trim()||'Клён');location.assign(url.href);
+  }
+  $('layout-seed').value=game.city.seed;
+  $('seed-select').onsubmit=e=>{e.preventDefault();openSeed($('layout-seed').value);};
+  $('roll-city').onclick=()=>openSeed(String(crypto.getRandomValues(new Uint32Array(1))[0]));
+  const comparison=new URL(location.href);
+  if(lanes)comparison.searchParams.set('plan','grid');else comparison.searchParams.delete('plan');
+  $('compare-plan').href=comparison.href;
+  $('compare-plan').textContent=lanes?'Сравнить с сеткой':'Открыть переулки';
+  $('plan-name').textContent=`${game.city.seed} · ${lanes?'ПЕРЕУЛКИ':'СЕТКА'} · 39°`;
   const meter=LT.distanceMeter(game);
   for(let i=0;i<365;i++)meter.step();
-  const stops=game.city.stops.filter(s=>!s.ring);
+  const stops=game.city.stops.filter(s=>!s.ring&&!s.junction);
   const stop=id=>game.lookup.stops.get(id), building=id=>game.lookup.buildings.get(id);
-  const link=(a,b)=>game.city.edges.find(e=>(e.a===a && e.b===b)||(e.a===b && e.b===a));
+  const sections=lanes?game.city.study.sections:game.city.edges;
+  const link=(a,b)=>sections.find(e=>(e.a===a && e.b===b)||(e.a===b && e.b===a));
+  const section=id=>sections.find(e=>e.id===id);
+  const built=e=>(e.parts||[e.id]).every(id=>game.trackIds.has(id));
+  const lay=e=>{for(const id of e.parts||[e.id])game.trackIds.add(id);};
   // A prepared block lets the player try a loop immediately. The other block still needs track.
-  const demo=['Рынок','Сквер','Типография','Площадь'].map(name=>stops.find(s=>s.name===name).id);
-  for(let i=1;i<demo.length;i++)game.trackIds.add(link(demo[i-1],demo[i]).id);
+  const demo=lanes?[...game.city.study.ring,game.city.study.ring[0]]:['Рынок','Сквер','Типография','Площадь'].map(name=>stops.find(s=>s.name===name).id);
+  for(let i=1;i<demo.length;i++)lay(link(demo[i-1],demo[i]));
   const names={build:'Строительство',stops:'Остановки',routes:'Маршруты',flows:'Потоки'};
   let mode='', place=game.city.starterStops.at(-1), first='', edge='', route=game.routes[0].id, draft=[], loop=false;
   let note='', person=null, renderingGame, previous=new Map(), sprites=[], paused=false, carry=0, last=null;
@@ -17,7 +33,7 @@
   let decoratedSigns;
   const point=p=>LT.art.project(p.x,p.y);
   const choices=(items,value)=>items.map(([k,v])=>`<option value="${k}" ${k===value?'selected':''}>${v}</option>`).join('');
-  const availableEdges=()=>game.city.edges.filter(e=>!game.trackIds.has(e.id)&&stops.includes(stop(e.a))&&stops.includes(stop(e.b)));
+  const availableEdges=()=>sections.filter(e=>!built(e)&&stops.includes(stop(e.a))&&stops.includes(stop(e.b)));
   function moneyTime() {
     $('cash').textContent=`${game.cash} ₽`; $('fleet').textContent=game.trains.length;
     $('clock').textContent=LT.stamp(LT.clockMinute(game));
@@ -33,7 +49,7 @@
     if(signs.firstElementChild!==decoratedSigns){
       decoratedSigns=signs.firstElementChild;
       for(const g of signs.querySelectorAll('[data-type="stop"]'))
-        g.insertAdjacentHTML('afterbegin',LT.prototypeShelter(stop(g.dataset.id)));
+        g.insertAdjacentHTML('afterbegin',LT.prototypeShelter(stop(g.dataset.id),lanes));
     }
     const now=positions();
     sprites=[...$('moving').children].map(node=>{
@@ -59,8 +75,10 @@
     const segment=(a,b,color,dash='')=>`<polyline points="${xy(a)} ${xy(b)}" fill="none" stroke="${color}" stroke-width="3" stroke-opacity=".82" stroke-dasharray="${dash}"/>`;
     const dot=(id,txt)=>`<g transform="translate(${xy(id)})"><circle r="5" fill="#ffedbd" stroke="#29584c" stroke-width="1.5"/><text class="flow-mark" x="7" y="-5">${txt}</text></g>`;
     if(mode==='build'){
-      for(const e of availableEdges())if(!first||e.a===first||e.b===first)
-        out+=segment(e.a,e.b,e.id===edge?'#ab502c':'#688269',e.id===edge?'4 1':'1 4');
+      for(const e of availableEdges())if(!first||e.a===first||e.b===first){
+        const vertices=e.line?.map(p=>p.id)||[e.a,e.b];
+        for(let n=1;n<vertices.length;n++)out+=segment(vertices[n-1],vertices[n],e.id===edge?'#ab502c':'#688269',e.id===edge?'4 1':'1 4');
+      }
     }
     if(mode==='routes') {
       const paths=loop?LT.loopPaths(game,draft):draft.slice(1).map((s,i)=>LT.railPath(game,draft[i],s));
@@ -117,7 +135,7 @@
     const pickPlace=label=>`<label>${label}<select id="district">${choices(stops.map(s=>[s.id,s.name]),place)}</select></label>`;
     let h='';
     if(mode==='build'){
-      const selected=game.lookup.edges.get(edge);
+      const selected=section(edge);
       h=availableEdges().length?`<p>${!first?'Нажмите на начало пунктирного участка на карте.':!selected?`Откуда: <b>${stop(first).name}</b>. Нажмите на соседнюю остановку в конце пунктира.`:`<b>${stop(first).name} → ${stop(selected.a===first?selected.b:selected.a).name}</b>`}</p>
         ${selected?`<button id="buy-track">Построить · ${LT.BALANCE.trackCost} ₽</button>`:''}
         ${first?'<button id="reset-build">Выбрать заново</button>':''}`:'<p>Все соседние остановки центра уже соединены путями.</p>';
@@ -130,6 +148,7 @@
         <p><b>${loop?'↻ Кольцевой':draft.length>=2?'↔ Туда и обратно':'Новый маршрут'}</b><br>
         ${[...draft,...(loop?[draft[0]]:[])].map(id=>stop(id).name).join(' → ')||'Нажмите первую остановку на карте.'}</p>
         <p class="muted">${loop?'После последней остановки поезд возвращается к первой и начинает следующий круг.':'Нажимайте остановки по порядку. Чтобы замкнуть кольцо, снова нажмите первую.'}</p>
+        ${lanes&&!draft.length?`<p class="muted">Кольцо этого города: ${demo.map(id=>stop(id).name).join(' → ')}.</p>`:''}
         ${draft.length?`<button id="undo">${loop?'Разомкнуть':'Убрать последнюю'}</button>`:''}
         <button id="save" ${draft.length<2?'disabled':''}>Сохранить</button>
         ${route?`<button id="buy-train">Купить трамвай · ${LT.BALANCE.trainCost} ₽</button>`:''}`;
@@ -169,7 +188,7 @@
         else {
           const e=link(first,id);
           if(!e)note='Это не соседние остановки. Выберите другой конец пунктира.';
-          else if(game.trackIds.has(e.id))note='Между этими остановками уже есть путь.';
+          else if(built(e))note='Между этими остановками уже есть путь.';
           else edge=e.id;
         }
       }
@@ -189,7 +208,15 @@
   };
   $('content').onclick=e=>{
     const id=e.target.id;let result;
-    if(id==='buy-track'){result=LT.buildTrack(game,edge);if(result.ok){first='';edge='';}}
+    if(id==='buy-track'){
+      if(lanes){
+        const e=section(edge);
+        if(!e||built(e))result={ok:false,message:'Выберите ещё не построенный участок.'};
+        else if(game.cash<LT.BALANCE.trackCost)result={ok:false,message:'Недостаточно денег на путь.'};
+        else {lay(e);game.cash-=LT.BALANCE.trackCost;result={ok:true};}
+      }else result=LT.buildTrack(game,edge);
+      if(result.ok){first='';edge='';}
+    }
     else if(id==='reset-build'){first='';edge='';}
     else if(id==='edit-service'){const r=game.routes.find(r=>r.stopIds.includes(place));setMode('routes');pickRoute(r?.id||'');}
     else if(id==='new-route'||e.target.dataset.line)pickRoute(e.target.dataset.line||'');

@@ -106,6 +106,12 @@
     });
     function build(game) {
       const stops=game.city.stops.filter(s=>s.ring<=game.openRing);
+      if(game.city.study){
+        const all=game.city.study.boundary.map(p=>project(p.x,p.y)),xs=all.map(p=>p[0]),ys=all.map(p=>p[1]);
+        base={x:Math.min(...xs)-14,y:Math.min(...ys)-36,w:Math.max(...xs)-Math.min(...xs)+28,h:Math.max(...ys)-Math.min(...ys)+57};
+        scene.innerHTML=`<g class="scenery">${globalThis.LastTram.streetStudy.scene(game,object)}</g><g class="signs"></g>`;
+        signsKey=null;moving.replaceChildren();nodes.clear();thoughts.replaceChildren();leaders.replaceChildren();labels.clear();fit();return;
+      }
       const buildings=game.city.buildings.filter(b=>b.ring<=game.openRing);
       const box=bounds(stops), {l,r,t,b}=box;
       const corners=[[l,t],[r,t],[r,b],[l,b]].map(p=>project(...p));
@@ -130,7 +136,7 @@
       const key=[...served.keys()].sort().join(',');
       if (key===signsKey) return;
       signsKey=key;
-      const stops=game.city.stops.filter(s=>s.ring<=game.openRing);
+      const stops=game.city.stops.filter(s=>s.ring<=game.openRing&&!s.junction);
       const stopLabels=stops.filter(s=>served.has(s.id)).map(s=>place(s.x+3,s.y+8,
         `<g class="stop-label"><rect x="-1" y="-1" width="${s.name.length*3.5+10}" height="9" rx="2"/>
         <circle cx="3" cy="3.5" r="1.55"/><text x="7" y="5.7">${s.name}</text></g>`)).join('');
@@ -189,8 +195,21 @@
       signs(game,served);
       const drawn=new Set(), showing=new Set(), active=[], seats=new Map();
       const layout=flow.enabled?thoughtLayout(view):null;
-      for (const train of game.trains)
-        sprite('train',train.id,train.name,()=>art.train(train.axis==='y'),project(train.position.x,train.position.y),drawn,train.axis);
+      for (const train of game.trains){
+        if(game.city.study){
+          if(train.a!==train.b){
+            const a=game.lookup.stops.get(train.a),b=game.lookup.stops.get(train.b);
+            train.studyBearing=Math.atan2(b.y-a.y,b.x-a.x);
+          }else if(train.studyBearing===undefined){
+            const run=train.runs[0],schedule=run.schedule,frames=schedule?.frames;
+            const phase=frames&&((game.tick+run.offset)%frames.length+frames.length)%frames.length;
+            const incoming=frames?.[(phase-(globalThis.LastTram.BALANCE.dwellTicks+1)+frames.length)%frames.length];
+            const a=game.lookup.stops.get(incoming?.a),b=game.lookup.stops.get(incoming?.b);
+            train.studyBearing=a&&b?Math.atan2(b.y-a.y,b.x-a.x):0;
+          }
+          sprite('train',train.id,train.name,()=>globalThis.LastTram.streetStudy.train(train.studyBearing),project(train.position.x,train.position.y),drawn,String(train.studyBearing));
+        }else sprite('train',train.id,train.name,()=>art.train(train.axis==='y'),project(train.position.x,train.position.y),drawn,train.axis);
+      }
       for (const r of game.residents) {
         if ((r.onTrainId && !layout) || (!r.journey && !(focus?.id===r.id || (game.tick===0 && r===game.residents[0])))) continue;
         const xy=project(r.position.x,r.position.y);

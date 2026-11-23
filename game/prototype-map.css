@@ -27,6 +27,11 @@ button:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:3px s
 .hud .time{margin-left:auto}.hud button{min-width:38px}
 .study{left:var(--gutter);bottom:61px;color:#534c3c;pointer-events:none}
 .study small,#panel>small{font:700 .67rem/1.2 system-ui;letter-spacing:.1em}
+.study a{display:block;width:fit-content;pointer-events:auto;color:#413a30;font-size:.76rem;background:#fff3dccc;border-radius:4px;padding:3px 5px;margin-top:3px}
+.study{max-width:min(245px,65vw);pointer-events:auto;background:#fff3dde6;border:1px solid var(--edge);border-radius:7px;padding:5px 8px;font-size:.76rem}
+.study small{display:block;overflow-wrap:anywhere}.study summary{cursor:pointer}.study button{font-size:.75rem;padding:3px 6px;margin:3px 0}
+.study input{width:7em;font:inherit}.study form{display:flex;align-items:center;gap:3px}
+.street-caption{font:italic 5px Georgia,serif;fill:#424f34;paint-order:stroke;stroke:#d2c99a;stroke-width:1.6px}
 .camera{left:var(--gutter);bottom:var(--gutter);display:flex;gap:3px}
 .camera button{min-height:33px;min-width:30px}
 footer{right:var(--gutter);top:73px}

@@ -53,9 +53,9 @@
       <path d="M-7-13l4-6 4-1-2 8Z" fill="#b2ae5a"/><path d="M-7-13l6 1-1 7-4-3Z" fill="#929a4f"/>
       <path d="M1-20l5 4-7 4Z" fill="#9a9e4e"/><path d="M6-16l2 6-4 4-5-6Z" fill="#69783d"/></g>`);
   }
-  function shelter(s) {
+  function shelter(s,lanes=false) {
     const {x,y}=s.sidewalk, l=x-5,r=x+2,t=y-2,b=y+1.8;
-    const crosswalk=Array.from({length:5},(_,i)=>land(x+6,s.y-4+i*1.8,2.6,.64,'#dbcbb2')).join('');
+    const crosswalk=lanes?'':Array.from({length:5},(_,i)=>land(x+6,s.y-4+i*1.8,2.6,.64,'#dbcbb2')).join('');
     return `<g pointer-events="none">${crosswalk}${land(l-1,t-1,9,6,'#c9b196')}${
       [[l,t],[r,t],[l,b],[r,b]].map(([u,v])=>line([[u,v,0],[u,v,5]],'#594b41',.65)).join('')
     }${land(l,t+.5,6.8,1,'#bb8049',1.6)}${polygon([[l-1,t-1,5.3],[r+1,t-1,5.3],[r+1,b+1,5.8],[l-1,b+1,5.8]],'#79685a')}${line([[l-1,b+1,5.8],[r+1,b+1,5.8]],'#e2c291',.7)}</g>`;
