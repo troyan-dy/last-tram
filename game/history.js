@@ -13,6 +13,7 @@
     const doors=[], tickets=[];
     const window=(events,from,to)=>events.slice(lowerBound(events,from),lowerBound(events,to));
     return {
+      get eventCount() { return doors.length+tickets.length; },
       recordArrival(g,r,j) {
         doors.push(Object.freeze({tick:j.arrivedAt, startedAt:j.startedAt, residentId:r.id,
           originId:j.originId, districtId:g.lookup.buildings.get(j.originId).districtId,

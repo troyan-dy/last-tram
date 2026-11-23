@@ -35,3 +35,19 @@ test('a connection sells one ticket at boarding and records one arrival in the i
   });
   assert.equal(h.arrivalsAt(from.id,0,arrival+1).total,0);
 });
+
+test('two independent opening mornings measure the same destination with just one extra train', () => {
+  const { compareMorning } = require('../game/experiment.js');
+  const live = startGame(createCity('ТРАМ-17'));
+  advance(live,300);
+  const before = [live.tick,live.cash,live.trains.length,live.history.fares(0,301)];
+  const market = live.city.buildings.find(b=>b.name==='Крытый рынок');
+  const result = compareMorning(live.city);
+  assert.deepEqual([result.from,result.to],[0,540]);
+  const measured = [result.control,result.changed].map(h=>{
+    const stats=h.arrivalsAt(market.id,result.from,result.to);
+    return [stats.total,stats.tram,h.revenue(result.from,result.to)];
+  });
+  assert.deepEqual(measured,[[7,2,20],[7,3,30]]);
+  assert.deepEqual([live.tick,live.cash,live.trains.length,live.history.fares(0,301)],before);
+});
