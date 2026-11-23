@@ -41,7 +41,7 @@
   }
   function stopSign(s, served) {
     const color = served ? '#bc563c' : '#798b78';
-    return object('stop',s.id,s.name,place(s.sidewalk.x,s.sidewalk.y,
+    return object('stop',s.id,s.stopName??s.name,place(s.sidewalk.x,s.sidewalk.y,
       `<g class="platform-light" pointer-events="none"><ellipse rx="10" ry="3" fill="#ffda85" opacity=".35"/>
        <circle cx="0" cy="-11" r="6" fill="#ffe6a8" opacity=".38"/></g>
        <path d="M0 0v-12" stroke="#526b63" stroke-width="1.2"/>
@@ -77,7 +77,7 @@
     }, { passive:false });
     svg.addEventListener('pointerdown', e => {
       moved=false;
-      if (e.button === 0 && zoom > 1) drag={ x:e.clientX,y:e.clientY,view:{...view} };
+      if (e.button === 0 && (zoom > 1 || svg.hasAttribute('data-prototype'))) drag={ x:e.clientX,y:e.clientY,view:{...view} };
     });
     svg.addEventListener('pointermove', e => {
       if (!drag || !e.buttons) return;
@@ -88,6 +88,7 @@
       setView({...drag.view,x:drag.view.x-(e.clientX-drag.x)/k,y:drag.view.y-(e.clientY-drag.y)/k});
     });
     svg.addEventListener('pointerup',()=> { drag=null; });
+    svg.addEventListener('pointercancel',()=> { drag=null; });
     function select(e) {
       const g=e.target.closest('[data-type]');
       if (!g || moved) return;
@@ -97,7 +98,7 @@
           .map(el=>el.closest('#moving [data-type="resident"]')).filter(Boolean);
         group=[...new Set(hits.map(el=>el.dataset.id))];
       }
-      onSelect(g.dataset.type,g.dataset.id,group);
+      onSelect(g.dataset.type,g.dataset.id,group,e.type==='click'?local(e.clientX,e.clientY):null);
     }
     svg.addEventListener('click',select);
     svg.addEventListener('keydown',e=>{
@@ -105,6 +106,13 @@
     });
     function build(game) {
       const stops=game.city.stops.filter(s=>s.ring<=game.openRing);
+      if(game.city.study){
+        const boundary=game.openRing?game.city.study.outerBoundary:game.city.study.boundary;
+        const all=boundary.map(p=>project(p.x,p.y)),xs=all.map(p=>p[0]),ys=all.map(p=>p[1]);
+        base={x:Math.min(...xs)-30,y:Math.min(...ys)-38,w:Math.max(...xs)-Math.min(...xs)+60,h:Math.max(...ys)-Math.min(...ys)+72};
+        scene.innerHTML=`<g class="scenery">${globalThis.LastTram.streetStudy.scene(game,object)}</g><g class="signs"></g>`;
+        signsKey=null;moving.replaceChildren();nodes.clear();thoughts.replaceChildren();leaders.replaceChildren();labels.clear();fit();return;
+      }
       const buildings=game.city.buildings.filter(b=>b.ring<=game.openRing);
       const box=bounds(stops), {l,r,t,b}=box;
       const corners=[[l,t],[r,t],[r,b],[l,b]].map(p=>project(...p));
@@ -129,10 +137,10 @@
       const key=[...served.keys()].sort().join(',');
       if (key===signsKey) return;
       signsKey=key;
-      const stops=game.city.stops.filter(s=>s.ring<=game.openRing);
+      const stops=game.city.stops.filter(s=>s.ring<=game.openRing&&(game.city.study?s.passengerStop:!s.junction));
       const stopLabels=stops.filter(s=>served.has(s.id)).map(s=>place(s.x+3,s.y+8,
-        `<g class="stop-label"><rect x="-1" y="-1" width="${s.name.length*3.5+10}" height="9" rx="2"/>
-        <circle cx="3" cy="3.5" r="1.55"/><text x="7" y="5.7">${s.name}</text></g>`)).join('');
+        `<g class="stop-label"><rect x="-1" y="-1" width="${(s.stopName??s.name).length*3.5+10}" height="9" rx="2"/>
+         <circle cx="3" cy="3.5" r="1.55"/><text x="7" y="5.7">${s.stopName??s.name}</text></g>`)).join('');
       scene.querySelector('.signs').innerHTML=stops.map(s=>stopSign(s,served.has(s.id))).join('')+stopLabels;
     }
     function sprite(type,id,name,draw,pos,drawn,variant='') {
@@ -179,13 +187,30 @@
     function render(game,focus,flow={enabled:false},inspection=null,served=globalThis.LastTram.operatingStops(game)) {
       const light=cityTime(game).period.id;
       if (svg.dataset.light!==light) svg.dataset.light=light;
-      const key=`${game.openRing}|${[...game.trackIds].join(',')}`;
-      if (game!==lastGame || signature!==key) { build(game); lastGame=game; signature=key; }
+      const key=`${game.openRing}|${game.city.stopRevision||0}|${[...game.trackIds].join(',')}`;
+      if (game!==lastGame || signature!==key) {
+        const camera=game===lastGame && svg.hasAttribute('data-prototype') && {view,zoom};
+        build(game); lastGame=game; signature=key;
+        if(camera){zoom=base.w/camera.view.w;setView(camera.view);}
+      }
       signs(game,served);
       const drawn=new Set(), showing=new Set(), active=[], seats=new Map();
       const layout=flow.enabled?thoughtLayout(view):null;
-      for (const train of game.trains)
-        sprite('train',train.id,train.name,()=>art.train(train.axis==='y'),project(train.position.x,train.position.y),drawn,train.axis);
+      for (const train of game.trains){
+        if(game.city.study){
+          if(train.a!==train.b){
+            const a=game.lookup.stops.get(train.a),b=game.lookup.stops.get(train.b);
+            train.studyBearing=Math.atan2(b.y-a.y,b.x-a.x);
+          }else if(train.studyBearing===undefined){
+            const run=train.runs[0],schedule=run.schedule,frames=schedule?.frames;
+            const phase=frames&&((game.tick+run.offset)%frames.length+frames.length)%frames.length;
+            const incoming=frames?.[(phase-(globalThis.LastTram.BALANCE.dwellTicks+1)+frames.length)%frames.length];
+            const a=game.lookup.stops.get(incoming?.a),b=game.lookup.stops.get(incoming?.b);
+            train.studyBearing=a&&b?Math.atan2(b.y-a.y,b.x-a.x):0;
+          }
+          sprite('train',train.id,train.name,()=>globalThis.LastTram.streetStudy.train(train.studyBearing),project(train.position.x,train.position.y),drawn,String(train.studyBearing));
+        }else sprite('train',train.id,train.name,()=>art.train(train.axis==='y'),project(train.position.x,train.position.y),drawn,train.axis);
+      }
       for (const r of game.residents) {
         if ((r.onTrainId && !layout) || (!r.journey && !(focus?.id===r.id || (game.tick===0 && r===game.residents[0])))) continue;
         const xy=project(r.position.x,r.position.y);
