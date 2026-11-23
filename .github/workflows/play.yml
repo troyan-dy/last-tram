@@ -1,0 +1,69 @@
+name: Playable build
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Package the offline game
+        run: |
+          mkdir _site
+          cp -R index.html game _site/
+          git rev-parse HEAD > _site/revision.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: last-tram-${{ github.event.pull_request.head.sha || github.sha }}
+          path: _site/
+          if-no-files-found: error
+      - name: How to play this revision
+        run: |
+          echo 'Распакуйте ZIP из Artifacts и откройте `index.html` в браузере.' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        with:
+          path: _site/
+
+  publish:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Publish master
+        uses: actions/deploy-pages@v4
+        id: deploy
+      - name: Verify the published revision and entry page
+        env:
+          PAGE_URL: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          base="${PAGE_URL%/}"
+          for attempt in {1..12}; do
+            if [ "$(curl -fsSL "$base/revision.txt?rev=$GITHUB_SHA")" = "$GITHUB_SHA" ] \
+              && curl -fsSL "$base/?rev=$GITHUB_SHA" -o "$RUNNER_TEMP/play.html" \
+              && grep -Fq 'src="game/app.js"' "$RUNNER_TEMP/play.html"; then
+              echo "Играть: $base/" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
