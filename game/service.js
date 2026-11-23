@@ -211,7 +211,7 @@
     g.fare=value;
     return {ok:true};
   }
-  const api = { buildTrack, createRoute, setStops, buyTrain, assignTrain, setFare, openLine, moveTrains, finalRun, operatingStops };
+  const api = { buildTrack, railPath, createRoute, setStops, buyTrain, assignTrain, setFare, openLine, moveTrains, finalRun, operatingStops };
   Object.assign(globalThis.LastTram ??= {}, api);
   if (typeof module !== 'undefined') module.exports = api;
 })();

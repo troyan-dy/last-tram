@@ -1,7 +1,10 @@
 // Flat-shaded paper buildings, market awnings and panel blocks from the approved morning study.
 (() => {
   'use strict';
-  function project(x, y, z = 0) { return [x * 1.64 - y * 0.84, x * 0.40 + y * 0.90 - z * 1.28]; }
+  function project(x, y, z = 0) {
+    if (globalThis.LastTram.prototypeProject) return globalThis.LastTram.prototypeProject(x,y,z);
+    return [x * 1.64 - y * 0.84, x * 0.40 + y * 0.90 - z * 1.28];
+  }
   const points = list => list.map(p => project(...p).map(v => v.toFixed(2)).join(',')).join(' ');
   const polygon = (list, fill) => `<polygon points="${points(list)}" fill="${fill}"/>`;
   const line = (list, stroke, width, more = '') =>

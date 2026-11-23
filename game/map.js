@@ -77,7 +77,7 @@
     }, { passive:false });
     svg.addEventListener('pointerdown', e => {
       moved=false;
-      if (e.button === 0 && zoom > 1) drag={ x:e.clientX,y:e.clientY,view:{...view} };
+      if (e.button === 0 && (zoom > 1 || svg.hasAttribute('data-prototype'))) drag={ x:e.clientX,y:e.clientY,view:{...view} };
     });
     svg.addEventListener('pointermove', e => {
       if (!drag || !e.buttons) return;
@@ -88,6 +88,7 @@
       setView({...drag.view,x:drag.view.x-(e.clientX-drag.x)/k,y:drag.view.y-(e.clientY-drag.y)/k});
     });
     svg.addEventListener('pointerup',()=> { drag=null; });
+    svg.addEventListener('pointercancel',()=> { drag=null; });
     function select(e) {
       const g=e.target.closest('[data-type]');
       if (!g || moved) return;
