@@ -121,17 +121,19 @@
       scene.innerHTML=`<g class="scenery">${scenery}</g>`+stops.map(s=>stopSign(s,served.has(s.id))).join('')+stopLabels;
       moving.replaceChildren(); nodes.clear(); thoughts.replaceChildren(); leaders.replaceChildren(); labels.clear(); fit();
     }
-    function sprite(type,id,name,draw,pos,drawn) {
+    function sprite(type,id,name,draw,pos,drawn,variant='') {
       drawn.add(id);
       let g=nodes.get(id);
       if (!g) {
         g=el('g'); g.dataset.type=type; g.dataset.id=id; g.setAttribute('tabindex','0');
         g.setAttribute('role','button'); g.setAttribute('aria-label',name);
-        g.innerHTML=`<title>${name}</title>${draw()}`;
         nodes.set(id,g); moving.append(g);
       }
+      if (g.dataset.variant!==variant) {
+        g.innerHTML=`<title>${name}</title>${draw()}`;
+        g.dataset.variant=variant;
+      }
       g.setAttribute('transform',`translate(${pos})`);
-      return g;
     }
     function thought(r,dest,xy,layout) {
       const action=journeyAction(r.journey), mode=r.journey.mode, signature=[dest.id,action,mode].join('|');
@@ -168,7 +170,7 @@
       const drawn=new Set(), showing=new Set(), active=[], seats=new Map();
       const layout=flow.enabled?thoughtLayout(view):null;
       for (const train of game.trains)
-        sprite('train',train.id,train.name,()=>art.train(false),project(train.position.x,train.position.y),drawn);
+        sprite('train',train.id,train.name,()=>art.train(train.axis==='y'),project(train.position.x,train.position.y),drawn,train.axis);
       for (const r of game.residents) {
         if ((r.onTrainId && !layout) || (!r.journey && !(focus?.id===r.id || (game.tick===0 && r===game.residents[0])))) continue;
         const xy=project(r.position.x,r.position.y);
