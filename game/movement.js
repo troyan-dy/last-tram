@@ -35,11 +35,11 @@
     return [p,{[axis]:at,[cross]:p[cross]},{[axis]:at,[cross]:q[cross]},q];
   }
   function walkingPath(game, from, to) {
-    if(game.city.study)return game.city.study.walking(from.entrance,to.entrance);
+    if(game.city.study)return game.city.study.walking(from.entrance,to.entrance,game.openRing);
     return [from.entrance,...streetPath(game,entrance(game,from),entrance(game,to)),to.entrance];
   }
   function platformPath(game,building,stop) {
-    if(game.city.study)return game.city.study.walking(building.entrance,stop.sidewalk);
+    if(game.city.study)return game.city.study.walking(building.entrance,stop.sidewalk,game.openRing);
     const a=entrance(game,building);
     return [building.entrance,...streetPath(game,a,{point:stop.sidewalk,axis:a.axis==='x'?'y':'x'})];
   }

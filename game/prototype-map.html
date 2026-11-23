@@ -4,10 +4,24 @@
 <body>
 <!-- Черновик Б: low-poly, живая сеть и редактирование поверх карты. -->
 <svg id="map" data-prototype="" xmlns="http://www.w3.org/2000/svg" aria-label="Интерактивная карта города Клён" role="group">
+  <defs>
+    <path id="mist-line"/><clipPath id="visible-streets"><use href="#mist-line"/></clipPath>
+    <radialGradient id="mist-puff"><stop stop-color="#f5f3e9" stop-opacity=".93"/><stop offset=".5" stop-color="#ebede5" stop-opacity=".65"/><stop offset="1" stop-color="#e3e8e0" stop-opacity="0"/></radialGradient>
+  </defs>
+  <g id="city-contents">
   <g id="scene"></g><g id="layer" pointer-events="none"></g><g id="leaders"></g><g id="thoughts"></g><g id="moving"></g>
   <g id="marker" pointer-events="none"><ellipse rx="8" ry="4" fill="none" stroke="#994626"/></g>
   <g id="network-marker" pointer-events="none"><ellipse rx="12" ry="6" fill="none" stroke="#126c6b" stroke-width="2"/></g>
   <g id="targets"></g>
+  <g id="stop-preview" pointer-events="none" aria-hidden="true" visibility="hidden"><ellipse rx="3.6" ry="1.7" fill="#fff0ce" stroke="#496a5d" stroke-width="1"/><path d="M0 0v-7h5v3H0" fill="#e9ba6d" stroke="#433d32" stroke-width=".8"/></g>
+  </g>
+  <g id="mist-fringe" aria-hidden="true" pointer-events="none" fill="none" stroke-linejoin="round">
+    <use href="#mist-line" stroke="#dae2da" stroke-width="22" opacity=".16"/>
+    <use href="#mist-line" stroke="#e0e6df" stroke-width="15" opacity=".32"/>
+    <use href="#mist-line" stroke="#e6eae2" stroke-width="8" opacity=".62"/>
+    <use href="#mist-line" stroke="#e4e9e1" stroke-width="3" opacity=".9"/>
+    <g id="mist-clouds"></g>
+  </g>
 </svg>
 <header class="hud">
   <div><small>Касса</small><strong id="cash"></strong></div>
@@ -17,8 +31,11 @@
   <button id="pause" aria-label="Пауза" title="Пауза">Ⅱ</button>
 </header>
 <section class="study" aria-label="Сравнение городов"><small id="plan-name">КЛЁН · ПЕРЕУЛКИ · 39°</small>
+  <div id="fog-study" hidden><span id="zone-state" role="status">Начало партии</span>
+    <button id="reveal-ring" type="button" title="Показать расширение в макете без списания денег">Открыть кольцо</button></div>
   <button id="roll-city" type="button">Другой город ↻</button>
   <details><summary>Выбрать сид</summary><form id="seed-select"><label>Сид города <input id="layout-seed" maxlength="60"></label><button>Открыть</button></form>
+    <a id="change-start" href="?start=line">Новая партия с готовой линией</a>
     <a id="compare-plan" href="?plan=grid">Сравнить с сеткой</a></details>
 </section>
 <div class="camera" aria-label="Масштаб карты"><button id="minus" aria-label="Отдалить">−</button><button id="plus" aria-label="Приблизить">+</button><button id="fit">Вся зона</button></div>
@@ -29,5 +46,5 @@
     <button data-mode="routes">Маршруты</button><button data-mode="flows">Потоки</button>
   </nav>
 </footer>
-<script src="city.js"></script><script src="movement.js"></script><script src="service.js"></script><script src="journey.js"></script><script src="expansion.js"></script><script src="demand.js"></script><script src="history.js"></script><script src="simulation.js"></script><script src="art.js"></script><script src="prototype-low-poly.js"></script><script src="street-plan.js"></script><script src="prototype-street-study.js"></script><script src="flows.js"></script><script src="map.js"></script><script src="prototype-distance.js"></script><script src="prototype-map.js"></script>
+<script src="city.js"></script><script src="movement.js"></script><script src="service.js"></script><script src="journey.js"></script><script src="expansion.js"></script><script src="demand.js"></script><script src="history.js"></script><script src="simulation.js"></script><script src="art.js"></script><script src="prototype-low-poly.js"></script><script src="street-plan.js"></script><script src="prototype-street-study.js"></script><script src="prototype-fog.js"></script><script src="flows.js"></script><script src="map.js"></script><script src="prototype-distance.js"></script><script src="prototype-map.js"></script>
 </body></html>

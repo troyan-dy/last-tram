@@ -41,7 +41,7 @@
   }
   function stopSign(s, served) {
     const color = served ? '#bc563c' : '#798b78';
-    return object('stop',s.id,s.name,place(s.sidewalk.x,s.sidewalk.y,
+    return object('stop',s.id,s.stopName??s.name,place(s.sidewalk.x,s.sidewalk.y,
       `<g class="platform-light" pointer-events="none"><ellipse rx="10" ry="3" fill="#ffda85" opacity=".35"/>
        <circle cx="0" cy="-11" r="6" fill="#ffe6a8" opacity=".38"/></g>
        <path d="M0 0v-12" stroke="#526b63" stroke-width="1.2"/>
@@ -98,7 +98,7 @@
           .map(el=>el.closest('#moving [data-type="resident"]')).filter(Boolean);
         group=[...new Set(hits.map(el=>el.dataset.id))];
       }
-      onSelect(g.dataset.type,g.dataset.id,group);
+      onSelect(g.dataset.type,g.dataset.id,group,e.type==='click'?local(e.clientX,e.clientY):null);
     }
     svg.addEventListener('click',select);
     svg.addEventListener('keydown',e=>{
@@ -107,8 +107,9 @@
     function build(game) {
       const stops=game.city.stops.filter(s=>s.ring<=game.openRing);
       if(game.city.study){
-        const all=game.city.study.boundary.map(p=>project(p.x,p.y)),xs=all.map(p=>p[0]),ys=all.map(p=>p[1]);
-        base={x:Math.min(...xs)-14,y:Math.min(...ys)-36,w:Math.max(...xs)-Math.min(...xs)+28,h:Math.max(...ys)-Math.min(...ys)+57};
+        const boundary=game.openRing?game.city.study.outerBoundary:game.city.study.boundary;
+        const all=boundary.map(p=>project(p.x,p.y)),xs=all.map(p=>p[0]),ys=all.map(p=>p[1]);
+        base={x:Math.min(...xs)-30,y:Math.min(...ys)-38,w:Math.max(...xs)-Math.min(...xs)+60,h:Math.max(...ys)-Math.min(...ys)+72};
         scene.innerHTML=`<g class="scenery">${globalThis.LastTram.streetStudy.scene(game,object)}</g><g class="signs"></g>`;
         signsKey=null;moving.replaceChildren();nodes.clear();thoughts.replaceChildren();leaders.replaceChildren();labels.clear();fit();return;
       }
@@ -136,10 +137,10 @@
       const key=[...served.keys()].sort().join(',');
       if (key===signsKey) return;
       signsKey=key;
-      const stops=game.city.stops.filter(s=>s.ring<=game.openRing&&!s.junction);
+      const stops=game.city.stops.filter(s=>s.ring<=game.openRing&&(game.city.study?s.passengerStop:!s.junction));
       const stopLabels=stops.filter(s=>served.has(s.id)).map(s=>place(s.x+3,s.y+8,
-        `<g class="stop-label"><rect x="-1" y="-1" width="${s.name.length*3.5+10}" height="9" rx="2"/>
-        <circle cx="3" cy="3.5" r="1.55"/><text x="7" y="5.7">${s.name}</text></g>`)).join('');
+        `<g class="stop-label"><rect x="-1" y="-1" width="${(s.stopName??s.name).length*3.5+10}" height="9" rx="2"/>
+         <circle cx="3" cy="3.5" r="1.55"/><text x="7" y="5.7">${s.stopName??s.name}</text></g>`)).join('');
       scene.querySelector('.signs').innerHTML=stops.map(s=>stopSign(s,served.has(s.id))).join('')+stopLabels;
     }
     function sprite(type,id,name,draw,pos,drawn,variant='') {
@@ -186,11 +187,11 @@
     function render(game,focus,flow={enabled:false},inspection=null,served=globalThis.LastTram.operatingStops(game)) {
       const light=cityTime(game).period.id;
       if (svg.dataset.light!==light) svg.dataset.light=light;
-      const key=`${game.openRing}|${[...game.trackIds].join(',')}`;
+      const key=`${game.openRing}|${game.city.stopRevision||0}|${[...game.trackIds].join(',')}`;
       if (game!==lastGame || signature!==key) {
         const camera=game===lastGame && svg.hasAttribute('data-prototype') && {view,zoom};
         build(game); lastGame=game; signature=key;
-        if(camera){zoom=camera.zoom;setView(camera.view);}
+        if(camera){zoom=base.w/camera.view.w;setView(camera.view);}
       }
       signs(game,served);
       const drawn=new Set(), showing=new Set(), active=[], seats=new Map();

@@ -2,7 +2,8 @@
 (() => {
   const LT=LastTram, $=id=>document.getElementById(id), svg=$('map');
   const query=new URLSearchParams(location.search),lanes=query.get('plan')!=='grid',seed=(query.get('seed')||'Клён').slice(0,60);
-  const game=lanes?LT.startGame(LT.streetStudy.create(seed),{openLine:LT.streetStudy.openLine}):LT.startGame(LT.createCity(seed));
+  const emptyStart=lanes&&query.get('start')!=='line';
+  const game=lanes?LT.startGame(LT.streetStudy.create(seed),{openLine:emptyStart?()=>{}:LT.streetStudy.openLine}):LT.startGame(LT.createCity(seed));
   function openSeed(value){
     const url=new URL(location.href);url.searchParams.set('seed',value.trim()||'Клён');location.assign(url.href);
   }
@@ -13,27 +14,29 @@
   if(lanes)comparison.searchParams.set('plan','grid');else comparison.searchParams.delete('plan');
   $('compare-plan').href=comparison.href;
   $('compare-plan').textContent=lanes?'Сравнить с сеткой':'Открыть переулки';
+  const otherStart=new URL(location.href);otherStart.searchParams.delete('plan');
+  otherStart.searchParams.set('start',emptyStart?'line':'empty');
+  $('change-start').href=otherStart.href;$('change-start').textContent=emptyStart?'Новая партия с готовой линией':'Начать с пустой сети';
   $('plan-name').textContent=`${game.city.seed} · ${lanes?'ПЕРЕУЛКИ':'СЕТКА'} · 39°`;
   const meter=LT.distanceMeter(game);
-  for(let i=0;i<365;i++)meter.step();
-  const stops=game.city.stops.filter(s=>!s.ring&&!s.junction);
+  if(!emptyStart)for(let i=0;i<365;i++)meter.step();
+  const accessible=()=>(lanes?game.city.study.platforms:game.city.stops).filter(s=>s.ring<=game.openRing&&!s.junction);
+  let districts=accessible();
+  const stations=()=>game.city.stops.filter(s=>s.ring<=game.openRing&&(lanes?s.passengerStop:!s.junction));
   const stop=id=>game.lookup.stops.get(id), building=id=>game.lookup.buildings.get(id);
+  const stopName=id=>stop(id).stopName??stop(id).name;
   const sections=lanes?game.city.study.sections:game.city.edges;
-  const link=(a,b)=>sections.find(e=>(e.a===a && e.b===b)||(e.a===b && e.b===a));
   const section=id=>sections.find(e=>e.id===id);
   const built=e=>(e.parts||[e.id]).every(id=>game.trackIds.has(id));
   const lay=e=>{for(const id of e.parts||[e.id])game.trackIds.add(id);};
-  // A prepared block lets the player try a loop immediately. The other block still needs track.
-  const demo=lanes?[...game.city.study.ring,game.city.study.ring[0]]:['Рынок','Сквер','Типография','Площадь'].map(name=>stops.find(s=>s.name===name).id);
-  for(let i=1;i<demo.length;i++)lay(link(demo[i-1],demo[i]));
   const names={build:'Строительство',stops:'Остановки',routes:'Маршруты',flows:'Потоки'};
-  let mode='', place=game.city.starterStops.at(-1), first='', edge='', route=game.routes[0].id, draft=[], loop=false;
+  let mode='', place=game.city.starterStops.at(-1),selected=stations()[0]?.id,route=game.routes[0]?.id||'', draft=[], loop=false;
   let note='', person=null, renderingGame, previous=new Map(), sprites=[], paused=false, carry=0, last=null;
   const map=LT.createMap(svg,selectObject);
   let decoratedSigns;
   const point=p=>LT.art.project(p.x,p.y);
   const choices=(items,value)=>items.map(([k,v])=>`<option value="${k}" ${k===value?'selected':''}>${v}</option>`).join('');
-  const availableEdges=()=>sections.filter(e=>!built(e)&&stops.includes(stop(e.a))&&stops.includes(stop(e.b)));
+  const visibleSections=()=>sections.filter(e=>stop(e.a).ring<=game.openRing&&stop(e.b).ring<=game.openRing);
   function moneyTime() {
     $('cash').textContent=`${game.cash} ₽`; $('fleet').textContent=game.trains.length;
     $('clock').textContent=LT.stamp(LT.clockMinute(game));
@@ -44,7 +47,7 @@
     return new Map([...game.trains,...game.residents].map(o=>[o.id,{...o.position}]));
   }
   function sample() {
-    map.render(renderingGame,null,{enabled:false},mode==='stops'?{type:'stop',id:place}:null);
+    map.render(renderingGame,null,{enabled:false},mode==='stops'&&selected?{type:'stop',id:selected}:null);
     const signs=svg.querySelector('.signs');
     if(signs.firstElementChild!==decoratedSigns){
       decoratedSigns=signs.firstElementChild;
@@ -70,16 +73,49 @@
     renderingGame=Object.create(game); sample(); draw(carry); overlay();
   }
   const xy=id=>point(stop(id)).join(',');
+  const roadPoints=e=>e.line||[stop(e.a),stop(e.b)];
+  function halfWay(points){
+    const lengths=points.slice(1).map((p,i)=>Math.hypot(p.x-points[i].x,p.y-points[i].y));
+    let left=lengths.reduce((a,b)=>a+b,0)/2;
+    for(let i=0;i<lengths.length;i++){
+      if(left<=lengths[i]){const t=left/lengths[i],a=points[i],b=points[i+1];return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};}
+      left-=lengths[i];
+    }
+    return points.at(-1);
+  }
+  function roadTarget(e){
+    const points=roadPoints(e),line=points.map(p=>point(p).join(',')).join(' '),on=built(e),buy=mode==='build';
+    const cost=LT.BALANCE.trackCost,action=buy?(on?'Путь построен':`Построить за ${cost} ₽`):'Поставить остановку';
+    const price=buy&&!on?`<g transform="translate(${point(halfWay(points))})"><rect x="-8" y="-3.9" width="16" height="7.8" rx="2.4"/>
+      <text class="price" text-anchor="middle" y="1.7">${cost} ₽</text></g>`:'';
+    return `<g data-type="section" data-id="${e.id}" tabindex="0" role="button" data-built="${on}" aria-label="${action}: ${stop(e.a).name} — ${stop(e.b).name}">
+      <title>${action}</title><polyline class="road-ink" points="${line}"/><polyline class="street-hit" points="${line}"/>${price}</g>`;
+  }
+  function snapClick(e,at){
+    const line=roadPoints(e);
+    if(!at)return halfWay(line);
+    let chosen,near=Infinity;
+    for(let i=1;i<line.length;i++){
+      const a=line[i-1],b=line[i],[x,y]=point(a),[v,w]=point(b),dx=v-x,dy=w-y;
+      const t=Math.max(0,Math.min(1,((at.x-x)*dx+(at.y-y)*dy)/(dx*dx+dy*dy||1)));
+      const d=Math.hypot(at.x-x-t*dx,at.y-y-t*dy);
+      if(d<near){near=d;chosen={x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};}
+    }
+    return chosen;
+  }
+  const ghost=$('stop-preview'),hideGhost=()=>ghost.setAttribute('visibility','hidden');
+  svg.addEventListener('pointermove',e=>{
+    const road=e.target.closest('[data-type=section]');
+    if(e.buttons||e.pointerType==='touch'||mode!=='stops'||!road)return hideGhost();
+    const at=new DOMPoint(e.clientX,e.clientY).matrixTransform(svg.getScreenCTM().inverse());
+    ghost.setAttribute('transform',`translate(${point(snapClick(section(road.dataset.id),at))})`);
+    ghost.setAttribute('visibility','visible');
+  });
+  svg.addEventListener('pointerleave',hideGhost);
   function overlay() {
     let out='';
     const segment=(a,b,color,dash='')=>`<polyline points="${xy(a)} ${xy(b)}" fill="none" stroke="${color}" stroke-width="3" stroke-opacity=".82" stroke-dasharray="${dash}"/>`;
     const dot=(id,txt)=>`<g transform="translate(${xy(id)})"><circle r="5" fill="#ffedbd" stroke="#29584c" stroke-width="1.5"/><text class="flow-mark" x="7" y="-5">${txt}</text></g>`;
-    if(mode==='build'){
-      for(const e of availableEdges())if(!first||e.a===first||e.b===first){
-        const vertices=e.line?.map(p=>p.id)||[e.a,e.b];
-        for(let n=1;n<vertices.length;n++)out+=segment(vertices[n-1],vertices[n],e.id===edge?'#ab502c':'#688269',e.id===edge?'4 1':'1 4');
-      }
-    }
     if(mode==='routes') {
       const paths=loop?LT.loopPaths(game,draft):draft.slice(1).map((s,i)=>LT.railPath(game,draft[i],s));
       for(const path of paths||[]){
@@ -90,7 +126,6 @@
         }
       }
     }
-    if(mode==='stops') out+=dot(place,stop(place).name);
     if(mode==='flows') {
       const counts=destinations();
       for(const [id,n] of counts) {
@@ -100,19 +135,20 @@
       out+=dot(place,`Из района ${stop(place).name}`);
     }
     $('layer').innerHTML=out;
-    if(mode==='build'||mode==='routes'){
-      $('targets').innerHTML=stops.map(s=>{
-        const n=draft.indexOf(s.id), selected=mode==='routes'?n>=0:s.id===first;
-        const text=mode==='routes'&&selected?`${n+1} · ${s.name}`:s.name;
+    const roads=mode==='build'||(mode==='stops'&&lanes)?visibleSections().map(roadTarget).join(''):'';
+    if(mode==='stops'||mode==='routes'){
+      $('targets').innerHTML=roads+stations().map(s=>{
+        const n=draft.indexOf(s.id), chosen=mode==='routes'?n>=0:s.id===selected;
+        const text=mode==='routes'&&chosen?`${n+1} · ${stopName(s.id)}`:stopName(s.id);
         const start=mode==='routes'&&n===0, edge=start?'#ffbc54':'#f6e4c6';
-        return `<g data-type="stop" data-id="${s.id}" role="button" tabindex="0" aria-label="${s.name}" transform="translate(${xy(s.id)})">
+        return `<g data-type="stop" data-id="${s.id}" role="button" tabindex="0" aria-label="${stopName(s.id)}" transform="translate(${xy(s.id)})">
           <rect x="-7" y="-22" width="${text.length*3.6+18}" height="24" rx="5" fill="transparent"/>
           ${start?'<ellipse rx="6" ry="2.2" fill="none" stroke="#ffbc54" stroke-width="1.25"/>':''}
           <path d="M-2 -9L0 -1 3 -9" fill="#423a31" stroke="${edge}" stroke-width=".85"/>
-          <rect x="-5" y="-20" width="${text.length*3.6+10}" height="12" rx="3" fill="${selected?'#37322c':'#f2ddbb'}" stroke="${edge}" stroke-width="${start?1.65:1}"/>
-          <text x="-.5" y="-11.5" fill="${selected?'#fff1d7':'#493e30'}" font-family="system-ui" font-size="6" font-weight="700">${text}</text></g>`;
+          <rect x="-5" y="-20" width="${text.length*3.6+10}" height="12" rx="3" fill="${chosen?'#37322c':'#f2ddbb'}" stroke="${edge}" stroke-width="${start?1.65:1}"/>
+          <text x="-.5" y="-11.5" fill="${chosen?'#fff1d7':'#493e30'}" font-family="system-ui" font-size="6" font-weight="700">${text}</text></g>`;
       }).join('');
-    } else $('targets').replaceChildren();
+    } else $('targets').innerHTML=roads;
   }
   function destinations() {
     const counts=new Map();
@@ -123,8 +159,7 @@
   }
   function pickRoute(id){const r=game.routes.find(r=>r.id===id);route=id;draft=[...(r?.stopIds||[])];loop=!!r?.loop;note='';}
   function setMode(m) {
-    mode=m;note='';person=null;
-    if(mode==='build'){edge='';first='';}
+    mode=m;note='';person=null;hideGhost();
     svg.dataset.mode=mode;
     for(const b of $('modes').children) b.setAttribute('aria-pressed',String(b.dataset.mode===mode));
     panel();sample();draw(carry);overlay();
@@ -132,23 +167,20 @@
   function panel() {
     $('panel').hidden=!mode; if(!mode)return;
     $('title').textContent=names[mode];
-    const pickPlace=label=>`<label>${label}<select id="district">${choices(stops.map(s=>[s.id,s.name]),place)}</select></label>`;
+    const pickPlace=label=>`<label>${label}<select id="district">${choices(districts.map(s=>[s.id,s.name]),place)}</select></label>`;
     let h='';
     if(mode==='build'){
-      const selected=section(edge);
-      h=availableEdges().length?`<p>${!first?'Нажмите на начало пунктирного участка на карте.':!selected?`Откуда: <b>${stop(first).name}</b>. Нажмите на соседнюю остановку в конце пунктира.`:`<b>${stop(first).name} → ${stop(selected.a===first?selected.b:selected.a).name}</b>`}</p>
-        ${selected?`<button id="buy-track">Построить · ${LT.BALANCE.trackCost} ₽</button>`:''}
-        ${first?'<button id="reset-build">Выбрать заново</button>':''}`:'<p>Все соседние остановки центра уже соединены путями.</p>';
+      h=visibleSections().some(e=>!built(e))?'<p>Цена подписана на дороге. Нажмите на участок или на его цену — рельсы будут куплены сразу.</p>':'<p>На всех доступных улицах уже есть рельсы.</p>';
     } else if(mode==='stops'){
-      const lines=game.routes.filter(r=>r.stopIds.includes(place));
-      h=pickPlace('Остановка на карте')+`<p>Здесь останавливаются: <b>${lines.map(r=>r.name).join(', ')||'пока ни одной линии'}</b>.</p><button id="edit-service">Изменить обслуживание</button>`;
+      const lines=game.routes.filter(r=>r.stopIds.includes(selected));
+      h=lanes?'<p>Нажмите на улицу в том месте, где нужен павильон. Остановка появится здесь; рельсы покупаются отдельно.</p>':'<p>Нажмите на остановку на карте.</p>';
+      if(selected)h+=`<p><b>${stopName(selected)}</b> · ${lines.map(r=>r.name).join(', ')||'пока без маршрута'}</p><button id="edit-service">Изменить обслуживание</button>`;
     } else if(mode==='routes'){
       h=`<div class="lines">${game.routes.map(r=>`<button data-line="${r.id}" aria-pressed="${route===r.id}">${r.name}</button>`).join('')}
         <button id="new-route">+ Новый маршрут</button></div>
         <p><b>${loop?'↻ Кольцевой':draft.length>=2?'↔ Туда и обратно':'Новый маршрут'}</b><br>
-        ${[...draft,...(loop?[draft[0]]:[])].map(id=>stop(id).name).join(' → ')||'Нажмите первую остановку на карте.'}</p>
+        ${[...draft,...(loop?[draft[0]]:[])].map(stopName).join(' → ')||(stations().length<2?'Сначала поставьте две остановки в режиме «Остановки».':'Нажмите первую остановку на карте.')}</p>
         <p class="muted">${loop?'После последней остановки поезд возвращается к первой и начинает следующий круг.':'Нажимайте остановки по порядку. Чтобы замкнуть кольцо, снова нажмите первую.'}</p>
-        ${lanes&&!draft.length?`<p class="muted">Кольцо этого города: ${demo.map(id=>stop(id).name).join(' → ')}.</p>`:''}
         ${draft.length?`<button id="undo">${loop?'Разомкнуть':'Убрать последнюю'}</button>`:''}
         <button id="save" ${draft.length<2?'disabled':''}>Сохранить</button>
         ${route?`<button id="buy-train">Купить трамвай · ${LT.BALANCE.trainCost} ₽</button>`:''}`;
@@ -165,9 +197,22 @@
     $('flow-info').innerHTML='<p><b>В пути сейчас:</b> '+(destinations().map(([id,n])=>`${stop(id).name} — ${n}`).join(', ')||'из района никто не идёт')+'.</p>'+
       (j?`<p><b>${r.name}</b>: ${building(j.originId).name} → ${building(j.destinationId).name}, ${j.mode==='tram'?'с трамваем':'пешком'}.</p>`:'');
   }
-  function selectObject(type,id){
-    if((mode==='build'||mode==='routes') && type!=='stop')return;
-    if(type==='stop') {
+  function selectObject(type,id,group,at){
+    if(type==='section'){
+      const e=section(id);
+      if(!e || !visibleSections().includes(e))return;
+      if(mode==='build'){
+        if(built(e))note='Этот путь уже построен.';
+        else if(game.cash<LT.BALANCE.trackCost)note=`Не хватает ${LT.BALANCE.trackCost-game.cash} ₽.`;
+        else {lay(e);game.cash-=LT.BALANCE.trackCost;note=`Путь построен · −${LT.BALANCE.trackCost} ₽.`;moneyTime();}
+      }else if(mode==='stops'&&lanes){
+        hideGhost();
+        const result=LT.streetStudy.placeStop(game,e,snapClick(e,at));
+        if(result.ok)selected=result.id;
+        note=result.ok?`Поставлена остановка «${result.name}».`:result.message;
+      }else return;
+    }else if((mode==='build'||mode==='routes'||mode==='stops')&&type!=='stop')return;
+    else if(type==='stop') {
       if(mode==='routes'){
         note='';
         if(loop)note='Сначала разомкните маршрут, чтобы изменить порядок.';
@@ -178,21 +223,9 @@
         else if(draft.length && !LT.railPath(game,draft.at(-1),id))note='Сюда пока нет рельсов от последней остановки. Сначала постройте путь.';
         else draft.push(id);
       }
-      else if(mode==='flows'){place=id;person=null;}
-      else if(mode==='build'){
-        note='';edge='';
-        if(!first){
-          if(availableEdges().some(e=>e.a===id||e.b===id))first=id;
-          else note='Здесь все соседние участки построены. Выберите конец пунктира.';
-        }else if(id===first)first='';
-        else {
-          const e=link(first,id);
-          if(!e)note='Это не соседние остановки. Выберите другой конец пунктира.';
-          else if(built(e))note='Между этими остановками уже есть путь.';
-          else edge=e.id;
-        }
-      }
-      else {place=id;setMode('stops');return;}
+      else if(mode==='flows'){place=districts.find(s=>s.districtId===stop(id).districtId)?.id??place;person=null;}
+      else if(mode==='build')return;
+      else {selected=id;setMode('stops');return;}
     } else if(type==='resident'||type==='building'){
       const r=type==='resident'?game.residents.find(r=>r.id===id):null;
       place=building(r?(r.journey?.originId||r.homeId):id).stopId;
@@ -208,23 +241,13 @@
   };
   $('content').onclick=e=>{
     const id=e.target.id;let result;
-    if(id==='buy-track'){
-      if(lanes){
-        const e=section(edge);
-        if(!e||built(e))result={ok:false,message:'Выберите ещё не построенный участок.'};
-        else if(game.cash<LT.BALANCE.trackCost)result={ok:false,message:'Недостаточно денег на путь.'};
-        else {lay(e);game.cash-=LT.BALANCE.trackCost;result={ok:true};}
-      }else result=LT.buildTrack(game,edge);
-      if(result.ok){first='';edge='';}
-    }
-    else if(id==='reset-build'){first='';edge='';}
-    else if(id==='edit-service'){const r=game.routes.find(r=>r.stopIds.includes(place));setMode('routes');pickRoute(r?.id||'');}
+    if(id==='edit-service'){const r=game.routes.find(r=>r.stopIds.includes(selected));setMode('routes');pickRoute(r?.id||'');if(!r&&selected)draft.push(selected);}
     else if(id==='new-route'||e.target.dataset.line)pickRoute(e.target.dataset.line||'');
     else if(id==='undo'){if(loop)loop=false;else draft.pop();}
     else if(id==='save'){result=route?LT.setStops(game,route,draft,loop):LT.createRoute(game,draft,loop);if(result.routeId)pickRoute(result.routeId);}
     else if(id==='buy-train')result=LT.buyTrain(game,route);
     else return;
-    note=result?(result.ok?({save:'Маршрут сохранён.','buy-track':'Путь построен.','buy-train':'Трамвай добавлен в парк.'}[id]):result.message):'';
+    note=result?(result.ok?({save:'Маршрут сохранён.','buy-train':'Трамвай добавлен в парк.'}[id]):result.message):'';
     moneyTime();panel();sample();draw(carry);overlay();
   };
   $('modes').onclick=e=>{const m=e.target.dataset.mode;if(m)setMode(m===mode?'':m);};
@@ -245,5 +268,17 @@
     }
     last=ms;requestAnimationFrame(frame);
   }
-  pickRoute(route);previous=positions();viewAngle();setMode('');moneyTime();requestAnimationFrame(frame);
+  pickRoute(route);previous=positions();viewAngle();setMode('');moneyTime();
+  if(lanes){
+    const reveal=LT.createStudyFog(svg,game.city.study,game.city.seed);
+    $('fog-study').hidden=false;
+    $('reveal-ring').onclick=()=>{
+      if(game.openRing){openSeed(game.city.seed);return;}
+      game.openRing=1;districts=accessible();sample();draw(carry);overlay();panel();reveal();
+      $('zone-state').textContent='После расширения';
+      $('reveal-ring').textContent='С начала · тот же сид';
+      $('reveal-ring').title='Начать новую демонстрационную партию с тем же городом';
+    };
+  }
+  requestAnimationFrame(frame);
 })();

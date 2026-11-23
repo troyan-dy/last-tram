@@ -88,5 +88,39 @@
     const yardPath=[face[0],across],east=mix(c,loc[across],.32);
     return {loc,label,boundary,edges,adj,starter,ring,garden,pocket,yardPath,courtBends:[c,east],center:c,pocketCenter:c2};
   }
-  globalThis.LastTram??={};LastTram.makeStreetPlan=plan;LastTram.streetRandom=random;
+  // Grow from the existing street graph into the empty margin and across its contour.
+  // A ring is a visibility boundary, not a compulsory circular road.
+  function extend(plan,rand){
+    const {loc,label,boundary,edges}=plan, original=loc.length, rings=loc.map(()=>0);
+    const innerNames=['Тихая','Гончарная','Сиреневая','Песчаная','Ткацкая','Луговая','Вишнёвая','Кузнечная'];
+    const outerNames=['Вокзал','Фабрика','Причал','Сады','Новоселье','Депо','Озёрная','Выселки'];
+    const scaled=(p,k)=>pt(p.x*k,p.y*k), gates=[],beyond=[];
+    function addSite(p,name,ring){const i=loc.length;loc.push(p);label.push(name);rings.push(ring);return i;}
+    function join(i,j,width,bend){
+      const line=bend?[loc[i],bend,loc[j]]:[loc[i],loc[j]];
+      for(let k=1;k<line.length;k++)if(edges.some(e=>e.line.slice(1).some((b,n)=>intersects(line[k-1],line[k],e.line[n],b))))return false;
+      edges.push({i,j,width,line});return true;
+    }
+    const phase=Math.floor(rand()*2);
+    for(let n=0;n<8;n++){
+      const i=(phase+n*2)%boundary.length;
+      const ray=mix(boundary[i],boundary[(i+1)%boundary.length],rand()*.75);
+      const gate=addSite(scaled(ray,.87+rand()*.065),innerNames[n],0);
+      const candidates=Array.from({length:original},(_,i)=>i).sort((a,b)=>dist(loc[a],loc[gate])-dist(loc[b],loc[gate]));
+      if(!candidates.some(i=>join(i,gate,6+rand()*3)))return false;
+      const v=scaled(ray,1.32+rand()*.09), drift=(rand()-.5)*.13;
+      const out=addSite(pt(v.x-v.y*drift,v.y+v.x*drift),outerNames[n],1);
+      if(!join(gate,out,7+rand()*3,scaled(ray,1.04)))return false;
+      gates.push(gate);beyond.push(out);
+    }
+    for(let n=0;n<8;n++){
+      const k=(n+1)%8;
+      if(rand()<.65)join(gates[n],gates[k],5+rand()*2);
+      if(rand()<.83)join(beyond[n],beyond[k],6+rand()*3,scaled(mix(loc[beyond[n]],loc[beyond[k]],.45),1.035+rand()*.04));
+    }
+    plan.rings=rings;
+    plan.outerBoundary=boundary.map(p=>scaled(p,1.57+rand()*.05));
+    return true;
+  }
+  globalThis.LastTram??={};LastTram.makeStreetPlan=plan;LastTram.extendStreetPlan=extend;LastTram.streetRandom=random;
 })();
