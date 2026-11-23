@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#203e36">
+  <title>Последний трамвай · Атлас движения</title>
+  <link rel="stylesheet" href="game/style.css">
+  <style>
+    .timebox { display:grid; grid-template-columns: auto auto auto; max-width:none; flex-shrink:0 }
+    #next-period { grid-column:1 / -1; height:auto; padding:4px 8px; font:600 12px/1.4 var(--mono) }
+    #next-period:disabled { cursor:progress }
+    #clock-period { white-space:nowrap; text-transform:uppercase }
+    #map[data-light="day"] .scenery { filter:brightness(1.06) }
+    #map[data-light="evening"] .scenery { filter:sepia(.36) saturate(1.1) brightness(.78) }
+    #map[data-light="night"] .scenery { filter:url(#night-light) }
+    .platform-light { opacity:0 }
+    #map[data-light="evening"] .platform-light { opacity:.65 }
+    #map[data-light="night"] .platform-light { opacity:1 }
+    .board:has(#map[data-light="evening"]) { background-color:#e2dfd2 }
+    .board:has(#map[data-light="night"]) { background-color:#c8d2d0 }
+    @media (max-width:660px) {
+      .timebox { grid-template-columns:repeat(2,1fr); width:118px }
+      .timebox div { grid-column:1 / -1 }
+      #next-period { font-size:10px }
+    }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M10 9h20v19H10zM17 5h6m-3 0v4M9 34l5-6m17 6-5-6M13 31h14"/><path d="M13 13h14v8H13z"/><circle cx="15" cy="25" r="1"/><circle cx="25" cy="25" r="1"/></svg>
+      <div>Последний трамвай<small>ГОРОДСКОЙ ТРАНСПОРТНЫЙ АТЛАС</small></div></div>
+    <form id="seed-form"><label for="seed">Сид города</label><input id="seed" maxlength="60" placeholder="Случайный" autocomplete="off">
+      <button type="submit">Новая партия <span aria-hidden="true">↗</span></button></form>
+  </header>
+  <main>
+    <section class="heading">
+      <div><div class="kicker"><i></i> ДИСПЕТЧЕРСКАЯ <span>/</span> ЛИСТ 01</div><h1>Ритм города<span>.</span></h1>
+        <p>Найдите жителя и проследите его путь до двери.</p></div>
+      <div class="timebox" role="group" aria-label="Городское время"><div><small id="clock-period">День 1 · Утро</small><strong id="clock">07:30</strong></div>
+        <button id="pause" title="Пауза" aria-label="Пауза">Ⅱ</button><button id="speed" aria-label="Скорость" title="Скорость">1×</button>
+        <button id="next-period" title="Довести город до следующего периода">К 12:00 · День</button></div>
+    </section>
+    <div class="layout">
+      <section class="map-card">
+        <div class="card-head"><b><span class="dot"></span> Зона обслуживания</b><span class="stamp" id="zone-label">ЦЕНТР / 01</span></div>
+        <div class="board">
+          <div class="coordinates">ПЛАН ГОРОДА <span>/</span> ИЗОМЕТРИЯ</div>
+          <svg id="map" xmlns="http://www.w3.org/2000/svg" aria-label="Карта города" role="group">
+            <defs><filter id="night-light" color-interpolation-filters="sRGB">
+              <feColorMatrix values=".47 0 0 0 .04  0 .55 0 0 .045  0 0 .72 0 .08  0 0 0 1 0"/>
+            </filter>
+              <g id="intent-house"><path d="M1 6l5-4 5 4v6H1Z" fill="#b98255"/><path d="M5 12V8h2v4" fill="#f8ebcf"/></g>
+              <g id="intent-work"><path d="M1 12V5l4 2V4l4 2V2h2v10Z" fill="#6a847e"/><path d="M3 9h5" stroke="#fff2d8"/></g>
+              <g id="intent-market"><path d="M1 5h10v7H1Z" fill="#b48150"/><path d="M2 2h8l2 4H0Z" fill="#b95d41"/><path d="m4 2-1 4m4-4 1 4" stroke="#fff1ce" stroke-width="2"/></g>
+              <g id="intent-tram"><rect x="1" y="2" width="9" height="8" rx="2"/><path d="M3 5h5" stroke="white"/><path d="m3 9-1 3m6-3 1 3" stroke="currentColor"/></g>
+              <g id="intent-walk"><circle cx="6" cy="2.1" r="1.5"/><path d="m3 7 2-3 2 2 2 1M6 5 5 8l-2 3m2-3 3 3" fill="none" stroke="currentColor" stroke-width="1.6"/></g>
+            </defs>
+            <g id="scene"></g><g id="leaders" pointer-events="none"></g><g id="thoughts"></g><g id="moving"></g>
+            <g id="marker" pointer-events="none" style="display:none"><ellipse rx="7.5" ry="3.4" fill="none" stroke="#b14f35" stroke-width="1.5"/></g>
+            <g id="network-marker" pointer-events="none" style="display:none"><ellipse rx="11" ry="5" fill="none" stroke="#325b66" stroke-dasharray="3 2" stroke-width="1.5"/></g>
+          </svg>
+          <div class="map-controls"><button id="less" aria-label="Отдалить">−</button><button id="more" aria-label="Приблизить">+</button>
+            <button id="fit"><span aria-hidden="true">⌗</span> Вся зона</button></div>
+        </div>
+        <div class="map-foot"><span class="legend"><i class="rail"></i> Путь <i class="platform"></i> Остановка</span>
+          <span>Сид: <b id="city-seed"></b></span></div>
+        <section id="network-info" aria-label="Объект сети" hidden></section>
+        <fieldset id="people-here" hidden><legend>Жители в этой точке</legend><div id="people-buttons"></div></fieldset>
+        <div class="flow-tools"><label><input type="checkbox" id="flow-toggle"> Потоки · Мысль</label>
+          <span class="flow-key">Цель и действие · <svg viewBox="0 0 11 12" aria-hidden="true"><use href="#intent-walk"/></svg> пешком
+            <svg viewBox="0 0 11 12" aria-hidden="true"><use href="#intent-tram"/></svg> с трамваем</span>
+          <fieldset id="flow-filters" hidden><legend>В пути · <span id="flow-target"></span></legend>
+            <label><input type="checkbox" value="to" checked> К зданию</label>
+            <label><input type="checkbox" value="from" checked> Из здания</label>
+            <label><input type="checkbox" value="walk" checked> Целиком пешком</label>
+            <label><input type="checkbox" value="tram" checked> С трамваем</label></fieldset>
+          <label class="building-picker">Выбрать здание <select id="building-choice"></select></label>
+          <label class="traveler-picker" id="travelers" hidden>В пути сейчас <select id="traveler-choice"></select></label>
+        </div>
+      </section>
+      <aside>
+        <section class="panel"><div class="kicker">01 <span>/</span> ОБСЛУЖИВАНИЕ</div>
+          <h2 id="line-title">Линия 01</h2><div id="line-stops"></div>
+          <div class="service-foot"><span><i class="dot"></i> В парке</span><b id="fleet"></b></div>
+          <p id="network-money"></p>
+          <details id="network-console"><summary>Пульт сети</summary>
+            <fieldset><legend>Рельсы</legend>
+              <label>Новый участок<select id="track-choice"></select></label><button id="build-track"></button>
+            </fieldset>
+            <fieldset><legend>Обслуживание</legend>
+              <label>Рабочий маршрут<select id="route-choice"></select></label>
+              <button id="new-route">Новый маршрут</button>
+              <p class="hint">Добавляйте остановки по порядку. Между ними поезд следует по построенным рельсам.</p>
+              <ol id="draft-stops"></ol>
+              <label>Добавить остановку<select id="stop-choice"></select></label>
+              <button id="append-stop">Добавить</button><button id="save-stops">Сохранить остановки</button>
+            </fieldset>
+            <fieldset><legend>Выпуск</legend>
+              <label>Выбранный поезд<select id="train-choice"></select></label>
+              <button id="show-train">Показать поезд</button><button id="assign-train">Назначить на маршрут</button>
+              <button id="buy-train"></button>
+            </fieldset>
+            <fieldset><legend>Тариф сети</legend>
+              <label>Цена билета<input id="fare-choice" type="number" min="0" step="1"></label>
+              <button id="set-fare">Установить тариф</button>
+            </fieldset>
+            <output id="network-message" role="status"></output>
+          </details>
+        </section>
+        <section class="panel" id="inspector" aria-label="Наблюдение"></section>
+        <section class="panel" id="building-ledger" aria-label="Журнал здания" hidden>
+          <div class="kicker">ЖУРНАЛ ПРИБЫТИЙ</div><h2 id="ledger-title"></h2>
+          <p>Считаем завершённые пути у этой двери. Район — откуда вышел житель, способ — за весь путь.</p>
+          <div class="ledger-controls"><label>День наблюдения<select id="ledger-day"></select></label>
+            <label>Время прибытия<select id="ledger-period">
+              <option value="450:540">07:30–09:00</option><option value="540:720">09:00–12:00</option>
+              <option value="720:1050">12:00–17:30</option><option value="1050:1290">17:30–21:30</option>
+              <option value="1290:1890">21:30–07:30</option></select></label></div>
+          <div id="live-stats"></div>
+          <p class="ledger-note">Выручка сети — все оплаченные билеты в это время, по моменту первой посадки. Покупки в неё не входят.</p>
+          <section class="experiment" id="morning-experiment"><h3>Если добавить поезд?</h3>
+            <p>Два повтора первого утра этого сида, 07:30–09:00. Стартовая сеть одинакова; во втором повторе в 07:30 покупаем ещё один поезд на первую линию. Ваша партия идёт отдельно.</p>
+            <button id="compare-mornings">Сравнить два утра</button>
+            <div id="comparison" aria-live="polite"></div></section>
+        </section>
+        <section class="panel directory"><label>Наблюдать за жителем<select id="resident-choice"></select></label></section>
+        <section class="panel" id="goals-panel" aria-label="Цели города"></section>
+      </aside>
+    </div>
+    <footer><span>ПОСЛЕДНИЙ ТРАМВАЙ <i>/</i> ПОЛЕВОЙ АТЛАС</span><span>Колесо — масштаб · Перетаскивание — обзор</span></footer>
+  </main>
+  <script src="game/city.js"></script><script src="game/movement.js"></script><script src="game/service.js"></script><script src="game/journey.js"></script>
+  <script src="game/expansion.js"></script>
+  <script src="game/demand.js"></script><script src="game/history.js"></script><script src="game/simulation.js"></script>
+  <script src="game/art.js"></script><script src="game/flows.js"></script><script src="game/map.js"></script>
+  <script src="game/network-panel.js"></script><script src="game/experiment.js"></script>
+  <script src="game/goals-panel.js"></script><script src="game/inspector.js"></script><script src="game/app.js"></script>
+</body>
+</html>

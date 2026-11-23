@@ -1,0 +1,12 @@
+{
+  "name": "last-tram",
+  "private": true,
+  "scripts": {
+    "test": "npm run test:model && npm run test:browser",
+    "test:model": "node --test tests/*.test.js",
+    "test:browser": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1"
+  }
+}
